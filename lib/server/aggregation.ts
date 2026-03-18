@@ -372,6 +372,8 @@ function buildHoldingsView(
         percentOfPortfolio: totalValue > 0 ? (pos.currentValue / totalValue) * 100 : 0,
         account: pos.accountName,
         investmentType: pos.investmentType,
+          totalGainLossDollar: pos.totalGainLossDollar,
+          costBasisTotal: pos.costBasisTotal,
       });
     } else {
       rowMap.set(key, {
@@ -396,6 +398,8 @@ function buildHoldingsView(
               totalValue > 0 ? (pos.currentValue / totalValue) * 100 : 0,
             account: pos.accountName,
             investmentType: pos.investmentType,
+            totalGainLossDollar: pos.totalGainLossDollar,
+            costBasisTotal: pos.costBasisTotal,
           },
         ],
       });
@@ -429,6 +433,8 @@ function buildHoldingsView(
             totalValue > 0 ? (holdingValue / totalValue) * 100 : 0,
           account: fund.accountName,
           investmentType: fund.investmentType,
+          totalGainLossDollar: 0,
+          costBasisTotal: 0,
         });
       } else {
         const hQuote = quotes[h.symbol];
@@ -454,6 +460,8 @@ function buildHoldingsView(
                 totalValue > 0 ? (holdingValue / totalValue) * 100 : 0,
               account: fund.accountName,
               investmentType: fund.investmentType,
+              totalGainLossDollar: 0,
+              costBasisTotal: 0,
             },
           ],
         });
@@ -504,6 +512,8 @@ function buildPositionsView(
         percentOfPortfolio: totalValue > 0 ? (pos.currentValue / totalValue) * 100 : 0,
         account: pos.accountName,
         investmentType: pos.investmentType,
+        totalGainLossDollar: pos.totalGainLossDollar,
+        costBasisTotal: pos.costBasisTotal,
       });
     } else {
       rowMap.set(key, {
@@ -528,6 +538,8 @@ function buildPositionsView(
               totalValue > 0 ? (pos.currentValue / totalValue) * 100 : 0,
             account: pos.accountName,
             investmentType: pos.investmentType,
+            totalGainLossDollar: pos.totalGainLossDollar,
+            costBasisTotal: pos.costBasisTotal,
           },
         ],
       });

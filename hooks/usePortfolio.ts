@@ -19,6 +19,7 @@ import {
   buildFlatHoldingTreeMapNodes,
   filterFundTreeMapNodes,
   getFundOptions,
+  relayoutTreeMapNodes,
 } from "@/lib/treemap";
 
 const POLL_INTERVAL = 5000;
@@ -130,11 +131,7 @@ export function usePortfolio() {
       ? portfolioData?.tableRows
       : portfolioData?.positionRows;
 
-  const filteredFundTreeMapNodes = getFilteredTreeMapNodes(
-    portfolioData,
-    positions,
-    filters
-  );
+  const filteredFundTreeMapNodes = getFilteredTreeMapNodes(portfolioData, filters);
   const fundOptions = getFundOptions(filteredFundTreeMapNodes);
 
   useEffect(() => {
@@ -152,6 +149,11 @@ export function usePortfolio() {
     sortConfig,
     selectedFunds
   );
+  const activeSummary = getActivePortfolioSummary(
+    positions,
+    filters,
+    selectedFunds
+  );
   const filteredTreeMapNodes =
     treeMapGrouping === "fund"
       ? filterFundTreeMapNodes(filteredFundTreeMapNodes, selectedFunds)
@@ -159,16 +161,11 @@ export function usePortfolio() {
           rows: portfolioData?.tableRows ?? [],
           filters,
           selectedFunds,
-          totalPortfolioValue: portfolioData?.summary.totalValue ?? 0,
+          totalPortfolioValue:
+            activeSummary?.value ?? portfolioData?.summary.totalValue ?? 0,
           width: TREE_MAP_WIDTH,
           height: TREE_MAP_HEIGHT,
         });
-
-  const activeSummary = getActivePortfolioSummary(
-    positions,
-    filters,
-    selectedFunds
-  );
 
   async function uploadFile(file: File) {
     setIsLoading(true);
@@ -267,34 +264,31 @@ export function usePortfolio() {
 
 // Pure functions
 
-function getFilteredRows(
+export function getFilteredRows(
   rows: TableRow[] | null,
   filters: FilterState,
   sortConfig: SortConfig,
   selectedFunds: string[]
 ): TableRow[] {
   if (!rows) return [];
-  let filtered = rows;
+  const filtered = rows
+    .map((row) => buildVisibleRow(row, filters, selectedFunds))
+    .filter((row): row is TableRow => row !== null);
+  const visibleTotalValue = filtered.reduce((sum, row) => sum + row.totalValue, 0);
 
-  if (filters.investmentTypes.length > 0) {
-    filtered = filtered.filter((r) =>
-      r.investmentTypes.some((t) => filters.investmentTypes.includes(t))
-    );
-  }
-  if (filters.accounts.length > 0) {
-    filtered = filtered.filter((r) =>
-      r.accounts.some((a) => filters.accounts.includes(a))
-    );
-  }
-
-  if (selectedFunds.length > 0) {
-    filtered = filtered.filter((r) =>
-      selectedFunds.includes(r.symbol) ||
-      r.sources.some((s) => selectedFunds.includes(s.sourceSymbol))
-    );
-  }
-
-  return sortTableRows(filtered, sortConfig);
+  return sortTableRows(
+    filtered.map((row) => ({
+      ...row,
+      percentOfPortfolio:
+        visibleTotalValue > 0 ? (row.totalValue / visibleTotalValue) * 100 : 0,
+      sources: row.sources.map((source) => ({
+        ...source,
+        percentOfPortfolio:
+          visibleTotalValue > 0 ? (source.value / visibleTotalValue) * 100 : 0,
+      })),
+    })),
+    sortConfig
+  );
 }
 
 function getActivePortfolioSummary(
@@ -392,32 +386,113 @@ function matchesFundSelection(
   );
 }
 
-function getFilteredTreeMapNodes(
+export function getFilteredTreeMapNodes(
   portfolioData: PortfolioData | null,
-  positions: FidelityPosition[] | null,
   filters: FilterState
 ): TreeMapNode[] {
   if (!portfolioData) return [];
-  let nodes = portfolioData.treeMapNodes;
-
-  if (filters.investmentTypes.length > 0 || filters.accounts.length > 0) {
-    const filteredSymbols = new Set<string>();
-
-    if (positions) {
-      for (const pos of positions) {
-        if (matchesPositionFilters(pos, filters)) {
-          filteredSymbols.add(pos.symbol);
-        }
-      }
-    }
-
-    nodes = nodes.filter((n) => {
-      if (n.depth === 1) return filteredSymbols.has(n.symbol);
-      if (n.depth === 2 && n.parentSymbol)
-        return filteredSymbols.has(n.parentSymbol);
-      return true;
-    });
+  if (filters.investmentTypes.length === 0 && filters.accounts.length === 0) {
+    return portfolioData.treeMapNodes;
   }
 
-  return nodes;
+  return relayoutTreeMapNodes(
+    portfolioData.treeMapNodes.filter((node) => matchesTreeMapNodeFilters(node, filters)),
+    TREE_MAP_WIDTH,
+    TREE_MAP_HEIGHT
+  );
+}
+
+function buildVisibleRow(
+  row: TableRow,
+  filters: FilterState,
+  selectedFunds: string[]
+): TableRow | null {
+  const visibleSources = row.sources.filter(
+    (source) =>
+      matchesSourceFilters(source.account, source.investmentType, filters) &&
+      matchesRowSourceFundSelection(
+        row.symbol,
+        source.type,
+        source.sourceSymbol,
+        selectedFunds
+      )
+  );
+
+  if (visibleSources.length === 0) {
+    return null;
+  }
+
+  const totalValue = visibleSources.reduce((sum, source) => sum + source.value, 0);
+  const totalGainLossDollar = visibleSources.reduce(
+    (sum, source) => sum + (source.totalGainLossDollar ?? 0),
+    0
+  );
+  const totalCostBasis = visibleSources.reduce(
+    (sum, source) => sum + (source.costBasisTotal ?? 0),
+    0
+  );
+
+  return {
+    ...row,
+    accounts: [...new Set(visibleSources.map((source) => source.account))],
+    investmentTypes: [
+      ...new Set(visibleSources.map((source) => source.investmentType)),
+    ],
+    totalValue,
+    percentOfPortfolio: 0,
+    totalGainLossDollar,
+    totalGainLossPercent:
+      totalCostBasis > 0 ? (totalGainLossDollar / totalCostBasis) * 100 : 0,
+    isExpandable: visibleSources.length > 1,
+    sources: visibleSources.map((source) => ({
+      ...source,
+    })),
+  };
+}
+
+function matchesSourceFilters(
+  account: string,
+  investmentType: string,
+  filters: FilterState
+): boolean {
+  const matchesAccount =
+    filters.accounts.length === 0 || filters.accounts.includes(account);
+  const matchesType =
+    filters.investmentTypes.length === 0 ||
+    filters.investmentTypes.includes(investmentType);
+
+  return matchesAccount && matchesType;
+}
+
+function matchesRowSourceFundSelection(
+  rowSymbol: string,
+  sourceType: "direct" | "fund",
+  sourceSymbol: string,
+  selectedFunds: string[]
+): boolean {
+  if (selectedFunds.length === 0) {
+    return true;
+  }
+
+  if (selectedFunds.includes(sourceSymbol)) {
+    return true;
+  }
+
+  return sourceType === "direct" && selectedFunds.includes(rowSymbol);
+}
+
+function matchesTreeMapNodeFilters(
+  node: TreeMapNode,
+  filters: FilterState
+): boolean {
+  const matchesAccount =
+    filters.accounts.length === 0 ||
+    (node.account ? filters.accounts.includes(node.account) : false);
+  const matchesType =
+    filters.investmentTypes.length === 0 ||
+    (node.investmentType
+      ? filters.investmentTypes.includes(node.investmentType)
+      : false);
+
+  return matchesAccount && matchesType;
 }

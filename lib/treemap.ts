@@ -23,6 +23,11 @@ interface FlatHierarchyData extends Partial<FlatNodeData> {
   children?: FlatHierarchyData[];
 }
 
+interface RelayoutHierarchyData {
+  node: TreeMapNode;
+  children?: RelayoutHierarchyData[];
+}
+
 export function isFundInvestmentType(type?: string): boolean {
   return !!type && FUND_TYPES.has(type);
 }
@@ -76,6 +81,95 @@ export function filterFundTreeMapNodes(
 
     return false;
   });
+}
+
+export function relayoutTreeMapNodes(
+  nodes: TreeMapNode[],
+  width: number,
+  height: number
+): TreeMapNode[] {
+  if (nodes.length === 0) {
+    return [];
+  }
+
+  const parentNodes = nodes.filter((node) => node.depth === 1);
+  const totalValue = parentNodes.reduce((sum, node) => sum + node.value, 0);
+  const childGroups = new Map<string, TreeMapNode[]>();
+
+  for (const node of nodes) {
+    if (node.depth !== 2 || !node.parentSymbol) {
+      continue;
+    }
+
+    const groupKey = getTreeMapGroupKey(node.parentSymbol, node.account);
+    const existing = childGroups.get(groupKey);
+    if (existing) {
+      existing.push(node);
+    } else {
+      childGroups.set(groupKey, [node]);
+    }
+  }
+
+  const root = hierarchy<RelayoutHierarchyData>({
+    node: {
+      id: "ROOT",
+      symbol: "ROOT",
+      name: "Portfolio",
+      value: totalValue,
+      color: "transparent",
+      percentOfPortfolio: 100,
+      x0: 0,
+      y0: 0,
+      x1: width,
+      y1: height,
+      depth: 0,
+    },
+    children: parentNodes.map((node) => ({
+      node,
+      children: (childGroups.get(getTreeMapGroupKey(node.symbol, node.account)) ?? []).map(
+        (child) => ({
+          node: child,
+        })
+      ),
+    })),
+  })
+    .sum((entry) => entry.node.value)
+    .sort((a, b) => (b.value || 0) - (a.value || 0));
+
+  const laidOut = treemap<RelayoutHierarchyData>()
+    .size([width, height])
+    .tile(treemapSquarify)
+    .paddingOuter(3)
+    .paddingTop((node) =>
+      node.depth === 0 ? 0 : node.children && node.children.length > 0 ? 20 : 0
+    )
+    .paddingInner(2)(root);
+
+  return laidOut
+    .descendants()
+    .filter((node) => node.depth > 0)
+    .map((node) => {
+      const source = node.data.node;
+      const nodeValue = node.value || 0;
+      const parentValue = node.parent?.value || 0;
+
+      return {
+        ...source,
+        value: nodeValue,
+        percentOfPortfolio: totalValue > 0 ? (nodeValue / totalValue) * 100 : 0,
+        percentOfParent:
+          node.depth === 2
+            ? parentValue > 0
+              ? (nodeValue / parentValue) * 100
+              : 0
+            : source.percentOfParent,
+        x0: node.x0,
+        y0: node.y0,
+        x1: node.x1,
+        y1: node.y1,
+        depth: node.depth,
+      };
+    });
 }
 
 export function buildFlatHoldingTreeMapNodes({
@@ -224,4 +318,8 @@ function matchesFundSelection(
   }
 
   return sourceType === "direct" && selectedFunds.includes(rowSymbol);
+}
+
+function getTreeMapGroupKey(symbol: string, account?: string): string {
+  return `${symbol}::${account ?? ""}`;
 }
