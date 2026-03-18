@@ -53,18 +53,18 @@ const portfolioData: PortfolioData = {
 };
 
 function renderDashboard({
-  onClearData = vi.fn(),
+  onRemovePortfolio = vi.fn(),
   enableIntroAnimation,
   enableValueAnimations,
   fetchError = null,
 }: {
-  onClearData?: () => void;
+  onRemovePortfolio?: () => void;
   enableIntroAnimation?: boolean;
   enableValueAnimations?: boolean;
   fetchError?: string | null;
 } = {}) {
   return {
-    onClearData,
+    onRemovePortfolio,
     ...render(
       <Dashboard
         portfolioData={portfolioData}
@@ -78,7 +78,7 @@ function renderDashboard({
         onSort={vi.fn()}
         expandedRows={new Set()}
         onToggleExpand={vi.fn()}
-        onClearData={onClearData}
+        onRemovePortfolio={onRemovePortfolio}
         isLoading={false}
         viewMode="holdings"
         onViewModeChange={vi.fn()}
@@ -99,27 +99,27 @@ function renderDashboard({
   };
 }
 
-describe("Dashboard clear action", () => {
+describe("Dashboard portfolio actions", () => {
   it("shows Your portfolio when nothing is filtered", () => {
     renderDashboard();
 
     expect(screen.getByText("Your portfolio")).toBeInTheDocument();
   });
 
-  it("renders a visible larger clear button", () => {
+  it("renders a visible larger remove button", () => {
     renderDashboard();
 
-    const button = screen.getByRole("button", { name: /clear file/i });
+    const button = screen.getByRole("button", { name: /remove portfolio/i });
     expect(button).toBeInTheDocument();
-    expect(button).toHaveTextContent("Clear file");
+    expect(button).toHaveTextContent("Remove portfolio");
     expect(button).toHaveClass("min-h-11");
   });
 
-  it("clears uploaded data in a single click", () => {
-    const { onClearData } = renderDashboard();
+  it("removes the active portfolio in a single click", () => {
+    const { onRemovePortfolio } = renderDashboard();
 
-    fireEvent.click(screen.getByRole("button", { name: /clear file/i }));
-    expect(onClearData).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: /remove portfolio/i }));
+    expect(onRemovePortfolio).toHaveBeenCalledTimes(1);
   });
 
   it("shows the active summary label in the header", () => {
@@ -137,7 +137,7 @@ describe("Dashboard clear action", () => {
         onSort={vi.fn()}
         expandedRows={new Set()}
         onToggleExpand={vi.fn()}
-        onClearData={vi.fn()}
+        onRemovePortfolio={vi.fn()}
         isLoading={false}
         viewMode="holdings"
         onViewModeChange={vi.fn()}
@@ -180,7 +180,7 @@ describe("Dashboard clear action", () => {
         onSort={vi.fn()}
         expandedRows={new Set()}
         onToggleExpand={vi.fn()}
-        onClearData={vi.fn()}
+        onRemovePortfolio={vi.fn()}
         isLoading={false}
         viewMode="holdings"
         onViewModeChange={vi.fn()}

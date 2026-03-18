@@ -1,8 +1,11 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  saveStoredPortfolioData,
+  saveUploadedPortfolio,
+} from "@/lib/storage";
 import type { FidelityPosition, PortfolioData } from "@/lib/types";
-import { savePortfolio, savePortfolioData } from "@/lib/storage";
-import { usePortfolio } from "../usePortfolio";
+import { useStoredPortfolioRecord } from "../useStoredPortfolioRecord";
 
 const positions: FidelityPosition[] = [
   {
@@ -51,16 +54,19 @@ const refreshedData: PortfolioData = {
   lastUpdated: "2026-03-18T00:05:00.000Z",
 };
 
-describe("usePortfolio startup cache restore", () => {
+describe("useStoredPortfolioRecord", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
     vi.useRealTimers();
   });
 
-  it("restores cached dashboard data before the refresh request finishes", async () => {
-    savePortfolio(positions);
-    savePortfolioData(cachedData);
+  it("restores cached data before refreshing the active portfolio", async () => {
+    const summary = saveUploadedPortfolio({
+      sourceFileName: "account-a.csv",
+      positions,
+    });
+    saveStoredPortfolioData(summary.id, cachedData);
 
     let resolveFetch: ((value: Response) => void) | undefined;
     const fetchMock = vi.fn(
@@ -72,17 +78,21 @@ describe("usePortfolio startup cache restore", () => {
     vi.stubGlobal("fetch", fetchMock);
     const scrollToSpy = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
 
-    const { result } = renderHook(() => usePortfolio());
+    const { result } = renderHook(() =>
+      useStoredPortfolioRecord({
+        portfolioId: summary.id,
+        width: 1200,
+        height: 400,
+        layoutMode: "desktop",
+      })
+    );
 
     await waitFor(() => {
-      expect(result.current.hasData).toBe(true);
+      expect(result.current.positions).toEqual(positions);
       expect(result.current.portfolioData).toEqual(cachedData);
       expect(result.current.restoredFromStorage).toBe(true);
     });
 
-    expect(result.current.isLoading).toBe(true);
-    expect(scrollToSpy).toHaveBeenCalledWith(0, 0);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith("/api/portfolio", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -92,6 +102,7 @@ describe("usePortfolio startup cache restore", () => {
         height: 400,
       }),
     });
+    expect(scrollToSpy).toHaveBeenCalledWith(0, 0);
 
     resolveFetch?.(
       new Response(JSON.stringify(refreshedData), {
@@ -103,6 +114,7 @@ describe("usePortfolio startup cache restore", () => {
     await waitFor(() => {
       expect(result.current.portfolioData).toEqual(refreshedData);
       expect(result.current.isLoading).toBe(false);
+      expect(result.current.error).toBeNull();
     });
   });
 });

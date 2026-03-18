@@ -5,12 +5,12 @@ import { useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 interface UploadViewProps {
-  onFileSelect: (file: File) => void;
+  onFilesSelect: (files: File[]) => void;
   error?: string | null;
   isLoading?: boolean;
 }
 
-export function UploadView({ onFileSelect, error, isLoading }: UploadViewProps) {
+export function UploadView({ onFilesSelect, error, isLoading }: UploadViewProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -31,18 +31,22 @@ export function UploadView({ onFileSelect, error, isLoading }: UploadViewProps) 
     e.stopPropagation();
     setIsDragOver(false);
 
-    const file = e.dataTransfer.files[0];
-    if (file) onFileSelect(file);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      onFilesSelect(files);
+    }
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) onFileSelect(file);
+    const files = Array.from(e.target.files ?? []);
+    if (files.length > 0) {
+      onFilesSelect(files);
+    }
   }
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-6"
+      className="flex items-center justify-center py-8"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -79,7 +83,7 @@ export function UploadView({ onFileSelect, error, isLoading }: UploadViewProps) 
                   Import your positions CSV
                 </p>
                 <p className="text-xs leading-5 text-text-muted">
-                  Upload your Fidelity export to load the portfolio view.
+                  Upload one or more Fidelity exports to build a saved library.
                 </p>
               </div>
             </div>
@@ -102,7 +106,7 @@ export function UploadView({ onFileSelect, error, isLoading }: UploadViewProps) 
               Open the <OverflowMenuIcon /> menu on the right, then click{" "}
               <strong>Download</strong> to export your positions as CSV
             </Step>
-            <Step number={3}>Drop the file below or click to browse</Step>
+            <Step number={3}>Drop one or more files below or click to browse</Step>
           </div>
 
           {/* Drop Zone */}
@@ -132,8 +136,8 @@ export function UploadView({ onFileSelect, error, isLoading }: UploadViewProps) 
                 <UploadIcon />
                 <span className="text-sm text-text-muted">
                   {isDragOver
-                    ? "Drop your file here"
-                    : "Drag & drop CSV or click to browse"}
+                    ? "Drop your files here"
+                    : "Drag & drop CSVs or click to browse"}
                 </span>
               </>
             )}
@@ -143,6 +147,7 @@ export function UploadView({ onFileSelect, error, isLoading }: UploadViewProps) 
             ref={fileInputRef}
             type="file"
             accept=".csv,text/csv"
+          multiple
             className="hidden"
             onChange={handleFileChange}
           />

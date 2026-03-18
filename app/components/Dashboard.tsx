@@ -34,7 +34,7 @@ interface DashboardProps {
   onSort: (key: string) => void;
   expandedRows: Set<string>;
   onToggleExpand: (symbol: string) => void;
-  onClearData: () => void;
+  onRemovePortfolio: () => void;
   isLoading: boolean;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
@@ -64,7 +64,7 @@ export function Dashboard({
   onSort,
   expandedRows,
   onToggleExpand,
-  onClearData,
+  onRemovePortfolio,
   isLoading,
   viewMode,
   onViewModeChange,
@@ -193,15 +193,15 @@ export function Dashboard({
 
               <button
                 type="button"
-                onClick={onClearData}
+                onClick={onRemovePortfolio}
                 className={cn(
                   "inline-flex min-h-11 items-center gap-2 rounded-full px-4 py-2.5",
                   "text-sm font-medium shadow-sm transition-all duration-200 cursor-pointer hover-lift press-down",
                   "border border-red-200/70 bg-red-50 text-red-700 hover:bg-red-100",
                   "dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/15"
                 )}
-                title="Clear the uploaded file"
-                aria-label="Clear file"
+                title="Remove this portfolio"
+                aria-label="Remove portfolio"
               >
                 <svg
                   width="16"
@@ -218,7 +218,7 @@ export function Dashboard({
                   <path d="M8 6V4h8v2" />
                   <path d="m19 6-1 14H6L5 6" />
                 </svg>
-                <span>Clear file</span>
+                <span>Remove portfolio</span>
               </button>
 
               {isLoading && (
