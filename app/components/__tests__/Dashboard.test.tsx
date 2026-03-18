@@ -47,9 +47,13 @@ function renderDashboard(onClearData = vi.fn()) {
         isLoading={false}
         viewMode="holdings"
         onViewModeChange={vi.fn()}
-        focusedFund={null}
-        onFocusFund={vi.fn()}
-        focusedSummary={null}
+        treeMapGrouping="fund"
+        onTreeMapGroupingChange={vi.fn()}
+        selectedFunds={[]}
+        onToggleFund={vi.fn()}
+        onClearFunds={vi.fn()}
+        fundOptions={[]}
+        selectedFundsSummary={null}
       />
     ),
   };
@@ -72,7 +76,7 @@ describe("Dashboard clear action", () => {
     expect(onClearData).toHaveBeenCalledTimes(1);
   });
 
-  it("explains that focused holdings are derived from the selected fund", () => {
+  it("shows the selected-fund summary label in the header", () => {
     render(
       <Dashboard
         portfolioData={portfolioData}
@@ -88,23 +92,21 @@ describe("Dashboard clear action", () => {
         isLoading={false}
         viewMode="holdings"
         onViewModeChange={vi.fn()}
-        focusedFund="09261F572"
-        onFocusFund={vi.fn()}
-        focusedSummary={{
+        treeMapGrouping="fund"
+        onTreeMapGroupingChange={vi.fn()}
+        selectedFunds={["09261F572", "VTI"]}
+        onToggleFund={vi.fn()}
+        onClearFunds={vi.fn()}
+        fundOptions={[]}
+        selectedFundsSummary={{
           value: 137194.21,
           gainLoss: 94943.14,
           gainLossPercent: 39.48,
-          name: "BTC LPATH IDX 2055 M",
-          color: "#7dd3fc",
+          label: "2 funds selected",
         }}
       />
     );
 
-    expect(
-      screen.getByText(/showing holdings derived from/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("BTC LPATH IDX 2055 M (09261F572)")
-    ).toBeInTheDocument();
+    expect(screen.getByText("2 funds selected")).toBeInTheDocument();
   });
 });

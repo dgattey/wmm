@@ -30,7 +30,7 @@ export type InvestmentType =
 // === Server Response: Full Dashboard Data ===
 
 export interface PortfolioData {
-  treeMapNodes: TreeMapNode[];
+  treeMapNodes: TreeMapNode[]; // grouped-by-fund treemap nodes
   tableRows: TableRow[]; // "holdings" view: aggregated by underlying symbol
   positionRows: TableRow[]; // "positions" view: one row per portfolio position/fund
   summary: PortfolioSummary;
@@ -38,6 +38,7 @@ export interface PortfolioData {
 }
 
 export type ViewMode = "holdings" | "positions";
+export type TreeMapGrouping = "fund" | "holding";
 
 export interface PortfolioSummary {
   totalValue: number;
@@ -73,6 +74,14 @@ export interface TreeMapNode {
   fiftyTwoWeekLow?: number;
   investmentType?: string;
   account?: string;
+}
+
+export interface FundOption {
+  symbol: string;
+  name: string;
+  color: string;
+  value: number;
+  hasChildren: boolean;
 }
 
 // === Table Row (pre-computed by server) ===

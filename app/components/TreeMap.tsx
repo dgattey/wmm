@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
-import type { TreeMapNode } from "@/lib/types";
+import { useRef, useState, useEffect, type MouseEvent } from "react";
+import type { TreeMapGrouping, TreeMapNode } from "@/lib/types";
+import { isFundInvestmentType } from "@/lib/treemap";
 import { cn, formatCompact } from "@/lib/utils";
 import { TreeMapTooltip } from "./TreeMapTooltip";
 
@@ -9,16 +10,20 @@ interface TreeMapProps {
   nodes: TreeMapNode[];
   originalWidth?: number;
   originalHeight?: number;
-  focusedFund?: string | null;
-  onFocusFund?: (symbol: string | null) => void;
+  grouping: TreeMapGrouping;
+  selectedFunds: string[];
+  onToggleFund?: (symbol: string) => void;
+  onClearFunds?: () => void;
 }
 
 export function TreeMap({
   nodes,
   originalWidth = 1200,
   originalHeight = 400,
-  focusedFund,
-  onFocusFund,
+  grouping,
+  selectedFunds,
+  onToggleFund,
+  onClearFunds,
 }: TreeMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(originalWidth);
@@ -42,17 +47,9 @@ export function TreeMap({
   const scaleY = scaleX;
   const scaledHeight = originalHeight * scaleY;
 
-  // Find the focused fund's parent node and compute zoom transform
-  const focusedParent = focusedFund
-    ? nodes.find(
-        (n) =>
-          n.depth === 1 &&
-          n.symbol === focusedFund &&
-          nodes.some((c) => c.parentSymbol === n.symbol)
-      )
-    : null;
+  const hasSelectedFunds = selectedFunds.length > 0;
 
-  // Compute zoom: scale focused fund's bounding box to fill entire container
+  // Compute zoom for the current fund selection by fitting the selected group bounds.
   let zoomTransform: {
     scaleX: number;
     scaleY: number;
@@ -60,18 +57,35 @@ export function TreeMap({
     offsetY: number;
   } | null = null;
 
-  if (focusedParent) {
-    const fw = (focusedParent.x1 - focusedParent.x0) * scaleX;
-    const fh = (focusedParent.y1 - focusedParent.y0) * scaleY;
-    const fx = focusedParent.x0 * scaleX;
-    const fy = focusedParent.y0 * scaleY;
+  const selectedNodes =
+    grouping === "fund" && hasSelectedFunds
+      ? nodes.filter((node) => {
+          if (node.depth === 1) {
+            return selectedFunds.includes(node.symbol);
+          }
 
-    if (fw > 0 && fh > 0) {
+          if (node.depth === 2 && node.parentSymbol) {
+            return selectedFunds.includes(node.parentSymbol);
+          }
+
+          return false;
+        })
+      : [];
+
+  if (selectedNodes.length > 0) {
+    const x0 = Math.min(...selectedNodes.map((node) => node.x0)) * scaleX;
+    const y0 = Math.min(...selectedNodes.map((node) => node.y0)) * scaleY;
+    const x1 = Math.max(...selectedNodes.map((node) => node.x1)) * scaleX;
+    const y1 = Math.max(...selectedNodes.map((node) => node.y1)) * scaleY;
+    const selectionWidth = x1 - x0;
+    const selectionHeight = y1 - y0;
+
+    if (selectionWidth > 0 && selectionHeight > 0) {
       zoomTransform = {
-        scaleX: containerWidth / fw,
-        scaleY: scaledHeight / fh,
-        offsetX: -fx * (containerWidth / fw),
-        offsetY: -fy * (scaledHeight / fh),
+        scaleX: containerWidth / selectionWidth,
+        scaleY: scaledHeight / selectionHeight,
+        offsetX: -x0 * (containerWidth / selectionWidth),
+        offsetY: -y0 * (scaledHeight / selectionHeight),
       };
     }
   }
@@ -87,28 +101,23 @@ export function TreeMap({
     return false;
   });
 
-  function handleMouseMove(e: React.MouseEvent) {
+  function handleMouseMove(e: MouseEvent) {
     setMousePos({ x: e.clientX, y: e.clientY });
   }
 
   function handleNodeClick(node: TreeMapNode) {
-    if (!onFocusFund) return;
+    if (grouping !== "fund" || !onToggleFund) return;
 
-    if (node.depth === 1 && nodes.some((c) => c.parentSymbol === node.symbol)) {
-      // Click on a fund group
-      onFocusFund(focusedFund === node.symbol ? null : node.symbol);
+    if (node.depth === 1 && isSelectableFund(node)) {
+      onToggleFund(node.symbol);
     } else if (node.depth === 2 && node.parentSymbol) {
-      // Click on a holding within a fund — focus the parent fund
-      onFocusFund(
-        focusedFund === node.parentSymbol ? null : node.parentSymbol
-      );
+      onToggleFund(node.parentSymbol);
     }
   }
 
-  function handleContainerClick(e: React.MouseEvent) {
-    // Only unfocus if clicking directly on the container background
-    if (e.target === containerRef.current && focusedFund && onFocusFund) {
-      onFocusFund(null);
+  function handleContainerClick(e: MouseEvent) {
+    if (e.target === containerRef.current && hasSelectedFunds && onClearFunds) {
+      onClearFunds();
     }
   }
 
@@ -131,11 +140,16 @@ export function TreeMap({
   }
 
   function isNodeVisible(node: TreeMapNode): boolean {
-    if (!focusedFund) return true;
-    // When focused: show only the focused fund's parent + its children
-    if (node.depth === 1 && node.symbol === focusedFund) return true;
-    if (node.depth === 2 && node.parentSymbol === focusedFund) return true;
+    if (grouping !== "fund" || !hasSelectedFunds) return true;
+    if (node.depth === 1 && selectedFunds.includes(node.symbol)) return true;
+    if (node.depth === 2 && node.parentSymbol) {
+      return selectedFunds.includes(node.parentSymbol);
+    }
     return false;
+  }
+
+  function isSelectableFund(node: TreeMapNode): boolean {
+    return node.depth === 1 && isFundInvestmentType(node.investmentType);
   }
 
   return (
@@ -163,7 +177,8 @@ export function TreeMap({
               key={`group-${node.id}`}
               className={cn(
                 "absolute rounded-lg",
-                "transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                "transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
+                grouping === "fund" && "cursor-pointer"
               )}
               style={{
                 left: pos.left,
@@ -213,8 +228,9 @@ export function TreeMap({
               key={node.id}
               className={cn(
                 "absolute rounded-lg flex flex-col items-center justify-center",
-                "cursor-pointer select-none overflow-hidden",
+                "select-none overflow-hidden",
                 "transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
+                grouping === "fund" ? "cursor-pointer" : "cursor-default",
                 visible &&
                   "hover:z-20 hover:brightness-110 hover:shadow-[var(--shadow-lg)]"
               )}

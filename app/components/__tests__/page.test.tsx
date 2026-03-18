@@ -41,6 +41,13 @@ function makePortfolioReturn(overrides: Partial<ReturnType<typeof usePortfolio>>
     toggleExpand: vi.fn(),
     uploadFile: vi.fn(),
     clearData: vi.fn(),
+    treeMapGrouping: "fund" as const,
+    setTreeMapGrouping: vi.fn(),
+    selectedFunds: [],
+    toggleFundSelection: vi.fn(),
+    clearSelectedFunds: vi.fn(),
+    fundOptions: [],
+    selectedFundsSummary: null,
     ...overrides,
   };
 }
@@ -74,6 +81,7 @@ describe("Home page routing", () => {
     const mockData = {
       treeMapNodes: [],
       tableRows: [],
+      positionRows: [],
       summary: {
         totalValue: 100000,
         totalGainLoss: 5000,

@@ -14,7 +14,7 @@ import type {
   PositionSource,
   PortfolioSummary,
 } from "../types";
-import { assignColors, getChildColor } from "./colors";
+import { assignColors, getChildColor } from "../colors";
 
 // === Intermediate types for treemap hierarchy ===
 

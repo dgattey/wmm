@@ -36,9 +36,13 @@ export default function Home() {
       isLoading={portfolio.isLoading}
       viewMode={portfolio.viewMode}
       onViewModeChange={portfolio.setViewMode}
-      focusedFund={portfolio.focusedFund}
-      onFocusFund={portfolio.setFocusedFund}
-      focusedSummary={portfolio.focusedSummary}
+      treeMapGrouping={portfolio.treeMapGrouping}
+      onTreeMapGroupingChange={portfolio.setTreeMapGrouping}
+      selectedFunds={portfolio.selectedFunds}
+      onToggleFund={portfolio.toggleFundSelection}
+      onClearFunds={portfolio.clearSelectedFunds}
+      fundOptions={portfolio.fundOptions}
+      selectedFundsSummary={portfolio.selectedFundsSummary}
     />
   );
 }

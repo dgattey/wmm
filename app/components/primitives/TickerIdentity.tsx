@@ -31,12 +31,12 @@ export function TickerIdentity({
   const [imgError, setImgError] = useState(false);
   const config = SIZE_CONFIG[size];
   const avatarColor = AVATAR_COLORS[hashString(symbol, AVATAR_COLORS.length)];
-
+  const avatarText = symbol.replace(/[^A-Z0-9]/gi, "").slice(0, 2) || symbol.slice(0, 2);
   const logoUrl = `https://financialmodelingprep.com/image-stock/${encodeURIComponent(symbol)}.png`;
 
   return (
     <div className={cn("flex items-center", config.gap, className)}>
-      {/* Logo / Avatar */}
+      {/* Fall back to a deterministic avatar when a remote logo 404s. */}
       <div
         className="flex-shrink-0 rounded-full overflow-hidden"
         style={{ width: config.logo, height: config.logo }}
@@ -59,7 +59,7 @@ export function TickerIdentity({
               fontSize: config.logo * 0.38,
             }}
           >
-            {symbol.slice(0, 2)}
+            {avatarText}
           </div>
         )}
       </div>

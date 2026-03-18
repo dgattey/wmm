@@ -1,11 +1,13 @@
 "use client";
 
 import type {
+  FundOption,
   PortfolioData,
   TreeMapNode,
   TableRow,
   FilterState,
   SortConfig,
+  TreeMapGrouping,
   ViewMode,
 } from "@/lib/types";
 import { formatDollar } from "@/lib/utils";
@@ -14,6 +16,7 @@ import { GainLoss } from "./primitives/GainLoss";
 import { TreeMap } from "./TreeMap";
 import { PortfolioTable } from "./PortfolioTable";
 import { FloatingToolbar } from "./FloatingToolbar";
+import { HeaderFundSelector } from "./HeaderFundSelector";
 import { cn } from "@/lib/utils";
 
 interface DashboardProps {
@@ -30,14 +33,17 @@ interface DashboardProps {
   isLoading: boolean;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
-  focusedFund: string | null;
-  onFocusFund: (symbol: string | null) => void;
-  focusedSummary: {
+  treeMapGrouping: TreeMapGrouping;
+  onTreeMapGroupingChange: (mode: TreeMapGrouping) => void;
+  selectedFunds: string[];
+  onToggleFund: (symbol: string) => void;
+  onClearFunds: () => void;
+  fundOptions: FundOption[];
+  selectedFundsSummary: {
     value: number;
     gainLoss: number;
     gainLossPercent: number;
-    name: string;
-    color: string;
+    label: string;
   } | null;
 }
 
@@ -55,54 +61,41 @@ export function Dashboard({
   isLoading,
   viewMode,
   onViewModeChange,
-  focusedFund,
-  onFocusFund,
-  focusedSummary,
+  treeMapGrouping,
+  onTreeMapGroupingChange,
+  selectedFunds,
+  onToggleFund,
+  onClearFunds,
+  fundOptions,
+  selectedFundsSummary,
 }: DashboardProps) {
   const { summary, lastUpdated } = portfolioData;
 
-  const displayValue = focusedSummary?.value ?? summary.totalValue;
-  const displayGainLoss = focusedSummary?.gainLoss ?? summary.totalGainLoss;
+  const displayValue = selectedFundsSummary?.value ?? summary.totalValue;
+  const displayGainLoss =
+    selectedFundsSummary?.gainLoss ?? summary.totalGainLoss;
   const displayGainLossPercent =
-    focusedSummary?.gainLossPercent ?? summary.totalGainLossPercent;
-  const headerLabel = focusedSummary
-    ? focusedSummary.name
+    selectedFundsSummary?.gainLossPercent ?? summary.totalGainLossPercent;
+  const headerLabel = selectedFundsSummary
+    ? selectedFundsSummary.label
     : "Portfolio Allocation";
-
-  const focusedFundInfo = focusedSummary
-    ? {
-        symbol: focusedFund!,
-        name: focusedSummary.name,
-        color: focusedSummary.color,
-      }
-    : null;
 
   return (
     <div className="min-h-screen pb-20 animate-fade-in">
       {/* Sticky Header */}
-      <header className="sticky-header sticky top-0 z-30 px-6 py-5">
-        <div className="max-w-[1400px] mx-auto">
+      <header className="sticky-header sticky top-0 z-30">
+        <div className="max-w-[1400px] mx-auto px-6 py-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
               <div className="mb-1">
                 <h1
                   className={cn(
                     "text-sm font-medium transition-colors duration-300 truncate max-w-[500px]",
-                    focusedSummary ? "text-text-primary" : "text-text-muted"
+                    selectedFundsSummary ? "text-text-primary" : "text-text-muted"
                   )}
                 >
                   {headerLabel}
                 </h1>
-                {focusedSummary && focusedFund && (
-                  <p className="mt-2 max-w-2xl text-xs leading-5 text-text-muted">
-                    Showing holdings derived from{" "}
-                    <span className="font-medium text-text-primary">
-                      {focusedSummary.name} ({focusedFund})
-                    </span>
-                    . Values below are allocated from this fund so it is clear
-                    where the breakdown comes from.
-                  </p>
-                )}
               </div>
 
               <div className="flex items-baseline gap-4">
@@ -117,6 +110,13 @@ export function Dashboard({
                   size="md"
                 />
               </div>
+
+              <HeaderFundSelector
+                funds={fundOptions}
+                selectedFunds={selectedFunds}
+                onToggleFund={onToggleFund}
+                onClearFunds={onClearFunds}
+              />
             </div>
 
             <div className="flex shrink-0 flex-col items-start gap-2 md:items-end">
@@ -167,8 +167,10 @@ export function Dashboard({
           nodes={filteredTreeMapNodes}
           originalWidth={1200}
           originalHeight={400}
-          focusedFund={focusedFund}
-          onFocusFund={onFocusFund}
+          grouping={treeMapGrouping}
+          selectedFunds={selectedFunds}
+          onToggleFund={onToggleFund}
+          onClearFunds={onClearFunds}
         />
       </section>
 
@@ -191,8 +193,8 @@ export function Dashboard({
         lastUpdated={lastUpdated}
         viewMode={viewMode}
         onViewModeChange={onViewModeChange}
-        focusedFund={focusedFundInfo}
-        onClearFocus={() => onFocusFund(null)}
+        treeMapGrouping={treeMapGrouping}
+        onTreeMapGroupingChange={onTreeMapGroupingChange}
       />
     </div>
   );
