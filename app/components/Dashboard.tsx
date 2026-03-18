@@ -121,8 +121,8 @@ export function Dashboard({
     filtersRef.current = filters;
   }, [filters]);
 
-  const stickyTopPx = isMobile ? 92 : 112; // 5.75rem, 7rem
-  const [dockSentinelRef, isSearchDocked] = useIsStickyDocked(stickyTopPx);
+  const headerRef = useRef<HTMLElement>(null);
+  const [dockSentinelRef, isSearchDocked] = useIsStickyDocked(headerRef);
 
   const handleSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -137,16 +137,23 @@ export function Dashboard({
     [onFiltersChange]
   );
 
+  const handleClearSearch = useCallback(() => {
+    setSearchInput("");
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = null;
+    onFiltersChange({ ...filtersRef.current, searchQuery: "" });
+  }, [onFiltersChange]);
+
   return (
     <div
       className={cn(
-        "min-h-screen",
+        "min-h-screen overflow-x-clip",
         enableIntroAnimation && "animate-fade-in",
         isMobile ? "pb-8" : "pb-20"
       )}
     >
       {/* Sticky Header */}
-      <header className="sticky-header sticky top-0 z-40">
+      <header ref={headerRef} className="sticky-header sticky top-0 z-40">
         <div
           className={cn(
             "max-w-[1400px] mx-auto py-5",
@@ -292,6 +299,7 @@ export function Dashboard({
         style={{ "--enter-delay": "160ms" } as CSSProperties}
       >
         <TreeMap
+          key={filteredTreeMapNodes.length > 0 ? "treemap-populated" : "treemap-empty"}
           nodes={filteredTreeMapNodes}
           originalWidth={treeMapWidth}
           originalHeight={treeMapHeight}
@@ -339,19 +347,29 @@ export function Dashboard({
         <div
           data-testid="portfolio-search-shell"
           className={cn(
-            "sticky z-30 mb-4 py-3",
-            isMobile ? "-mx-4 px-4" : "-mx-6 px-6",
+            "sticky z-40 mb-4 py-3",
             isMobile ? "top-[5.75rem]" : "top-[7rem]",
             "transition-[background-color,backdrop-filter,box-shadow] duration-200",
+            "w-screen relative",
             isSearchDocked
               ? "search-bar-docked"
               : "bg-transparent"
           )}
+          style={{
+            marginLeft: "calc(-50vw + 50%)",
+            marginRight: "calc(-50vw + 50%)",
+          }}
         >
-          <div className="flex items-center gap-3">
+          <div
+            className={cn(
+              "flex items-center gap-3",
+              isMobile ? "px-4" : "px-6",
+              "max-w-[1400px] mx-auto"
+            )}
+          >
             <div className={cn("relative min-w-0 flex-1", !isMobile && "max-w-xl lg:max-w-2xl")}>
               <svg
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 z-10 text-text-muted"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -371,10 +389,29 @@ export function Dashboard({
                 placeholder="Search by name or symbol"
                 aria-label="Search portfolio"
                 className={cn(
-                  "w-full rounded-xl border border-border bg-surface/95 py-2.5 pl-10 pr-3 text-sm text-text-primary shadow-[var(--shadow-sm)] backdrop-blur-xl",
-                  "outline-none transition-colors placeholder:text-text-muted hover:border-border/80 focus:border-border"
+                  "w-full rounded-xl border border-border bg-surface/95 py-2.5 pl-10 text-sm text-text-primary shadow-[var(--shadow-sm)] backdrop-blur-xl",
+                  "outline-none transition-colors placeholder:text-text-muted hover:border-border/80 focus:border-border",
+                  searchInput.length > 0 ? "pr-10" : "pr-3"
                 )}
               />
+              {searchInput.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  className={cn(
+                    "absolute right-3 top-1/2 -translate-y-1/2",
+                    "inline-flex h-6 w-6 items-center justify-center rounded-full",
+                    "text-text-muted hover:text-text-primary hover:bg-surface-hover",
+                    "transition-colors cursor-pointer"
+                  )}
+                  aria-label="Clear search"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
             <p
               data-testid="inline-holdings-count"

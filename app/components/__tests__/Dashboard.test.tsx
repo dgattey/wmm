@@ -227,6 +227,47 @@ describe("Dashboard clear action", () => {
     vi.useRealTimers();
   });
 
+  it("shows and uses Clear button when search has text", () => {
+    const onFiltersChange = vi.fn();
+    render(
+      <Dashboard
+        portfolioData={portfolioData}
+        filteredTreeMapNodes={[]}
+        filteredRows={[]}
+        isMobile={false}
+        filters={{ investmentTypes: [], accounts: [], searchQuery: "test" }}
+        onFiltersChange={onFiltersChange}
+        onResetFilters={vi.fn()}
+        sortConfig={{ key: "totalValue", direction: "desc" }}
+        onSort={vi.fn()}
+        expandedRows={new Set()}
+        onToggleExpand={vi.fn()}
+        onClearData={vi.fn()}
+        isLoading={false}
+        viewMode="holdings"
+        onViewModeChange={vi.fn()}
+        treeMapGrouping="fund"
+        onTreeMapGroupingChange={vi.fn()}
+        selectedFunds={[]}
+        onToggleFund={vi.fn()}
+        onClearFunds={vi.fn()}
+        fundOptions={[]}
+        activeSummary={null}
+        treeMapWidth={1200}
+        treeMapHeight={400}
+      />
+    );
+    const clearBtn = screen.getByRole("button", { name: "Clear search" });
+    expect(clearBtn).toBeInTheDocument();
+    fireEvent.click(clearBtn);
+    expect(onFiltersChange).toHaveBeenCalledWith({
+      investmentTypes: [],
+      accounts: [],
+      searchQuery: "test",
+      searchQuery: "",
+    });
+  });
+
   it("renders the bare sticky search field on mobile too", () => {
     const onFiltersChange = vi.fn();
 
