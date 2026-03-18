@@ -115,6 +115,9 @@ export function useStoredPortfolioRecord({
     setError(null);
     setIsMissing(false);
     setRestoredFromStorage(false);
+    setSummary(null);
+    setPositions(null);
+    setPortfolioData(null);
 
     const storedPortfolio = loadStoredPortfolio(portfolioId);
     if (!storedPortfolio) {
