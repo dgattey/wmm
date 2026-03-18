@@ -43,11 +43,11 @@ const portfolioData: PortfolioData = {
   tableRows: [],
   positionRows: [],
   summary: {
-    totalValue: 100000,
-    totalGainLoss: 5000,
-    totalGainLossPercent: 5,
-    accounts: ["DG 401K"],
-    investmentTypes: ["Others"],
+    totalValue: 20000,
+    totalGainLoss: 1200,
+    totalGainLossPercent: 6,
+    accounts: ["Account A"],
+    investmentTypes: ["ETFs"],
   },
   lastUpdated: new Date().toISOString(),
 };
@@ -97,10 +97,10 @@ function renderDashboard({
 }
 
 describe("Dashboard clear action", () => {
-  it("shows Full portfolio when nothing is filtered", () => {
+  it("shows Your portfolio when nothing is filtered", () => {
     renderDashboard();
 
-    expect(screen.getByText("Full portfolio")).toBeInTheDocument();
+    expect(screen.getByText("Your portfolio")).toBeInTheDocument();
   });
 
   it("renders a visible larger clear button", () => {
@@ -140,14 +140,14 @@ describe("Dashboard clear action", () => {
         onViewModeChange={vi.fn()}
         treeMapGrouping="fund"
         onTreeMapGroupingChange={vi.fn()}
-        selectedFunds={["09261F572", "VTI"]}
+        selectedFunds={["FUND-A", "FUND-B"]}
         onToggleFund={vi.fn()}
         onClearFunds={vi.fn()}
         fundOptions={[]}
         activeSummary={{
-          value: 137194.21,
-          gainLoss: 94943.14,
-          gainLossPercent: 39.48,
+          value: 12500,
+          gainLoss: 2800,
+          gainLossPercent: 28,
           label: "2 funds selected",
         }}
         treeMapWidth={1200}

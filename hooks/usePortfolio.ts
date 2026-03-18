@@ -457,24 +457,6 @@ export function sanitizeSelectionForFilterChange(
     );
   }
 
-  if (accountChanged) {
-    nextState.filters.investmentTypes = getValidInvestmentTypes(
-      positions,
-      nextState.filters.accounts,
-      [],
-      nextState.filters.investmentTypes
-    );
-  }
-
-  if (typeChanged) {
-    nextState.filters.accounts = getValidAccounts(
-      positions,
-      [],
-      nextState.filters.investmentTypes,
-      nextState.filters.accounts
-    );
-  }
-
   return nextState;
 }
 
@@ -490,25 +472,16 @@ export function sanitizeSelectionForFundChange(
     };
   }
 
-  const nextState: FilterSelectionState = {
-    filters: normalizeFilterState(filters),
-    selectedFunds: [...nextSelectedFunds],
+  const normalizedFilters = normalizeFilterState(filters);
+
+  return {
+    filters: normalizedFilters,
+    selectedFunds: getValidSelectedFunds(
+      positions,
+      normalizedFilters,
+      nextSelectedFunds
+    ),
   };
-
-  nextState.filters.accounts = getValidAccounts(
-    positions,
-    nextState.selectedFunds,
-    [],
-    nextState.filters.accounts
-  );
-  nextState.filters.investmentTypes = getValidInvestmentTypes(
-    positions,
-    nextState.filters.accounts,
-    nextState.selectedFunds,
-    nextState.filters.investmentTypes
-  );
-
-  return nextState;
 }
 
 function sanitizeCurrentSelection(
@@ -524,29 +497,21 @@ function sanitizeCurrentSelection(
   }
 
   const normalizedFilters = normalizeFilterState(filters);
+  const nextFilters: FilterState = {
+    accounts: filterExistingAccounts(positions, normalizedFilters.accounts),
+    investmentTypes: filterExistingInvestmentTypes(
+      positions,
+      normalizedFilters.investmentTypes
+    ),
+  };
   const nextSelectedFunds = getValidSelectedFunds(
     positions,
-    normalizedFilters,
+    nextFilters,
     selectedFunds
-  );
-  const nextAccounts = getValidAccounts(
-    positions,
-    nextSelectedFunds,
-    normalizedFilters.investmentTypes,
-    normalizedFilters.accounts
-  );
-  const nextInvestmentTypes = getValidInvestmentTypes(
-    positions,
-    nextAccounts,
-    nextSelectedFunds,
-    normalizedFilters.investmentTypes
   );
 
   return {
-    filters: {
-      accounts: nextAccounts,
-      investmentTypes: nextInvestmentTypes,
-    },
+    filters: nextFilters,
     selectedFunds: nextSelectedFunds,
   };
 }
@@ -659,41 +624,29 @@ function getValidSelectedFunds(
   );
 }
 
-function getValidAccounts(
+function filterExistingAccounts(
   positions: FidelityPosition[],
-  selectedFunds: string[],
-  investmentTypes: string[],
   accounts: string[]
 ): string[] {
   if (accounts.length === 0) return accounts;
 
+  const validAccounts = new Set(positions.map((position) => position.accountName));
   return accounts.filter((account) =>
-    positions.some((position) =>
-      matchesPositionFilters(position, {
-        accounts: [account],
-        investmentTypes,
-      }) &&
-      matchesFundSelection(position, selectedFunds)
-    )
+    validAccounts.has(account)
   );
 }
 
-function getValidInvestmentTypes(
+function filterExistingInvestmentTypes(
   positions: FidelityPosition[],
-  accounts: string[],
-  selectedFunds: string[],
   investmentTypes: string[]
 ): string[] {
   if (investmentTypes.length === 0) return investmentTypes;
 
+  const validInvestmentTypes = new Set(
+    positions.map((position) => position.investmentType)
+  );
   return investmentTypes.filter((investmentType) =>
-    positions.some((position) =>
-      matchesPositionFilters(position, {
-        accounts,
-        investmentTypes: [investmentType],
-      }) &&
-      matchesFundSelection(position, selectedFunds)
-    )
+    validInvestmentTypes.has(investmentType)
   );
 }
 

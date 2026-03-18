@@ -5,10 +5,10 @@ import { FloatingToolbar } from "../FloatingToolbar";
 function makeProps() {
   return {
     summary: {
-      totalValue: 100000,
-      totalGainLoss: 5000,
-      totalGainLossPercent: 5,
-      accounts: ["Brokerage", "Roth IRA"],
+      totalValue: 20000,
+      totalGainLoss: 1200,
+      totalGainLossPercent: 6,
+      accounts: ["Account A", "Account B"],
       investmentTypes: ["Stocks", "ETFs"],
     },
     filters: {
@@ -23,15 +23,15 @@ function makeProps() {
     onTreeMapGroupingChange: vi.fn(),
     fundOptions: [
       {
-        symbol: "VTI",
-        name: "Vanguard Total Stock Market ETF",
+        symbol: "FUND-A",
+        name: "Synthetic Market Fund",
         color: "#4E9999",
         value: 1000,
         hasChildren: true,
       },
       {
-        symbol: "VXUS",
-        name: "Vanguard Total International Stock ETF",
+        symbol: "FUND-B",
+        name: "Synthetic Global Fund",
         color: "#8B74AB",
         value: 800,
         hasChildren: true,
@@ -56,9 +56,9 @@ describe("FloatingToolbar", () => {
     const props = makeProps();
     props.filters = {
       investmentTypes: ["Stocks"],
-      accounts: ["Brokerage"],
+      accounts: ["Account A"],
     };
-    props.selectedFunds = ["VTI"];
+    props.selectedFunds = ["FUND-A"];
 
     render(<FloatingToolbar {...props} />);
 
@@ -76,16 +76,25 @@ describe("FloatingToolbar", () => {
     render(<FloatingToolbar {...props} />);
 
     fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
-    expect(screen.getByText("Account")).toBeInTheDocument();
-    expect(screen.getByText("Funds")).toBeInTheDocument();
-    expect(screen.getByText("Types")).toBeInTheDocument();
+    const accountCard = screen.getByText("Account");
+    const typesCard = screen.getByText("Types");
+    const fundsCard = screen.getByText("Funds");
+
+    expect(accountCard).toBeInTheDocument();
+    expect(typesCard).toBeInTheDocument();
+    expect(fundsCard).toBeInTheDocument();
+    expect(
+      typesCard.compareDocumentPosition(fundsCard) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+
     fireEvent.change(screen.getByRole("combobox"), {
-      target: { value: "Roth IRA" },
+      target: { value: "Account B" },
     });
 
     expect(props.onFiltersChange).toHaveBeenCalledWith({
       investmentTypes: [],
-      accounts: ["Roth IRA"],
+      accounts: ["Account B"],
     });
   });
 
@@ -94,9 +103,9 @@ describe("FloatingToolbar", () => {
     render(<FloatingToolbar {...props} />);
 
     fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
-    fireEvent.click(screen.getByRole("button", { name: "VTI" }));
+    fireEvent.click(screen.getByRole("button", { name: "FUND-A" }));
 
-    expect(props.onToggleFund).toHaveBeenCalledWith("VTI");
+    expect(props.onToggleFund).toHaveBeenCalledWith("FUND-A");
   });
 
   it("clears selected types from the filters card", () => {
@@ -121,9 +130,9 @@ describe("FloatingToolbar", () => {
     const props = makeProps();
     props.filters = {
       investmentTypes: ["Stocks", "ETFs"],
-      accounts: ["Brokerage"],
+      accounts: ["Account A"],
     };
-    props.selectedFunds = ["VTI"];
+    props.selectedFunds = ["FUND-A"];
 
     render(<FloatingToolbar {...props} />);
 
@@ -136,18 +145,18 @@ describe("FloatingToolbar", () => {
     const props = makeProps();
     props.filters = {
       investmentTypes: ["Stocks"],
-      accounts: ["Brokerage"],
+      accounts: ["Account A"],
     };
-    props.selectedFunds = ["VTI"];
+    props.selectedFunds = ["FUND-A"];
 
     render(<FloatingToolbar {...props} />);
 
     expect(screen.getByText("Account")).toBeInTheDocument();
-    expect(screen.getByText("Brokerage")).toBeInTheDocument();
-    expect(screen.getByText("Fund")).toBeInTheDocument();
-    expect(screen.getByText("VTI")).toBeInTheDocument();
+    expect(screen.getByText("Account A")).toBeInTheDocument();
     expect(screen.getByText("Type")).toBeInTheDocument();
     expect(screen.getByText("Stocks")).toBeInTheDocument();
+    expect(screen.getByText("Fund")).toBeInTheDocument();
+    expect(screen.getByText("FUND-A")).toBeInTheDocument();
   });
 
   it("shows all-filters hint when nothing is active", () => {

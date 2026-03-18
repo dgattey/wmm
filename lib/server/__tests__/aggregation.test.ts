@@ -6,22 +6,22 @@ function makePosition(
   overrides: Partial<FidelityPosition> = {}
 ): FidelityPosition {
   return {
-    accountNumber: "1",
-    accountName: "DG 401K",
+    accountNumber: "TEST-0001",
+    accountName: "Account A",
     investmentType: "Others",
-    symbol: "09261F572",
-    description: "BTC LPATH IDX 2055 M",
-    quantity: 20304.534,
-    lastPrice: 16.5199,
-    lastPriceChange: 0.1955,
-    currentValue: 335428.89,
-    todayGainLossDollar: 3969.54,
-    todayGainLossPercent: 1.2,
-    totalGainLossDollar: 94943.14,
-    totalGainLossPercent: 39.48,
+    symbol: "PLANX",
+    description: "Synthetic Allocation Fund",
+    quantity: 1000,
+    lastPrice: 12,
+    lastPriceChange: 0.2,
+    currentValue: 12000,
+    todayGainLossDollar: 120,
+    todayGainLossPercent: 1,
+    totalGainLossDollar: 2400,
+    totalGainLossPercent: 25,
     percentOfAccount: 100,
-    costBasisTotal: 240485.75,
-    averageCostBasis: 11.84,
+    costBasisTotal: 9600,
+    averageCostBasis: 9.6,
     type: "",
     ...overrides,
   };
@@ -32,18 +32,18 @@ describe("computePortfolioData", () => {
     const positions = [makePosition()];
 
     const result = computePortfolioData(positions, {}, {}, 1200, 400);
-    const btcPathRow = result.tableRows.find((row) => row.symbol === "09261F572");
+    const portfolioRow = result.tableRows.find((row) => row.symbol === "PLANX");
 
-    expect(result.summary.totalValue).toBeCloseTo(335428.89);
-    expect(btcPathRow).toMatchObject({
-      symbol: "09261F572",
-      totalValue: 335428.89,
+    expect(result.summary.totalValue).toBeCloseTo(12000);
+    expect(portfolioRow).toMatchObject({
+      symbol: "PLANX",
+      totalValue: 12000,
       isExpandable: false,
     });
-    expect(btcPathRow?.sources).toHaveLength(1);
-    expect(btcPathRow?.sources[0]).toMatchObject({
+    expect(portfolioRow?.sources).toHaveLength(1);
+    expect(portfolioRow?.sources[0]).toMatchObject({
       type: "direct",
-      value: 335428.89,
+      value: 12000,
       percentOfSource: 100,
       percentOfPortfolio: 100,
     });
@@ -53,8 +53,8 @@ describe("computePortfolioData", () => {
     const positions = [
       makePosition({
         investmentType: "ETFs",
-        symbol: "VTI",
-        description: "Vanguard Total Stock Market ETF",
+        symbol: "FUNDX",
+        description: "Synthetic Equity Fund",
         currentValue: 100,
         totalGainLossDollar: 10,
         costBasisTotal: 90,
@@ -65,24 +65,24 @@ describe("computePortfolioData", () => {
       positions,
       {},
       {
-        VTI: [
-          { symbol: "AAPL", holdingName: "Apple Inc.", holdingPercent: 0.6 },
-          { symbol: "MSFT", holdingName: "Microsoft Corp.", holdingPercent: 0.4 },
+        FUNDX: [
+          { symbol: "EQTYA", holdingName: "Synthetic Equity A", holdingPercent: 0.6 },
+          { symbol: "EQTYB", holdingName: "Synthetic Equity B", holdingPercent: 0.4 },
         ],
       },
       1200,
       400
     );
 
-    expect(result.tableRows.find((row) => row.symbol === "VTI")).toBeUndefined();
-    expect(result.tableRows.find((row) => row.symbol === "AAPL")?.totalValue).toBe(
+    expect(result.tableRows.find((row) => row.symbol === "FUNDX")).toBeUndefined();
+    expect(result.tableRows.find((row) => row.symbol === "EQTYA")?.totalValue).toBe(
       60
     );
-    expect(result.tableRows.find((row) => row.symbol === "MSFT")?.totalValue).toBe(
+    expect(result.tableRows.find((row) => row.symbol === "EQTYB")?.totalValue).toBe(
       40
     );
     expect(
-      result.tableRows.find((row) => row.symbol === "AAPL")?.sources[0]
+      result.tableRows.find((row) => row.symbol === "EQTYA")?.sources[0]
     ).toMatchObject({
       type: "fund",
       value: 60,
@@ -95,22 +95,22 @@ describe("computePortfolioData", () => {
     const positions: FidelityPosition[] = [
       makePosition({
         investmentType: "ETFs",
-        symbol: "VTI",
-        description: "Vanguard Total Stock Market ETF",
+        symbol: "FUNDX",
+        description: "Synthetic Equity Fund",
         currentValue: 600,
       }),
       makePosition({
         investmentType: "Stocks",
-        symbol: "MSFT",
-        description: "Microsoft Corp.",
+        symbol: "EQTYA",
+        description: "Synthetic Equity A",
         currentValue: 400,
       }),
     ];
 
     const holdings: Record<string, FundHolding[]> = {
-      VTI: [
-        { symbol: "AAPL", holdingName: "Apple Inc.", holdingPercent: 0.6 },
-        { symbol: "NVDA", holdingName: "NVIDIA Corp.", holdingPercent: 0.4 },
+      FUNDX: [
+        { symbol: "EQTYB", holdingName: "Synthetic Equity B", holdingPercent: 0.6 },
+        { symbol: "EQTYC", holdingName: "Synthetic Equity C", holdingPercent: 0.4 },
       ],
     };
 
@@ -128,9 +128,9 @@ describe("computePortfolioData", () => {
 
     expect(highestTopLevelY).toBeLessThan(5);
 
-    const fundNode = topLevelNodes.find((node) => node.symbol === "VTI");
+    const fundNode = topLevelNodes.find((node) => node.symbol === "FUNDX");
     const fundChildren = treeMapNodes.filter(
-      (node) => node.depth === 2 && node.parentSymbol === "VTI"
+      (node) => node.depth === 2 && node.parentSymbol === "FUNDX"
     );
 
     expect(fundNode).toBeDefined();
@@ -144,8 +144,8 @@ describe("computePortfolioData", () => {
     const positions = [
       makePosition({
         investmentType: "ETFs",
-        symbol: "VTI",
-        description: "Vanguard Total Stock Market ETF",
+        symbol: "FUNDX",
+        description: "Synthetic Equity Fund",
         currentValue: 100,
         totalGainLossDollar: 10,
         costBasisTotal: 90,
@@ -155,27 +155,27 @@ describe("computePortfolioData", () => {
     const result = computePortfolioData(
       positions,
       {
-        VTI: {
-          symbol: "VTI",
+        FUNDX: {
+          symbol: "FUNDX",
           regularMarketPrice: 100,
           regularMarketChange: 1,
           regularMarketChangePercent: 1,
           fiftyTwoWeekHigh: 110,
           fiftyTwoWeekLow: 90,
-          shortName: "VTI",
-          longName: "Vanguard Total Stock Market ETF",
+          shortName: "FUNDX",
+          longName: "Synthetic Equity Fund",
         },
       },
       {
-        VTI: [
+        FUNDX: [
           {
-            symbol: "AAPL",
-            holdingName: "Apple Inc.",
+            symbol: "EQTYA",
+            holdingName: "Synthetic Equity A",
             holdingPercent: 0.6,
           },
           {
-            symbol: "VTI",
-            holdingName: "Rest of Vanguard Total Stock Market ETF",
+            symbol: "FUNDX",
+            holdingName: "Rest of Synthetic Equity Fund",
             holdingPercent: 0.4,
           },
         ],
@@ -184,19 +184,19 @@ describe("computePortfolioData", () => {
       400
     );
 
-    const retainedRow = result.tableRows.find((row) => row.symbol === "VTI");
+    const retainedRow = result.tableRows.find((row) => row.symbol === "FUNDX");
     const retainedNode = result.treeMapNodes.find(
-      (node) => node.depth === 2 && node.symbol === "VTI"
+      (node) => node.depth === 2 && node.symbol === "FUNDX"
     );
 
     expect(retainedRow).toMatchObject({
-      symbol: "VTI",
-      name: "Rest of Vanguard Total Stock Market ETF",
+      symbol: "FUNDX",
+      name: "Rest of Synthetic Equity Fund",
       totalValue: 40,
     });
     expect(retainedNode).toMatchObject({
-      symbol: "VTI",
-      name: "Rest of Vanguard Total Stock Market ETF",
+      symbol: "FUNDX",
+      name: "Rest of Synthetic Equity Fund",
       value: 40,
     });
   });

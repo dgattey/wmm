@@ -84,7 +84,7 @@ export function Dashboard({
   const displayGainLossPercent =
     activeSummary?.gainLossPercent ?? summary.totalGainLossPercent;
   const isFiltered = activeSummary !== null;
-  const headerLabel = isFiltered ? activeSummary.label : "Full portfolio";
+  const headerLabel = isFiltered ? activeSummary.label : "Your portfolio";
 
   return (
     <div

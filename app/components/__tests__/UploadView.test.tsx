@@ -13,7 +13,7 @@ import { UploadView } from "../UploadView";
 describe("UploadView", () => {
   it("renders the title and instructions", () => {
     render(<UploadView onFileSelect={vi.fn()} />);
-    expect(screen.getByText("Portfolio Allocation")).toBeInTheDocument();
+    expect(screen.getByText("Your portfolio")).toBeInTheDocument();
     expect(
       screen.getByText("Visualize your investment portfolio breakdown")
     ).toBeInTheDocument();

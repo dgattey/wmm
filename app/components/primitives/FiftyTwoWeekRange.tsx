@@ -30,7 +30,7 @@ export function FiftyTwoWeekRange({
     <div
       className={cn(
         "flex flex-col",
-        size === "sm" ? "w-24" : "w-44 min-w-[11rem]",
+        size === "sm" ? "w-24" : "w-40 min-w-[10rem] xl:w-44 xl:min-w-[11rem]",
         className
       )}
     >

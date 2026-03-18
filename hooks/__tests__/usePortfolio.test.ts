@@ -9,11 +9,11 @@ function makePosition(
   overrides: Partial<FidelityPosition> = {}
 ): FidelityPosition {
   return {
-    accountNumber: "1",
-    accountName: "Brokerage",
+    accountNumber: "TEST-0001",
+    accountName: "Account A",
     investmentType: "Stocks",
-    symbol: "MSFT",
-    description: "Microsoft",
+    symbol: "EQTY-A",
+    description: "Synthetic Equity A",
     quantity: 1,
     lastPrice: 100,
     lastPriceChange: 1,
@@ -33,20 +33,20 @@ function makePosition(
 describe("portfolio selection sanitizing", () => {
   const positions = [
     makePosition({
-      symbol: "VTI",
-      description: "Vanguard Total Stock Market ETF",
+      symbol: "FUND-A",
+      description: "Synthetic Market Fund",
       investmentType: "ETFs",
     }),
     makePosition({
-      symbol: "MSFT",
-      description: "Microsoft",
+      symbol: "EQTY-A",
+      description: "Synthetic Equity A",
       investmentType: "Stocks",
     }),
     makePosition({
-      accountNumber: "2",
-      accountName: "Roth IRA",
-      symbol: "FXAIX",
-      description: "Fidelity 500 Index Fund",
+      accountNumber: "TEST-0002",
+      accountName: "Account B",
+      symbol: "FUND-B",
+      description: "Synthetic Income Fund",
       investmentType: "Mutual Funds",
     }),
   ];
@@ -64,14 +64,14 @@ describe("portfolio selection sanitizing", () => {
         accounts: [],
         investmentTypes: ["Stocks"],
       },
-      ["VTI"]
+      ["FUND-A"]
     );
 
     expect(sanitized.selectedFunds).toEqual([]);
     expect(sanitized.filters.investmentTypes).toEqual(["Stocks"]);
   });
 
-  it("clears incompatible types when a new account is applied", () => {
+  it("keeps the chosen filters when a new account clears selected funds", () => {
     const previousFilters: FilterState = {
       accounts: [],
       investmentTypes: ["Stocks"],
@@ -81,29 +81,55 @@ describe("portfolio selection sanitizing", () => {
       positions,
       previousFilters,
       {
-        accounts: ["Roth IRA"],
+        accounts: ["Account B"],
         investmentTypes: ["Stocks"],
       },
-      ["VTI"]
+      ["FUND-A"]
     );
 
     expect(sanitized.selectedFunds).toEqual([]);
-    expect(sanitized.filters.accounts).toEqual(["Roth IRA"]);
-    expect(sanitized.filters.investmentTypes).toEqual([]);
+    expect(sanitized.filters.accounts).toEqual(["Account B"]);
+    expect(sanitized.filters.investmentTypes).toEqual(["Stocks"]);
   });
 
-  it("keeps a newly selected fund and clears conflicting type filters", () => {
+  it("keeps compatible type filters when selecting a fund", () => {
     const sanitized = sanitizeSelectionForFundChange(
       positions,
       {
-        accounts: ["Brokerage"],
-        investmentTypes: ["Stocks"],
+        accounts: [],
+        investmentTypes: ["ETFs", "Mutual Funds"],
       },
-      ["VTI"]
+      ["FUND-A"]
     );
 
-    expect(sanitized.selectedFunds).toEqual(["VTI"]);
-    expect(sanitized.filters.accounts).toEqual(["Brokerage"]);
-    expect(sanitized.filters.investmentTypes).toEqual([]);
+    expect(sanitized.selectedFunds).toEqual(["FUND-A"]);
+    expect(sanitized.filters.accounts).toEqual([]);
+    expect(sanitized.filters.investmentTypes).toEqual([
+      "ETFs",
+      "Mutual Funds",
+    ]);
+  });
+
+  it("keeps a selected fund when broadening the type filter", () => {
+    const previousFilters: FilterState = {
+      accounts: [],
+      investmentTypes: ["ETFs"],
+    };
+
+    const sanitized = sanitizeSelectionForFilterChange(
+      positions,
+      previousFilters,
+      {
+        accounts: [],
+        investmentTypes: ["ETFs", "Mutual Funds"],
+      },
+      ["FUND-A"]
+    );
+
+    expect(sanitized.selectedFunds).toEqual(["FUND-A"]);
+    expect(sanitized.filters.investmentTypes).toEqual([
+      "ETFs",
+      "Mutual Funds",
+    ]);
   });
 });

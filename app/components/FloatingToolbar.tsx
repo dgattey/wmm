@@ -299,9 +299,51 @@ export function FloatingToolbar({
             </FilterCard>
 
             <FilterCard
+              label="Types"
+              subtitle="Choose one or more investment types."
+              style={{ "--enter-delay": "60ms" } as CSSProperties}
+            >
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={clearInvestmentTypes}
+                  className={cn(
+                    "px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer whitespace-nowrap hover-lift press-down animate-soft-pop",
+                    filters.investmentTypes.length === 0
+                      ? "bg-white/15 text-white shadow-sm"
+                      : "text-white/60 hover:text-white hover:bg-white/10 border border-white/10"
+                  )}
+                  style={{ "--enter-delay": "80ms" } as CSSProperties}
+                >
+                  All types
+                </button>
+                {summary.investmentTypes.map((type, index) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => toggleInvestmentType(type)}
+                    className={cn(
+                      "animate-soft-pop cursor-pointer whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-200 hover-lift press-down",
+                      filters.investmentTypes.includes(type)
+                        ? "bg-accent text-white shadow-sm"
+                        : "border border-white/10 text-white/60 hover:bg-white/10 hover:text-white"
+                    )}
+                    style={
+                      {
+                        "--enter-delay": `${120 + index * 30}ms`,
+                      } as CSSProperties
+                    }
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </FilterCard>
+
+            <FilterCard
               label="Funds"
               subtitle="Apply the same top-line totals to selected funds."
-              style={{ "--enter-delay": "60ms" } as CSSProperties}
+              style={{ "--enter-delay": "120ms" } as CSSProperties}
               action={
                 selectedFunds.length > 0 ? (
                   <button
@@ -325,7 +367,7 @@ export function FloatingToolbar({
                         ? "bg-white/15 text-white shadow-sm"
                         : "border border-white/10 text-white/60 hover:bg-white/10 hover:text-white"
                     )}
-                    style={{ "--enter-delay": "80ms" } as CSSProperties}
+                    style={{ "--enter-delay": "140ms" } as CSSProperties}
                   >
                     All funds
                   </button>
@@ -345,7 +387,7 @@ export function FloatingToolbar({
                         )}
                         style={
                           {
-                            "--enter-delay": `${120 + index * 30}ms`,
+                            "--enter-delay": `${180 + index * 30}ms`,
                             ...(isSelected
                               ? {
                                   backgroundColor: fund.color,
@@ -366,50 +408,6 @@ export function FloatingToolbar({
                 </p>
               )}
             </FilterCard>
-
-            {summary.investmentTypes.length > 0 && (
-              <FilterCard
-                label="Types"
-                subtitle="Choose one or more investment types."
-                style={{ "--enter-delay": "120ms" } as CSSProperties}
-              >
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={clearInvestmentTypes}
-                    className={cn(
-                      "px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer whitespace-nowrap hover-lift press-down animate-soft-pop",
-                      filters.investmentTypes.length === 0
-                        ? "bg-white/15 text-white shadow-sm"
-                        : "text-white/60 hover:text-white hover:bg-white/10 border border-white/10"
-                    )}
-                    style={{ "--enter-delay": "160ms" } as CSSProperties}
-                  >
-                    All types
-                  </button>
-                  {summary.investmentTypes.map((type, index) => (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => toggleInvestmentType(type)}
-                      className={cn(
-                        "animate-soft-pop cursor-pointer whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-200 hover-lift press-down",
-                        filters.investmentTypes.includes(type)
-                          ? "bg-accent text-white shadow-sm"
-                          : "border border-white/10 text-white/60 hover:bg-white/10 hover:text-white"
-                      )}
-                      style={
-                        {
-                          "--enter-delay": `${200 + index * 30}ms`,
-                        } as CSSProperties
-                      }
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
-              </FilterCard>
-            )}
           </div>
         )}
       </div>
@@ -593,16 +591,6 @@ function getFilterSummaryItems(filters: FilterState, selectedFunds: string[]) {
     });
   }
 
-  if (selectedFunds.length > 0) {
-    items.push({
-      label: selectedFunds.length === 1 ? "Fund" : "Funds",
-      value:
-        selectedFunds.length === 1
-          ? selectedFunds[0]
-          : `${selectedFunds.length} selected`,
-    });
-  }
-
   if (filters.investmentTypes.length > 0) {
     items.push({
       label: filters.investmentTypes.length === 1 ? "Type" : "Types",
@@ -610,6 +598,16 @@ function getFilterSummaryItems(filters: FilterState, selectedFunds: string[]) {
         filters.investmentTypes.length === 1
           ? filters.investmentTypes[0]
           : `${filters.investmentTypes.length} selected`,
+    });
+  }
+
+  if (selectedFunds.length > 0) {
+    items.push({
+      label: selectedFunds.length === 1 ? "Fund" : "Funds",
+      value:
+        selectedFunds.length === 1
+          ? selectedFunds[0]
+          : `${selectedFunds.length} selected`,
     });
   }
 

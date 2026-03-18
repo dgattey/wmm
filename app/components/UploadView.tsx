@@ -51,7 +51,7 @@ export function UploadView({ onFileSelect, error, isLoading }: UploadViewProps) 
         {/* Card */}
         <div className="bg-surface rounded-2xl border border-border/60 p-8 shadow-[var(--shadow-lg)]">
           <h1 className="text-2xl font-bold text-text-primary mb-1">
-            Portfolio Allocation
+            Your portfolio
           </h1>
           <p className="text-text-muted text-sm mb-8">
             Visualize your investment portfolio breakdown
