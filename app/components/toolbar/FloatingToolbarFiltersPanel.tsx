@@ -14,8 +14,6 @@ interface FloatingToolbarFiltersPanelProps {
   filters: FilterState;
   fundOptions: FundOption[];
   selectedFunds: string[];
-  onSearchChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  onClearSearch: () => void;
   onAccountChange: (event: ChangeEvent<HTMLSelectElement>) => void;
   onClearInvestmentTypes: () => void;
   onToggleInvestmentType: (type: string) => void;
@@ -28,8 +26,6 @@ export function FloatingToolbarFiltersPanel({
   filters,
   fundOptions,
   selectedFunds,
-  onSearchChange,
-  onClearSearch,
   onAccountChange,
   onClearInvestmentTypes,
   onToggleInvestmentType,
@@ -39,38 +35,9 @@ export function FloatingToolbarFiltersPanel({
   return (
     <div className="origin-bottom animate-soft-pop flex flex-col gap-3">
       <FilterCard
-        label="Search"
-        subtitle="Filter by name or symbol across funds and holdings."
-        style={{ "--enter-delay": "0ms" } as CSSProperties}
-        action={
-          filters.searchQuery?.trim() ? (
-            <button
-              type="button"
-              onClick={onClearSearch}
-              className="text-[11px] font-medium text-white/45 transition-colors hover:text-white/75 hover-lift press-down"
-            >
-              Clear
-            </button>
-          ) : undefined
-        }
-      >
-        <input
-          type="search"
-          value={filters.searchQuery ?? ""}
-          onChange={onSearchChange}
-          placeholder="Search by name or symbol"
-          aria-label="Search by name or symbol"
-          className={cn(
-            "w-full min-w-[180px] rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80",
-            "outline-none transition-colors placeholder:text-white/30 hover:bg-white/10 focus:border-white/20 focus:bg-white/8"
-          )}
-        />
-      </FilterCard>
-
-      <FilterCard
         label="Account"
         subtitle="Limit the view to a single account."
-        style={{ "--enter-delay": "40ms" } as CSSProperties}
+        style={{ "--enter-delay": "0ms" } as CSSProperties}
       >
         <select
           value={filters.accounts.length === 1 ? filters.accounts[0] : ""}
@@ -99,7 +66,7 @@ export function FloatingToolbarFiltersPanel({
       <FilterCard
         label="Types"
         subtitle="Choose one or more investment types."
-        style={{ "--enter-delay": "80ms" } as CSSProperties}
+        style={{ "--enter-delay": "60ms" } as CSSProperties}
       >
         <div className="flex flex-wrap gap-2">
           <button

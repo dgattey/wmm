@@ -104,6 +104,7 @@ describe("Dashboard clear action", () => {
     renderDashboard();
 
     expect(screen.getByText("Your portfolio")).toBeInTheDocument();
+    expect(screen.getByText("Your portfolio").parentElement).toHaveClass("min-h-9");
   });
 
   it("renders a visible larger clear button", () => {
@@ -164,6 +165,143 @@ describe("Dashboard clear action", () => {
     expect(screen.queryByText("Reset filters")).not.toBeInTheDocument();
     fireEvent.click(resetButton);
     expect(onResetFilters).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders a sticky search bar above the table and updates searchQuery", () => {
+    const onFiltersChange = vi.fn();
+
+    render(
+      <Dashboard
+        portfolioData={portfolioData}
+        filteredTreeMapNodes={[]}
+        filteredRows={[]}
+        isMobile={false}
+        filters={{ investmentTypes: [], accounts: [] }}
+        onFiltersChange={onFiltersChange}
+        onResetFilters={vi.fn()}
+        sortConfig={{ key: "totalValue", direction: "desc" }}
+        onSort={vi.fn()}
+        expandedRows={new Set()}
+        onToggleExpand={vi.fn()}
+        onClearData={vi.fn()}
+        isLoading={false}
+        viewMode="holdings"
+        onViewModeChange={vi.fn()}
+        treeMapGrouping="fund"
+        onTreeMapGroupingChange={vi.fn()}
+        selectedFunds={[]}
+        onToggleFund={vi.fn()}
+        onClearFunds={vi.fn()}
+        fundOptions={[]}
+        activeSummary={null}
+        treeMapWidth={1200}
+        treeMapHeight={400}
+      />
+    );
+
+    const searchShell = screen.getByTestId("portfolio-search-shell");
+    expect(searchShell).toHaveClass("sticky");
+    expect(searchShell).toHaveClass("sticky-header");
+    expect(searchShell).toHaveClass("top-[7rem]");
+    expect(screen.getByTestId("inline-holdings-count")).toHaveTextContent(
+      "0 holdings"
+    );
+    expect(screen.getByRole("searchbox", { name: "Search portfolio" })).toHaveAttribute(
+      "placeholder",
+      "Search by name or symbol"
+    );
+    expect(screen.queryByText("Search portfolio")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Showing \d+ holdings?/)).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search portfolio" }), {
+      target: { value: "aapl" },
+    });
+
+    expect(onFiltersChange).toHaveBeenCalledWith({
+      investmentTypes: [],
+      accounts: [],
+      searchQuery: "aapl",
+    });
+  });
+
+  it("renders the bare sticky search field on mobile too", () => {
+    const onFiltersChange = vi.fn();
+
+    render(
+      <Dashboard
+        portfolioData={{
+          ...portfolioData,
+          tableRows: [
+            {
+              symbol: "AAPL",
+              name: "Apple Inc.",
+              accounts: ["Account A"],
+              investmentTypes: ["Stocks"],
+              totalValue: 100,
+              percentOfPortfolio: 100,
+              currentPrice: 100,
+              totalGainLossDollar: 10,
+              totalGainLossPercent: 10,
+              fiftyTwoWeekHigh: 120,
+              fiftyTwoWeekLow: 80,
+              isExpandable: false,
+              sources: [],
+            },
+          ],
+        }}
+        filteredTreeMapNodes={[]}
+        filteredRows={[
+          {
+            symbol: "AAPL",
+            name: "Apple Inc.",
+            accounts: ["Account A"],
+            investmentTypes: ["Stocks"],
+            totalValue: 100,
+            percentOfPortfolio: 100,
+            currentPrice: 100,
+            totalGainLossDollar: 10,
+            totalGainLossPercent: 10,
+            fiftyTwoWeekHigh: 120,
+            fiftyTwoWeekLow: 80,
+            isExpandable: false,
+            sources: [],
+          },
+        ]}
+        isMobile
+        filters={{ investmentTypes: [], accounts: [], searchQuery: "AAPL" }}
+        onFiltersChange={onFiltersChange}
+        onResetFilters={vi.fn()}
+        sortConfig={{ key: "totalValue", direction: "desc" }}
+        onSort={vi.fn()}
+        expandedRows={new Set()}
+        onToggleExpand={vi.fn()}
+        onClearData={vi.fn()}
+        isLoading={false}
+        viewMode="holdings"
+        onViewModeChange={vi.fn()}
+        treeMapGrouping="fund"
+        onTreeMapGroupingChange={vi.fn()}
+        selectedFunds={[]}
+        onToggleFund={vi.fn()}
+        onClearFunds={vi.fn()}
+        fundOptions={[]}
+        activeSummary={null}
+        treeMapWidth={720}
+        treeMapHeight={640}
+      />
+    );
+
+    const searchShell = screen.getByTestId("portfolio-search-shell");
+    expect(searchShell).toHaveClass("sticky");
+    expect(searchShell).toHaveClass("sticky-header");
+    expect(searchShell).toHaveClass("top-[5.75rem]");
+    expect(screen.getByTestId("inline-holdings-count")).toHaveTextContent(
+      "1 holding"
+    );
+    expect(screen.getByRole("searchbox", { name: "Search portfolio" })).toHaveValue(
+      "AAPL"
+    );
+    expect(screen.queryByRole("button", { name: "Clear" })).not.toBeInTheDocument();
   });
 
   it("renders the mobile variants inline on small screens", () => {

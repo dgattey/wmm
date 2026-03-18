@@ -14,14 +14,6 @@ export function buildFilterSummaryItems(
   selectedFunds: string[]
 ): FilterSummaryItem[] {
   const items: FilterSummaryItem[] = [];
-  const searchQuery = filters.searchQuery?.trim();
-
-  if (searchQuery) {
-    items.push({
-      label: "Search",
-      value: searchQuery,
-    });
-  }
 
   if (filters.accounts.length > 0) {
     items.push({
