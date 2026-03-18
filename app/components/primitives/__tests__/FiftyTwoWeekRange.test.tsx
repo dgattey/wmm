@@ -10,11 +10,10 @@ describe("FiftyTwoWeekRange", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("renders nothing when low is 0", () => {
-    const { container } = render(
-      <FiftyTwoWeekRange low={0} high={100} current={50} />
-    );
-    expect(container.firstChild).toBeNull();
+  it("renders when low is 0 but the range is otherwise valid", () => {
+    render(<FiftyTwoWeekRange low={0} high={100} current={50} />);
+    expect(screen.getByText("$0.00")).toBeInTheDocument();
+    expect(screen.getByText("$100.00")).toBeInTheDocument();
   });
 
   it("renders labels in md size", () => {

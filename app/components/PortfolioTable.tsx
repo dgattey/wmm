@@ -1,5 +1,6 @@
 "use client";
 
+import { FIFTY_TWO_WEEK_POSITION_SORT_KEY } from "@/lib/tableSort";
 import type { TableRow, SortConfig } from "@/lib/types";
 import { cn, formatDollar, formatPercent, formatPrice } from "@/lib/utils";
 import { TickerIdentity } from "./primitives/TickerIdentity";
@@ -27,6 +28,7 @@ const SORTABLE_COLUMNS: {
   { key: "currentPrice", label: "Price", align: "right" },
   { key: "totalGainLossDollar", label: "$ Change", align: "right" },
   { key: "totalGainLossPercent", label: "% Change", align: "right" },
+  { key: FIFTY_TWO_WEEK_POSITION_SORT_KEY, label: "52W Range" },
 ];
 
 export function PortfolioTable({
@@ -94,12 +96,6 @@ export function PortfolioTable({
                 />
               </th>
             ))}
-            {/* 52-Week Range */}
-            <th className="px-3 py-3 text-left">
-              <span className="text-xs font-medium uppercase tracking-wider text-text-muted">
-                52W Range
-              </span>
-            </th>
           </tr>
         </thead>
         <tbody>

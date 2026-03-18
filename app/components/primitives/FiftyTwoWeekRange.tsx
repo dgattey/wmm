@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  getFiftyTwoWeekPosition,
+  hasValidFiftyTwoWeekRange,
+} from "@/lib/fiftyTwoWeek";
 import { cn, formatPrice } from "@/lib/utils";
 
 interface FiftyTwoWeekRangeProps {
@@ -17,9 +21,10 @@ export function FiftyTwoWeekRange({
   size = "md",
   className,
 }: FiftyTwoWeekRangeProps) {
-  if (!low || !high || low >= high) return null;
+  if (!hasValidFiftyTwoWeekRange(low, high)) return null;
 
-  const position = Math.max(0, Math.min(1, (current - low) / (high - low)));
+  const position = getFiftyTwoWeekPosition(low, high, current);
+  if (position === null) return null;
 
   return (
     <div

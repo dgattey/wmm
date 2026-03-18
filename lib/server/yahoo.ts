@@ -23,6 +23,8 @@ const holdingsCache = new Map<string, CacheEntry<FundHolding[]>>();
 
 const QUOTE_TTL = 4_000; // 4 seconds
 const HOLDINGS_TTL = 3_600_000; // 1 hour
+const LOOKTHROUGH_DEPTH = 1;
+const MIN_HOLDING_PERCENT = 0.000001;
 
 function isCacheValid<T>(entry: CacheEntry<T> | undefined, ttl: number): boolean {
   if (!entry) return false;
@@ -55,8 +57,24 @@ const FUND_DESCRIPTION_TERM_MAP: Record<string, string> = {
 const SKIP_SYMBOLS = new Set(["FZFXX", "FDRXX", "SPAXX"]);
 
 /** Symbols with non-standard format (e.g. 401K fund identifiers) */
+const YAHOO_SYMBOL_PATTERN = /^[A-Z0-9-]+(?:\.[A-Z]+)?$/i;
+
 function isNonStandardSymbol(symbol: string): boolean {
-  return /^\d/.test(symbol) || symbol.length > 8;
+  const normalized = symbol.trim().toUpperCase();
+  if (!normalized || !YAHOO_SYMBOL_PATTERN.test(normalized)) return true;
+
+  const [baseSymbol, exchangeSuffix] = normalized.split(".", 2);
+  if (exchangeSuffix) return false;
+
+  return /^\d/.test(baseSymbol) || normalized.length > 8;
+}
+
+export function shouldSkipYahooSymbol(symbol: string): boolean {
+  const normalized = symbol.trim().toUpperCase();
+  if (!normalized || normalized.length > 15) return true;
+  if (!YAHOO_SYMBOL_PATTERN.test(normalized)) return true;
+
+  return isNonStandardSymbol(normalized);
 }
 
 function toYahooSymbol(symbol: string): string {
@@ -146,7 +164,7 @@ export async function fetchQuotes(
 
   // Check cache first
   for (const sym of symbols) {
-    if (SKIP_SYMBOLS.has(sym) || isNonStandardSymbol(sym)) continue;
+    if (SKIP_SYMBOLS.has(sym) || shouldSkipYahooSymbol(sym)) continue;
     const cached = quoteCache.get(sym);
     if (isCacheValid(cached, QUOTE_TTL)) {
       result[sym] = cached!.data;
@@ -203,9 +221,9 @@ export async function fetchQuotes(
 // === Holdings fetching ===
 
 /**
- * Fetch top holdings for a single fund/ETF symbol.
+ * Fetch the direct holdings Yahoo reports for a single fund/ETF symbol.
  */
-async function fetchHoldingsForSymbol(
+async function fetchDirectHoldingsForSymbol(
   symbol: string,
   description?: string
 ): Promise<FundHolding[]> {
@@ -213,6 +231,10 @@ async function fetchHoldingsForSymbol(
   const cached = holdingsCache.get(symbol);
   if (isCacheValid(cached, HOLDINGS_TTL)) {
     return cached!.data;
+  }
+
+  if (SKIP_SYMBOLS.has(symbol)) {
+    return [];
   }
 
   const lookupCandidates = [toYahooSymbol(symbol)];
@@ -275,6 +297,113 @@ async function fetchHoldingsForSymbol(
   // Cache even empty results (means this symbol has no holdings data)
   holdingsCache.set(symbol, { data: [], timestamp: Date.now() });
   return [];
+}
+
+function sumHoldingPercents(holdings: FundHolding[]): number {
+  return holdings.reduce((sum, holding) => sum + holding.holdingPercent, 0);
+}
+
+function aggregateHoldings(holdings: FundHolding[]): FundHolding[] {
+  const holdingMap = new Map<
+    string,
+    { symbol: string; holdingName: string; holdingPercent: number }
+  >();
+
+  for (const holding of holdings) {
+    if (holding.holdingPercent <= MIN_HOLDING_PERCENT) continue;
+
+    const existing = holdingMap.get(holding.symbol);
+    if (existing) {
+      existing.holdingPercent += holding.holdingPercent;
+      if (!existing.holdingName && holding.holdingName) {
+        existing.holdingName = holding.holdingName;
+      }
+    } else {
+      holdingMap.set(holding.symbol, { ...holding });
+    }
+  }
+
+  return [...holdingMap.values()].sort(
+    (a, b) => b.holdingPercent - a.holdingPercent
+  );
+}
+
+function buildResidualHolding(
+  symbol: string,
+  description: string | undefined,
+  holdingPercent: number
+): FundHolding | null {
+  if (holdingPercent <= MIN_HOLDING_PERCENT) {
+    return null;
+  }
+
+  return {
+    symbol,
+    holdingName: `Rest of ${description || symbol}`,
+    holdingPercent,
+  };
+}
+
+async function fetchHoldingsForSymbol(
+  symbol: string,
+  description?: string,
+  depth = 0,
+  visited = new Set<string>()
+): Promise<FundHolding[]> {
+  const directHoldings = await fetchDirectHoldingsForSymbol(symbol, description);
+  if (directHoldings.length === 0) {
+    return [];
+  }
+
+  const reportedPercent = sumHoldingPercents(directHoldings);
+  const residualHolding = buildResidualHolding(
+    symbol,
+    description,
+    Math.max(0, 1 - reportedPercent)
+  );
+
+  if (depth >= LOOKTHROUGH_DEPTH) {
+    return aggregateHoldings(
+      residualHolding ? [...directHoldings, residualHolding] : directHoldings
+    );
+  }
+
+  const nextVisited = new Set(visited);
+  nextVisited.add(symbol);
+
+  const expandedHoldings: FundHolding[] = [];
+  for (const holding of directHoldings) {
+    if (nextVisited.has(holding.symbol)) {
+      expandedHoldings.push(holding);
+      continue;
+    }
+
+    const nestedHoldings = await fetchHoldingsForSymbol(
+      holding.symbol,
+      holding.holdingName,
+      depth + 1,
+      nextVisited
+    );
+
+    if (nestedHoldings.length === 0) {
+      expandedHoldings.push(holding);
+      continue;
+    }
+
+    for (const nestedHolding of nestedHoldings) {
+      expandedHoldings.push({
+        symbol: nestedHolding.symbol,
+        holdingName: nestedHolding.holdingName,
+        holdingPercent: holding.holdingPercent * nestedHolding.holdingPercent,
+      });
+    }
+  }
+
+  if (residualHolding) {
+    expandedHoldings.push(residualHolding);
+  }
+
+  return aggregateHoldings(expandedHoldings);
 }
 
 /**
