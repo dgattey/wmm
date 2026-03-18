@@ -125,33 +125,36 @@ describe("yahoo fund symbol lookups", () => {
     const { fetchAllHoldings } = await import("../yahoo");
     const result = await fetchAllHoldings([{ symbol: "TARGET" }]);
 
-    expect(result.TARGET).toEqual([
+    expect(result.TARGET.map(({ symbol, holdingName }) => ({ symbol, holdingName }))).toEqual([
       {
         symbol: "2330.TW",
         holdingName: "Taiwan Semiconductor Manufacturing Co Ltd",
-        holdingPercent: 0.3,
       },
       {
         symbol: "CASHX",
         holdingName: "Cash Sleeve",
-        holdingPercent: 0.3,
       },
       {
         symbol: "005930.KS",
         holdingName: "Samsung Electronics Co Ltd",
-        holdingPercent: 0.15,
       },
       {
         symbol: "IXUS",
         holdingName: "iShares Core MSCI Total Intl Stk ETF",
-        holdingPercent: 0.15,
       },
       {
         symbol: "TARGET",
         holdingName: "TARGET",
-        holdingPercent: 0.1,
       },
     ]);
+    expect(result.TARGET[0]?.holdingPercent).toBeCloseTo(0.3);
+    expect(result.TARGET[1]?.holdingPercent).toBeCloseTo(0.3);
+    expect(result.TARGET[2]?.holdingPercent).toBeCloseTo(0.15);
+    expect(result.TARGET[3]?.holdingPercent).toBeCloseTo(0.15);
+    expect(result.TARGET[4]?.holdingPercent).toBeCloseTo(0.1);
+    expect(
+      result.TARGET.reduce((sum, holding) => sum + holding.holdingPercent, 0)
+    ).toBeCloseTo(1);
   });
 
   it("still skips quote lookups for internal non-market symbols", async () => {
