@@ -48,7 +48,7 @@ function makePortfolioReturn(overrides: Partial<ReturnType<typeof usePortfolio>>
     toggleFundSelection: vi.fn(),
     clearSelectedFunds: vi.fn(),
     fundOptions: [],
-    selectedFundsSummary: null,
+    activeSummary: null,
     treeMapWidth: 1200,
     treeMapHeight: 400,
     ...overrides,

@@ -66,7 +66,7 @@ function renderDashboard(onClearData = vi.fn()) {
         onToggleFund={vi.fn()}
         onClearFunds={vi.fn()}
         fundOptions={[]}
-        selectedFundsSummary={null}
+        activeSummary={null}
         treeMapWidth={1200}
         treeMapHeight={400}
       />
@@ -91,7 +91,7 @@ describe("Dashboard clear action", () => {
     expect(onClearData).toHaveBeenCalledTimes(1);
   });
 
-  it("shows the selected-fund summary label in the header", () => {
+  it("shows the active summary label in the header", () => {
     render(
       <Dashboard
         portfolioData={portfolioData}
@@ -114,7 +114,7 @@ describe("Dashboard clear action", () => {
         onToggleFund={vi.fn()}
         onClearFunds={vi.fn()}
         fundOptions={[]}
-        selectedFundsSummary={{
+        activeSummary={{
           value: 137194.21,
           gainLoss: 94943.14,
           gainLossPercent: 39.48,
@@ -151,7 +151,7 @@ describe("Dashboard clear action", () => {
         onToggleFund={vi.fn()}
         onClearFunds={vi.fn()}
         fundOptions={[]}
-        selectedFundsSummary={null}
+        activeSummary={null}
         treeMapWidth={720}
         treeMapHeight={640}
       />

@@ -43,7 +43,7 @@ export default function Home() {
       onToggleFund={portfolio.toggleFundSelection}
       onClearFunds={portfolio.clearSelectedFunds}
       fundOptions={portfolio.fundOptions}
-      selectedFundsSummary={portfolio.selectedFundsSummary}
+      activeSummary={portfolio.activeSummary}
       treeMapWidth={portfolio.treeMapWidth}
       treeMapHeight={portfolio.treeMapHeight}
     />
