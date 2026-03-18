@@ -36,7 +36,6 @@ export function PortfolioDetailClient({
     positions: record.positions,
     portfolioData: record.portfolioData,
     isMobile,
-    resetKey: portfolioId,
   });
 
   useEffect(() => {

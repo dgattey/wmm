@@ -75,14 +75,12 @@ interface UsePortfolioViewStateInput {
   positions: FidelityPosition[] | null;
   portfolioData: PortfolioData | null;
   isMobile: boolean;
-  resetKey: string;
 }
 
 export function usePortfolioViewState({
   positions,
   portfolioData,
   isMobile,
-  resetKey: _resetKey,
 }: UsePortfolioViewStateInput): PortfolioViewState {
   const [filters, setFiltersState] = useState<FilterState>(createDefaultFilters);
   const [sortConfig, setSortConfig] = useState<SortConfig>(createDefaultSortConfig);
@@ -143,36 +141,23 @@ export function usePortfolioViewState({
     [effectiveFilters, positions, effectiveSelectedFunds]
   );
 
-  const filteredTreeMapNodes = useMemo(
-    () =>
-      treeMapGrouping === "fund"
-        ? filterAndRelayoutFundTreeMapNodes(
-            filteredFundTreeMapNodes,
-            selectedFunds,
-            treeMapLayout.width,
-            treeMapLayout.height
-          )
-        : buildFlatHoldingTreeMapNodes({
-            rows: portfolioData?.tableRows ?? [],
-            filters: effectiveFilters,
-            selectedFunds: effectiveSelectedFunds,
-            totalPortfolioValue:
-              activeSummary?.value ?? portfolioData?.summary.totalValue ?? 0,
-            width: treeMapLayout.width,
-            height: treeMapLayout.height,
-          }),
-    [
-      activeSummary?.value,
-      filteredFundTreeMapNodes,
-      effectiveFilters,
-      portfolioData?.summary.totalValue,
-      portfolioData?.tableRows,
-      effectiveSelectedFunds,
-      treeMapGrouping,
-      treeMapLayout.height,
-      treeMapLayout.width,
-    ]
-  );
+  const filteredTreeMapNodes =
+    treeMapGrouping === "fund"
+      ? filterAndRelayoutFundTreeMapNodes(
+          filteredFundTreeMapNodes,
+          effectiveSelectedFunds,
+          treeMapLayout.width,
+          treeMapLayout.height
+        )
+      : buildFlatHoldingTreeMapNodes({
+          rows: portfolioData?.tableRows ?? [],
+          filters: effectiveFilters,
+          selectedFunds: effectiveSelectedFunds,
+          totalPortfolioValue:
+            activeSummary?.value ?? portfolioData?.summary.totalValue ?? 0,
+          width: treeMapLayout.width,
+          height: treeMapLayout.height,
+        });
 
   function toggleExpand(symbol: string) {
     setExpandedRows((prev) => {
@@ -249,8 +234,4 @@ export function usePortfolioViewState({
     treeMapHeight: treeMapLayout.height,
     activeSummary,
   };
-}
-
-function areStringArraysEqual(a: string[], b: string[]): boolean {
-  return a.length === b.length && a.every((value, index) => value === b[index]);
 }
