@@ -190,7 +190,7 @@ export function TreeMap({
             <div
               key={`group-${node.id}`}
               className={cn(
-                "absolute",
+                "absolute rounded-lg",
                 enableIntroAnimation && "animate-soft-pop",
                 "transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
                 grouping === "fund" && "cursor-pointer"
@@ -201,6 +201,8 @@ export function TreeMap({
                 top: pos.top,
                 width: pos.width,
                 height: pos.height,
+                backgroundColor: `${node.color}15`,
+                border: `1px solid ${node.color}30`,
                 opacity: visible ? 1 : 0,
                 pointerEvents: visible ? "auto" : "none",
               } as CSSProperties}
@@ -253,13 +255,13 @@ export function TreeMap({
             <div
               key={node.id}
               className={cn(
-                "absolute flex flex-col items-center justify-center",
+                "absolute rounded-lg flex flex-col items-center justify-center",
                 enableIntroAnimation && "animate-tile-in",
                 "select-none overflow-hidden",
                 "transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
                 grouping === "fund" ? "cursor-pointer" : "cursor-default",
                 visible &&
-                  "hover:z-20 hover:brightness-110 hover-lift"
+                  "hover:z-20 hover:brightness-110 hover:shadow-[var(--shadow-lg)] hover-lift"
               )}
               style={{
                 "--enter-delay": `${160 + Math.min(index, 10) * 18}ms`,
@@ -271,6 +273,10 @@ export function TreeMap({
                 opacity: visible ? 1 : 0,
                 transform: visible ? "scale(1)" : "scale(0.85)",
                 pointerEvents: visible ? "auto" : "none",
+                boxShadow: visible
+                  ? "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.06)"
+                  : "none",
+                border: visible ? "1px solid rgba(255,255,255,0.08)" : "none",
               } as CSSProperties}
               onMouseEnter={() => visible && setHoveredNode(node)}
               onMouseLeave={() => setHoveredNode(null)}
