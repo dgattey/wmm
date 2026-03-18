@@ -235,6 +235,7 @@ export function Dashboard({
       {/* TreeMap */}
       <section
         className={cn(
+          isMobile ? "pt-2" : "pt-6",
           "mb-6 max-w-[1400px] mx-auto",
           enableIntroAnimation && "animate-soft-rise",
           isMobile ? "px-4" : "px-6"

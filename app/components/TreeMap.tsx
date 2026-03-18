@@ -131,7 +131,7 @@ export function TreeMap({
     return (
       <div
         className={cn(
-          "w-full rounded-xl bg-surface border border-border flex items-center justify-center text-text-muted",
+          "w-full flex items-center justify-center text-text-muted",
           isMobile ? "h-[280px]" : "h-[400px]"
         )}
       >
@@ -163,7 +163,7 @@ export function TreeMap({
       <div
         ref={containerRef}
         className={cn(
-          "relative w-full overflow-hidden rounded-2xl bg-surface border border-border/60 shadow-[var(--shadow-md)] cursor-default touch-manipulation",
+          "relative w-full overflow-hidden cursor-default touch-manipulation",
           enableIntroAnimation && "animate-soft-rise"
         )}
         style={
