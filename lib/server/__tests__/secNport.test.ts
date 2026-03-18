@@ -77,7 +77,7 @@ describe("SEC N-PORT holdings provider", () => {
     });
 
     const holdings = await fetchSecNportHoldings("IVV");
-    const cachedHoldings = await fetchSecNportHoldings("IVV");
+    const repeatedHoldings = await fetchSecNportHoldings("IVV");
 
     expect(holdings).toEqual([
       {
@@ -91,8 +91,8 @@ describe("SEC N-PORT holdings provider", () => {
         holdingPercent: 0.05,
       },
     ]);
-    expect(cachedHoldings).toEqual(holdings);
-    expect(fetchCalls).toHaveLength(3);
+    expect(repeatedHoldings).toEqual(holdings);
+    expect(fetchCalls).toHaveLength(6);
   });
 
   it("treats stale SEC filings as unsupported so callers can fall back", async () => {

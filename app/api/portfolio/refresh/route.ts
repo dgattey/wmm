@@ -5,7 +5,7 @@ import { computePortfolioData } from "@/lib/server/aggregation";
 
 /**
  * Refresh route — same as the main portfolio route but optimized for polling.
- * Holdings are cached for 1hr so this mainly re-fetches quotes.
+ * Holdings and quotes are cached through Next's data cache.
  */
 export async function POST(request: Request) {
   try {
@@ -35,8 +35,7 @@ export async function POST(request: Request) {
       new Map(fundSymbols.map((fund) => [fund.symbol, fund])).values()
     );
 
-    // Holdings will be served from cache (1hr TTL)
-    // Quotes will be re-fetched (4s TTL)
+    // Holdings and quotes use persistent Next data-cache entries.
     const [quotes, holdings] = await Promise.all([
       fetchQuotes(allSymbols),
       fetchAllHoldings(uniqueFundSymbols),

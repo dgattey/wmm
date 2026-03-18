@@ -1,12 +1,14 @@
+import { unstable_cache } from "next/cache";
 import type { FundHolding } from "@/lib/types";
 
 const SEC_BASE_URL = "https://www.sec.gov";
 const SERIES_CLASS_PAGE_URL =
   "https://www.sec.gov/data-research/sec-markets-data/investment-company-series-class-information";
-const SERIES_CLASS_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-const HOLDINGS_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const SERIES_CLASS_REVALIDATE_SECONDS = 30 * 24 * 60 * 60;
+const HOLDINGS_REVALIDATE_SECONDS = 7 * 24 * 60 * 60;
 const MAX_REPORT_AGE_DAYS = 180;
 const MIN_HOLDING_PERCENT = 0.000001;
+const SHOULD_BYPASS_NEXT_CACHE = process.env.NODE_ENV === "test";
 const FUND_DESCRIPTION_TERM_MAP: Record<string, string> = {
   IDX: "INDEX",
   LPATH: "LIFEPATH",
@@ -45,28 +47,18 @@ interface SecFundMapping {
 
 interface SecCachedHoldings {
   source: "sec-nport";
-  symbol: string;
   seriesId: string;
   asOfDate: string;
   filingUrl: string;
-  lastRefreshedAt: string;
   holdings: FundHolding[];
-}
-
-interface TimedSeriesClassMappings {
-  loadedAt: number;
-  mappings: SecFundMapping[];
 }
 
 type FetchTextImplementation = (url: string) => Promise<string>;
 
-const holdingsMemoryCache = new Map<string, SecCachedHoldings>();
-
-let seriesClassMappingsPromise: Promise<SecFundMapping[]> | null = null;
 let fetchTextImpl: FetchTextImplementation = defaultFetchText;
-let nowImpl = () => Date.now();
+const defaultNow = () => Date.now();
+let nowImpl = defaultNow;
 let seriesClassMappingsOverride: SecFundMapping[] | null = null;
-let timedSeriesClassMappings: TimedSeriesClassMappings | null = null;
 
 async function defaultFetchText(url: string): Promise<string> {
   const response = await fetch(url, {
@@ -191,75 +183,66 @@ function aggregateNormalizedHoldings(holdings: FundHolding[]): FundHolding[] {
   );
 }
 
+async function loadSeriesClassMappingsUncached(): Promise<SecFundMapping[]> {
+  const landingPage = await fetchTextImpl(SERIES_CLASS_PAGE_URL);
+  const csvMatch = landingPage.match(
+    /href="([^"]*investment[-_]company[-_]series[-_]class[^"]+\.csv)"/i
+  );
+  if (!csvMatch) {
+    throw new Error("Could not locate SEC series/class CSV download");
+  }
+
+  const csvUrl = new URL(csvMatch[1], SEC_BASE_URL).toString();
+  const csvText = await fetchTextImpl(csvUrl);
+
+  const lines = csvText
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return lines
+    .slice(1)
+    .map((line) => parseCsvLine(line))
+    .filter((values) => values.length >= 9)
+    .filter((values) => values[3] === "30")
+    .map((values) => {
+      const seriesName = values[5];
+      const className = values[7];
+      const classTicker = values[8]?.toUpperCase() || undefined;
+
+      return {
+        cik: values[1].padStart(10, "0"),
+        organizationType: values[3],
+        seriesId: values[4],
+        seriesName,
+        classId: values[6],
+        className,
+        classTicker,
+        normalizedSeriesName: normalizeLookupText(seriesName),
+        normalizedClassName: normalizeLookupText(className),
+      };
+    });
+}
+
+const loadSeriesClassMappingsCached = unstable_cache(
+  loadSeriesClassMappingsUncached,
+  ["sec-series-class-mappings-v1"],
+  {
+    revalidate: SERIES_CLASS_REVALIDATE_SECONDS,
+    tags: ["sec-series-class-mappings"],
+  }
+);
+
 async function loadSeriesClassMappings(): Promise<SecFundMapping[]> {
   if (seriesClassMappingsOverride) {
     return seriesClassMappingsOverride;
   }
 
-  if (
-    timedSeriesClassMappings &&
-    nowImpl() - timedSeriesClassMappings.loadedAt < SERIES_CLASS_CACHE_TTL_MS
-  ) {
-    return timedSeriesClassMappings.mappings;
+  if (SHOULD_BYPASS_NEXT_CACHE || fetchTextImpl !== defaultFetchText) {
+    return loadSeriesClassMappingsUncached();
   }
 
-  if (seriesClassMappingsPromise) {
-    return seriesClassMappingsPromise;
-  }
-
-  seriesClassMappingsPromise = (async () => {
-    const landingPage = await fetchTextImpl(SERIES_CLASS_PAGE_URL);
-    const csvMatch = landingPage.match(
-      /href="([^"]*investment[-_]company[-_]series[-_]class[^"]+\.csv)"/i
-    );
-    if (!csvMatch) {
-      throw new Error("Could not locate SEC series/class CSV download");
-    }
-
-    const csvUrl = new URL(csvMatch[1], SEC_BASE_URL).toString();
-    const csvText = await fetchTextImpl(csvUrl);
-
-    const lines = csvText
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(Boolean);
-
-    const mappings = lines
-      .slice(1)
-      .map((line) => parseCsvLine(line))
-      .filter((values) => values.length >= 9)
-      .filter((values) => values[3] === "30")
-      .map((values) => {
-        const seriesName = values[5];
-        const className = values[7];
-        const classTicker = values[8]?.toUpperCase() || undefined;
-
-        return {
-          cik: values[1].padStart(10, "0"),
-          organizationType: values[3],
-          seriesId: values[4],
-          seriesName,
-          classId: values[6],
-          className,
-          classTicker,
-          normalizedSeriesName: normalizeLookupText(seriesName),
-          normalizedClassName: normalizeLookupText(className),
-        };
-      });
-
-    timedSeriesClassMappings = {
-      loadedAt: nowImpl(),
-      mappings,
-    };
-
-    return mappings;
-  })();
-
-  try {
-    return await seriesClassMappingsPromise;
-  } finally {
-    seriesClassMappingsPromise = null;
-  }
+  return loadSeriesClassMappingsCached();
 }
 
 async function findFundMapping(
@@ -297,9 +280,11 @@ async function findFundMapping(
     .filter(({ matchedTokens }) => matchedTokens.length === tokens.length)
     .sort((left, right) => {
       const leftScore =
-        left.matchedTokens.join(" ").length + left.mapping.normalizedSeriesName.length;
+        left.matchedTokens.join(" ").length +
+        left.mapping.normalizedSeriesName.length;
       const rightScore =
-        right.matchedTokens.join(" ").length + right.mapping.normalizedSeriesName.length;
+        right.matchedTokens.join(" ").length +
+        right.mapping.normalizedSeriesName.length;
       return rightScore - leftScore;
     });
 
@@ -309,9 +294,9 @@ async function findFundMapping(
 
   if (candidates.length > 1) {
     const [best, secondBest] = candidates;
-    const bestSeries = best.mapping.normalizedSeriesName;
-    const secondSeries = secondBest.mapping.normalizedSeriesName;
-    if (bestSeries !== secondSeries) {
+    if (
+      best.mapping.normalizedSeriesName !== secondBest.mapping.normalizedSeriesName
+    ) {
       return null;
     }
 
@@ -396,21 +381,50 @@ function normalizeHoldingsFromFiling(xmlText: string): {
   };
 }
 
-async function readCachedHoldings(seriesId: string): Promise<SecCachedHoldings | null> {
-  return holdingsMemoryCache.get(seriesId) ?? null;
-}
-
-async function writeCachedHoldings(entry: SecCachedHoldings): Promise<void> {
-  holdingsMemoryCache.set(entry.seriesId, entry);
-}
-
-function shouldRefreshCachedHoldings(entry: SecCachedHoldings): boolean {
-  const refreshedAt = Date.parse(entry.lastRefreshedAt);
-  if (Number.isNaN(refreshedAt)) {
-    return true;
+async function fetchSecNportHoldingsForSeriesUncached(
+  seriesId: string
+): Promise<SecCachedHoldings | null> {
+  const filingUrl = await fetchLatestFilingUrl(seriesId);
+  if (!filingUrl) {
+    return null;
   }
 
-  return nowImpl() - refreshedAt > HOLDINGS_CACHE_TTL_MS;
+  const filingXml = await fetchTextImpl(filingUrl);
+  const normalized = normalizeHoldingsFromFiling(filingXml);
+  if (!normalized || isReportDateStale(normalized.asOfDate)) {
+    return null;
+  }
+
+  return {
+    source: "sec-nport",
+    seriesId,
+    asOfDate: normalized.asOfDate,
+    filingUrl,
+    holdings: normalized.holdings,
+  };
+}
+
+const fetchSecNportHoldingsForSeriesCached = unstable_cache(
+  fetchSecNportHoldingsForSeriesUncached,
+  ["sec-series-holdings-v1"],
+  {
+    revalidate: HOLDINGS_REVALIDATE_SECONDS,
+    tags: ["sec-series-holdings"],
+  }
+);
+
+async function fetchSecNportHoldingsForSeries(
+  seriesId: string
+): Promise<SecCachedHoldings | null> {
+  if (
+    SHOULD_BYPASS_NEXT_CACHE ||
+    fetchTextImpl !== defaultFetchText ||
+    nowImpl !== defaultNow
+  ) {
+    return fetchSecNportHoldingsForSeriesUncached(seriesId);
+  }
+
+  return fetchSecNportHoldingsForSeriesCached(seriesId);
 }
 
 export async function fetchSecNportHoldings(
@@ -422,47 +436,14 @@ export async function fetchSecNportHoldings(
     return null;
   }
 
-  const cachedEntry = await readCachedHoldings(mapping.seriesId);
-  if (
-    cachedEntry &&
-    !shouldRefreshCachedHoldings(cachedEntry) &&
-    !isReportDateStale(cachedEntry.asOfDate)
-  ) {
-    return cachedEntry.holdings;
-  }
-
   try {
-    const filingUrl = await fetchLatestFilingUrl(mapping.seriesId);
-    if (!filingUrl) {
-      return cachedEntry && !isReportDateStale(cachedEntry.asOfDate)
-        ? cachedEntry.holdings
-        : null;
+    const cachedEntry = await fetchSecNportHoldingsForSeries(mapping.seriesId);
+    if (!cachedEntry || isReportDateStale(cachedEntry.asOfDate)) {
+      return null;
     }
 
-    const filingXml = await fetchTextImpl(filingUrl);
-    const normalized = normalizeHoldingsFromFiling(filingXml);
-    if (!normalized || isReportDateStale(normalized.asOfDate)) {
-      return cachedEntry && !isReportDateStale(cachedEntry.asOfDate)
-        ? cachedEntry.holdings
-        : null;
-    }
-
-    const cacheEntry: SecCachedHoldings = {
-      source: "sec-nport",
-      symbol: symbol.trim().toUpperCase(),
-      seriesId: mapping.seriesId,
-      asOfDate: normalized.asOfDate,
-      filingUrl,
-      lastRefreshedAt: new Date(nowImpl()).toISOString(),
-      holdings: normalized.holdings,
-    };
-    await writeCachedHoldings(cacheEntry);
-    return cacheEntry.holdings;
+    return cachedEntry.holdings;
   } catch {
-    if (cachedEntry && !isReportDateStale(cachedEntry.asOfDate)) {
-      return cachedEntry.holdings;
-    }
-
     return null;
   }
 }
@@ -477,14 +458,11 @@ export const __testing = {
     seriesClassMappingsOverride = mappings;
   },
   setNowImplementation(implementation: (() => number) | null) {
-    nowImpl = implementation ?? (() => Date.now());
+    nowImpl = implementation ?? defaultNow;
   },
   reset() {
-    holdingsMemoryCache.clear();
-    seriesClassMappingsPromise = null;
-    seriesClassMappingsOverride = null;
-    timedSeriesClassMappings = null;
     fetchTextImpl = defaultFetchText;
-    nowImpl = () => Date.now();
+    nowImpl = defaultNow;
+    seriesClassMappingsOverride = null;
   },
 };
