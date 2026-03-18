@@ -14,7 +14,7 @@ Instructions for AI coding agents working in this repo.
 
 ### Requirements
 
-- **Node**: ≥18 (LTS recommended; tested on 20, 22)
+- **Node**: ≥24 (matches Vercel)
 - **Package manager**: `pnpm` (lockfile is `pnpm-lock.yaml`)
 
 ### First-time setup
