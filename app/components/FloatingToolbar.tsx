@@ -1,6 +1,6 @@
 "use client";
 
-import type { ChangeEvent, ReactNode } from "react";
+import { useEffect, useState, type ChangeEvent, type ReactNode } from "react";
 import type {
   PortfolioSummary,
   FilterState,
@@ -62,9 +62,15 @@ export function FloatingToolbar({
   const hasFilters =
     filters.investmentTypes.length > 0 || filters.accounts.length > 0;
   const hasFundSelection = selectedFunds.length > 0;
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 10000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   const secondsAgo = Math.floor(
-    (Date.now() - new Date(lastUpdated).getTime()) / 1000
+    (now - new Date(lastUpdated).getTime()) / 1000
   );
   const timeAgo =
     secondsAgo < 5
