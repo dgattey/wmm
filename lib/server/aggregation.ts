@@ -368,6 +368,7 @@ function buildHoldingsView(
         sourceName: pos.accountName,
         value: pos.currentValue,
         percentOfSource: 100,
+        percentOfPortfolio: totalValue > 0 ? (pos.currentValue / totalValue) * 100 : 0,
         account: pos.accountName,
         investmentType: pos.investmentType,
       });
@@ -390,6 +391,8 @@ function buildHoldingsView(
             sourceName: pos.accountName,
             value: pos.currentValue,
             percentOfSource: 100,
+            percentOfPortfolio:
+              totalValue > 0 ? (pos.currentValue / totalValue) * 100 : 0,
             account: pos.accountName,
             investmentType: pos.investmentType,
           },
@@ -421,6 +424,8 @@ function buildHoldingsView(
           sourceName: fund.description,
           value: holdingValue,
           percentOfSource: h.holdingPercent * 100,
+          percentOfPortfolio:
+            totalValue > 0 ? (holdingValue / totalValue) * 100 : 0,
           account: fund.accountName,
           investmentType: fund.investmentType,
         });
@@ -442,6 +447,8 @@ function buildHoldingsView(
               sourceName: fund.description,
               value: holdingValue,
               percentOfSource: h.holdingPercent * 100,
+              percentOfPortfolio:
+                totalValue > 0 ? (holdingValue / totalValue) * 100 : 0,
               account: fund.accountName,
               investmentType: fund.investmentType,
             },
@@ -491,6 +498,7 @@ function buildPositionsView(
         sourceName: pos.accountName,
         value: pos.currentValue,
         percentOfSource: 100,
+        percentOfPortfolio: totalValue > 0 ? (pos.currentValue / totalValue) * 100 : 0,
         account: pos.accountName,
         investmentType: pos.investmentType,
       });
@@ -513,6 +521,8 @@ function buildPositionsView(
             sourceName: pos.accountName,
             value: pos.currentValue,
             percentOfSource: 100,
+            percentOfPortfolio:
+              totalValue > 0 ? (pos.currentValue / totalValue) * 100 : 0,
             account: pos.accountName,
             investmentType: pos.investmentType,
           },

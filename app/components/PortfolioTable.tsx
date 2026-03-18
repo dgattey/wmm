@@ -259,7 +259,7 @@ function TableRowGroup({
               {formatDollar(source.value)}
             </td>
             <td className="px-3 py-2 text-right text-xs text-text-muted tabular-nums">
-              {source.percentOfSource.toFixed(1)}%
+              {formatPercent(source.percentOfPortfolio)}
             </td>
             <td colSpan={4} />
           </tr>

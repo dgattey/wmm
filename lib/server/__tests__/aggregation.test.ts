@@ -45,6 +45,7 @@ describe("computePortfolioData", () => {
       type: "direct",
       value: 335428.89,
       percentOfSource: 100,
+      percentOfPortfolio: 100,
     });
   });
 
@@ -79,6 +80,14 @@ describe("computePortfolioData", () => {
     );
     expect(result.tableRows.find((row) => row.symbol === "MSFT")?.totalValue).toBe(
       40
+    );
+    expect(result.tableRows.find((row) => row.symbol === "AAPL")?.sources[0]).toMatchObject(
+      {
+        type: "fund",
+        value: 60,
+        percentOfSource: 60,
+        percentOfPortfolio: 60,
+      }
     );
   });
 });
