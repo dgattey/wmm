@@ -1,5 +1,13 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+
+vi.mock("next/image", () => ({
+  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img alt={props.alt ?? ""} {...props} />
+  ),
+}));
+
 import { UploadView } from "../UploadView";
 
 describe("UploadView", () => {
@@ -11,11 +19,25 @@ describe("UploadView", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows the upload preview card without icon-specific copy", () => {
+    render(<UploadView onFileSelect={vi.fn()} />);
+    expect(screen.getByAltText("Portfolio preview graphic")).toBeInTheDocument();
+    expect(screen.getByText("Import your positions CSV")).toBeInTheDocument();
+    expect(
+      screen.getByText("Upload your Fidelity export to load the portfolio view.")
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/favicon/i)).not.toBeInTheDocument();
+  });
+
   it("renders all three instruction steps", () => {
     render(<UploadView onFileSelect={vi.fn()} />);
     expect(screen.getByText("1")).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
+    expect(screen.getByLabelText("More actions menu")).toBeInTheDocument();
+    expect(screen.getByText(/menu on the right/i)).toHaveTextContent(
+      "Open the menu on the right, then click Download to export your positions as CSV"
+    );
   });
 
   it("renders a link to Fidelity Positions", () => {
