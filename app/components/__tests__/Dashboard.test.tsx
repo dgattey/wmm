@@ -4,15 +4,27 @@ import { Dashboard } from "../Dashboard";
 import type { PortfolioData } from "@/lib/types";
 
 vi.mock("../TreeMap", () => ({
-  TreeMap: () => <div data-testid="tree-map" />,
+  TreeMap: (props: { isMobile?: boolean }) => (
+    <div data-testid="tree-map" data-mobile={props.isMobile ? "true" : "false"} />
+  ),
 }));
 
 vi.mock("../PortfolioTable", () => ({
-  PortfolioTable: () => <div data-testid="portfolio-table" />,
+  PortfolioTable: (props: { isMobile?: boolean }) => (
+    <div
+      data-testid="portfolio-table"
+      data-mobile={props.isMobile ? "true" : "false"}
+    />
+  ),
 }));
 
 vi.mock("../FloatingToolbar", () => ({
-  FloatingToolbar: () => <div data-testid="floating-toolbar" />,
+  FloatingToolbar: (props: { isMobile?: boolean }) => (
+    <div
+      data-testid="floating-toolbar"
+      data-mobile={props.isMobile ? "true" : "false"}
+    />
+  ),
 }));
 
 const portfolioData: PortfolioData = {
@@ -37,6 +49,7 @@ function renderDashboard(onClearData = vi.fn()) {
         portfolioData={portfolioData}
         filteredTreeMapNodes={[]}
         filteredRows={[]}
+        isMobile={false}
         filters={{ investmentTypes: [], accounts: [] }}
         onFiltersChange={vi.fn()}
         sortConfig={{ key: "totalValue", direction: "desc" }}
@@ -54,6 +67,8 @@ function renderDashboard(onClearData = vi.fn()) {
         onClearFunds={vi.fn()}
         fundOptions={[]}
         selectedFundsSummary={null}
+        treeMapWidth={1200}
+        treeMapHeight={400}
       />
     ),
   };
@@ -82,6 +97,7 @@ describe("Dashboard clear action", () => {
         portfolioData={portfolioData}
         filteredTreeMapNodes={[]}
         filteredRows={[]}
+        isMobile={false}
         filters={{ investmentTypes: [], accounts: [] }}
         onFiltersChange={vi.fn()}
         sortConfig={{ key: "totalValue", direction: "desc" }}
@@ -104,9 +120,51 @@ describe("Dashboard clear action", () => {
           gainLossPercent: 39.48,
           label: "2 funds selected",
         }}
+        treeMapWidth={1200}
+        treeMapHeight={400}
       />
     );
 
     expect(screen.getByText("2 funds selected")).toBeInTheDocument();
+  });
+
+  it("renders the mobile variants inline on small screens", () => {
+    render(
+      <Dashboard
+        portfolioData={portfolioData}
+        filteredTreeMapNodes={[]}
+        filteredRows={[]}
+        isMobile
+        filters={{ investmentTypes: [], accounts: [] }}
+        onFiltersChange={vi.fn()}
+        sortConfig={{ key: "totalValue", direction: "desc" }}
+        onSort={vi.fn()}
+        expandedRows={new Set()}
+        onToggleExpand={vi.fn()}
+        onClearData={vi.fn()}
+        isLoading={false}
+        viewMode="holdings"
+        onViewModeChange={vi.fn()}
+        treeMapGrouping="fund"
+        onTreeMapGroupingChange={vi.fn()}
+        selectedFunds={[]}
+        onToggleFund={vi.fn()}
+        onClearFunds={vi.fn()}
+        fundOptions={[]}
+        selectedFundsSummary={null}
+        treeMapWidth={720}
+        treeMapHeight={640}
+      />
+    );
+
+    expect(screen.getByTestId("tree-map")).toHaveAttribute("data-mobile", "true");
+    expect(screen.getByTestId("portfolio-table")).toHaveAttribute(
+      "data-mobile",
+      "true"
+    );
+    expect(screen.getByTestId("floating-toolbar")).toHaveAttribute(
+      "data-mobile",
+      "true"
+    );
   });
 });

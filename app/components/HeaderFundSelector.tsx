@@ -47,7 +47,7 @@ export function HeaderFundSelector({
   return (
     <div
       ref={containerRef}
-      className="relative mt-5 max-w-[780px] rounded-2xl border border-border/70 bg-surface/86 backdrop-blur-xl shadow-[var(--shadow-md)] px-4 py-3"
+      className="relative mt-4 max-w-full rounded-2xl border border-border/70 bg-surface/86 px-3 py-3 backdrop-blur-xl shadow-[var(--shadow-md)] sm:mt-5 sm:max-w-[780px] sm:px-4"
     >
       <div className="flex flex-wrap items-center gap-2">
         <HeaderLabel>Funds</HeaderLabel>
@@ -94,8 +94,9 @@ export function HeaderFundSelector({
       </div>
 
       {showMenu && (
-        <div className="absolute left-0 top-full mt-2 w-[320px] max-w-[calc(100vw-3rem)] rounded-2xl border border-border/70 bg-surface shadow-[var(--shadow-lg)] p-2 z-20 animate-fade-in">
+        <div className="absolute inset-x-0 top-full z-20 mt-2 rounded-2xl border border-border/70 bg-surface p-2 shadow-[var(--shadow-lg)] animate-fade-in sm:inset-x-auto sm:left-0 sm:w-[320px] sm:max-w-[calc(100vw-3rem)]">
           <button
+            type="button"
             onClick={(event) => {
               event.preventDefault();
               onClearFunds();
@@ -113,13 +114,14 @@ export function HeaderFundSelector({
 
           <div className="my-2 h-px bg-border/80" />
 
-          <div className="max-h-[260px] overflow-y-auto">
+          <div className="max-h-[min(50vh,260px)] overflow-y-auto">
             {funds.map((fund) => {
               const selected = selectedFunds.includes(fund.symbol);
 
               return (
                 <button
                   key={fund.symbol}
+                  type="button"
                   onClick={(event) => handleMenuToggle(event, fund.symbol)}
                   className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-surface-hover transition-colors cursor-pointer"
                 >

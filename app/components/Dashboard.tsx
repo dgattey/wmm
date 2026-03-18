@@ -23,6 +23,7 @@ interface DashboardProps {
   portfolioData: PortfolioData;
   filteredTreeMapNodes: TreeMapNode[];
   filteredRows: TableRow[];
+  isMobile: boolean;
   filters: FilterState;
   onFiltersChange: (f: FilterState) => void;
   sortConfig: SortConfig;
@@ -45,12 +46,15 @@ interface DashboardProps {
     gainLossPercent: number;
     label: string;
   } | null;
+  treeMapWidth: number;
+  treeMapHeight: number;
 }
 
 export function Dashboard({
   portfolioData,
   filteredTreeMapNodes,
   filteredRows,
+  isMobile,
   filters,
   onFiltersChange,
   sortConfig,
@@ -68,6 +72,8 @@ export function Dashboard({
   onClearFunds,
   fundOptions,
   selectedFundsSummary,
+  treeMapWidth,
+  treeMapHeight,
 }: DashboardProps) {
   const { summary, lastUpdated } = portfolioData;
 
@@ -81,10 +87,20 @@ export function Dashboard({
     : "Portfolio Allocation";
 
   return (
-    <div className="min-h-screen pb-20 animate-fade-in">
+    <div
+      className={cn(
+        "min-h-screen animate-fade-in",
+        isMobile ? "pb-8" : "pb-20"
+      )}
+    >
       {/* Sticky Header */}
       <header className="sticky-header sticky top-0 z-30">
-        <div className="max-w-[1400px] mx-auto px-6 py-5">
+        <div
+          className={cn(
+            "max-w-[1400px] mx-auto py-5",
+            isMobile ? "px-4" : "px-6"
+          )}
+        >
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
               <div className="mb-1">
@@ -98,16 +114,26 @@ export function Dashboard({
                 </h1>
               </div>
 
-              <div className="flex items-baseline gap-4">
+              <div
+                className={cn(
+                  "gap-4",
+                  isMobile
+                    ? "flex flex-col items-start"
+                    : "flex items-baseline"
+                )}
+              >
                 <SlidingNumber
                   value={displayValue}
                   format={formatDollar}
-                  className="text-3xl font-bold text-text-primary"
+                  className={cn(
+                    "font-bold text-text-primary",
+                    isMobile ? "text-[clamp(2rem,10vw,2.6rem)]" : "text-3xl"
+                  )}
                 />
                 <GainLoss
                   dollar={displayGainLoss}
                   percent={displayGainLossPercent}
-                  size="md"
+                  size={isMobile ? "sm" : "md"}
                 />
               </div>
 
@@ -162,40 +188,70 @@ export function Dashboard({
       </header>
 
       {/* TreeMap */}
-      <section className="px-6 mb-6 max-w-[1400px] mx-auto">
+      <section
+        className={cn(
+          "mb-6 max-w-[1400px] mx-auto",
+          isMobile ? "px-4" : "px-6"
+        )}
+      >
         <TreeMap
           nodes={filteredTreeMapNodes}
-          originalWidth={1200}
-          originalHeight={400}
+          originalWidth={treeMapWidth}
+          originalHeight={treeMapHeight}
           grouping={treeMapGrouping}
           selectedFunds={selectedFunds}
           onToggleFund={onToggleFund}
           onClearFunds={onClearFunds}
+          isMobile={isMobile}
         />
       </section>
 
+      {isMobile && (
+        <section className="px-4 mb-6 max-w-[1400px] mx-auto">
+          <FloatingToolbar
+            summary={summary}
+            filters={filters}
+            onFiltersChange={onFiltersChange}
+            lastUpdated={lastUpdated}
+            viewMode={viewMode}
+            onViewModeChange={onViewModeChange}
+            treeMapGrouping={treeMapGrouping}
+            onTreeMapGroupingChange={onTreeMapGroupingChange}
+            isMobile
+          />
+        </section>
+      )}
+
       {/* Table */}
-      <section className="px-6 max-w-[1400px] mx-auto">
+      <section
+        className={cn(
+          "max-w-[1400px] mx-auto",
+          isMobile ? "px-4" : "px-6"
+        )}
+      >
         <PortfolioTable
           rows={filteredRows}
           sortConfig={sortConfig}
           onSort={onSort}
           expandedRows={expandedRows}
           onToggleExpand={onToggleExpand}
+          isMobile={isMobile}
         />
       </section>
 
       {/* Floating Toolbar */}
-      <FloatingToolbar
-        summary={summary}
-        filters={filters}
-        onFiltersChange={onFiltersChange}
-        lastUpdated={lastUpdated}
-        viewMode={viewMode}
-        onViewModeChange={onViewModeChange}
-        treeMapGrouping={treeMapGrouping}
-        onTreeMapGroupingChange={onTreeMapGroupingChange}
-      />
+      {!isMobile && (
+        <FloatingToolbar
+          summary={summary}
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+          lastUpdated={lastUpdated}
+          viewMode={viewMode}
+          onViewModeChange={onViewModeChange}
+          treeMapGrouping={treeMapGrouping}
+          onTreeMapGroupingChange={onTreeMapGroupingChange}
+        />
+      )}
     </div>
   );
 }

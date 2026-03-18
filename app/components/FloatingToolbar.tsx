@@ -18,6 +18,7 @@ interface FloatingToolbarProps {
   onViewModeChange: (mode: ViewMode) => void;
   treeMapGrouping: TreeMapGrouping;
   onTreeMapGroupingChange: (mode: TreeMapGrouping) => void;
+  isMobile?: boolean;
 }
 
 export function FloatingToolbar({
@@ -29,6 +30,7 @@ export function FloatingToolbar({
   onViewModeChange,
   treeMapGrouping,
   onTreeMapGroupingChange,
+  isMobile = false,
 }: FloatingToolbarProps) {
   const [showFilters, setShowFilters] = useState(false);
 
@@ -74,18 +76,38 @@ export function FloatingToolbar({
         : `${Math.floor(secondsAgo / 60)}m ago`;
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 animate-slide-up">
+    <div
+      className={cn(
+        "animate-slide-up",
+        isMobile
+          ? "w-full"
+          : "fixed bottom-4 left-1/2 z-40 -translate-x-1/2"
+      )}
+    >
       <div
         className={cn(
           "flex flex-col gap-3 px-4 py-3 rounded-2xl",
           "bg-[#1a1d28]/92 backdrop-blur-2xl saturate-150",
           "border border-white/[0.06] shadow-[0_8px_40px_rgba(0,0,0,0.35),0_2px_8px_rgba(0,0,0,0.2)]",
           "ring-1 ring-inset ring-white/[0.04]",
-          "w-fit max-w-[92vw]"
+          isMobile ? "w-full max-w-none" : "w-fit max-w-[92vw]"
         )}
       >
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3">
+        <div
+          className={cn(
+            "gap-4",
+            isMobile
+              ? "flex flex-col"
+              : "flex flex-wrap items-center justify-between"
+          )}
+        >
+          <div
+            className={cn(
+              isMobile
+                ? "grid gap-3"
+                : "flex flex-wrap items-center gap-3"
+            )}
+          >
             <ToolbarSection label="View">
               <SegmentButton
                 active={viewMode === "holdings"}
@@ -117,6 +139,7 @@ export function FloatingToolbar({
             </ToolbarSection>
 
             <button
+              type="button"
               onClick={() => setShowFilters((open) => !open)}
               className={cn(
                 "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border cursor-pointer whitespace-nowrap",
@@ -129,9 +152,17 @@ export function FloatingToolbar({
             </button>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div
+            className={cn(
+              "gap-3 shrink-0",
+              isMobile
+                ? "flex items-center justify-between"
+                : "flex items-center"
+            )}
+          >
             {hasFilters && (
               <button
+                type="button"
                 onClick={clearAllFilters}
                 className="text-xs text-red-400/80 hover:text-red-300 font-medium whitespace-nowrap cursor-pointer transition-colors"
               >
@@ -182,6 +213,7 @@ export function FloatingToolbar({
                 {summary.investmentTypes.map((type) => (
                   <button
                     key={type}
+                    type="button"
                     onClick={() => toggleInvestmentType(type)}
                     className={cn(
                       "px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer whitespace-nowrap",
@@ -211,9 +243,9 @@ function ToolbarSection({
   children: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
       <ToolbarLabel>{label}</ToolbarLabel>
-      <div className="flex items-center rounded-lg bg-white/5 p-0.5">
+      <div className="flex flex-wrap items-center rounded-lg bg-white/5 p-0.5">
         {children}
       </div>
     </div>

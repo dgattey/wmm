@@ -26,6 +26,7 @@ export default function Home() {
       portfolioData={portfolio.portfolioData}
       filteredTreeMapNodes={portfolio.filteredTreeMapNodes}
       filteredRows={portfolio.filteredRows}
+      isMobile={portfolio.isMobile}
       filters={portfolio.filters}
       onFiltersChange={portfolio.setFilters}
       sortConfig={portfolio.sortConfig}
@@ -43,6 +44,8 @@ export default function Home() {
       onClearFunds={portfolio.clearSelectedFunds}
       fundOptions={portfolio.fundOptions}
       selectedFundsSummary={portfolio.selectedFundsSummary}
+      treeMapWidth={portfolio.treeMapWidth}
+      treeMapHeight={portfolio.treeMapHeight}
     />
   );
 }

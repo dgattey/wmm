@@ -78,4 +78,12 @@ describe("FloatingToolbar", () => {
       screen.getByRole("button", { name: "Filters (3)" })
     ).toBeInTheDocument();
   });
+
+  it("renders as an inline panel on mobile", () => {
+    const props = makeProps();
+    const { container } = render(<FloatingToolbar {...props} isMobile />);
+
+    expect(container.firstElementChild).toHaveClass("w-full");
+    expect(container.querySelector(".fixed")).not.toBeInTheDocument();
+  });
 });

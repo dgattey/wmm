@@ -68,4 +68,43 @@ describe("PortfolioTable", () => {
     expect(screen.getAllByText("+32.60%")).toHaveLength(2);
     expect(screen.queryByText("100.0%")).not.toBeInTheDocument();
   });
+
+  it("renders mobile cards with sort controls and expandable breakdowns", () => {
+    function TestHarness() {
+      const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+      return (
+        <PortfolioTable
+          rows={rows}
+          sortConfig={{ key: "totalValue", direction: "desc" }}
+          onSort={vi.fn()}
+          expandedRows={expandedRows}
+          onToggleExpand={(symbol) =>
+            setExpandedRows((prev) => {
+              const next = new Set(prev);
+              if (next.has(symbol)) {
+                next.delete(symbol);
+              } else {
+                next.add(symbol);
+              }
+              return next;
+            })
+          }
+          isMobile
+        />
+      );
+    }
+
+    render(<TestHarness />);
+
+    expect(screen.getByRole("combobox", { name: "Sort holdings" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Show breakdown" })
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Show breakdown" }));
+
+    expect(screen.getByText("Source breakdown")).toBeInTheDocument();
+    expect(screen.getByText("Direct holding")).toBeInTheDocument();
+  });
 });
