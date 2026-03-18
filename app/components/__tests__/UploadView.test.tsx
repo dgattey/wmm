@@ -19,19 +19,14 @@ describe("UploadView", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows how the upload connects to the treemap favicon", () => {
+  it("shows the upload preview card without icon-specific copy", () => {
     render(<UploadView onFileSelect={vi.fn()} />);
+    expect(screen.getByAltText("Portfolio preview graphic")).toBeInTheDocument();
+    expect(screen.getByText("Import your positions CSV")).toBeInTheDocument();
     expect(
-      screen.getByAltText("Portfolio treemap app icon preview")
+      screen.getByText("Upload your Fidelity export to load the portfolio view.")
     ).toBeInTheDocument();
-    expect(
-      screen.getByText("Upload a CSV to build this treemap")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "The favicon matches the portfolio blocks you see after importing your positions."
-      )
-    ).toBeInTheDocument();
+    expect(screen.queryByText(/favicon/i)).not.toBeInTheDocument();
   });
 
   it("renders all three instruction steps", () => {

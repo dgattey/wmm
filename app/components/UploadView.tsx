@@ -63,7 +63,7 @@ export function UploadView({ onFileSelect, error, isLoading }: UploadViewProps) 
                 <div className="flex h-16 w-16 items-center justify-center rounded-[1.25rem] border border-white/10 bg-[#151922] shadow-[0_12px_30px_rgba(0,0,0,0.28)]">
                   <Image
                     src="/icon.svg"
-                    alt="Portfolio treemap app icon preview"
+                    alt="Portfolio preview graphic"
                     width={44}
                     height={44}
                     className="h-11 w-11"
@@ -76,11 +76,10 @@ export function UploadView({ onFileSelect, error, isLoading }: UploadViewProps) 
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-semibold text-text-primary">
-                  Upload a CSV to build this treemap
+                  Import your positions CSV
                 </p>
                 <p className="text-xs leading-5 text-text-muted">
-                  The favicon matches the portfolio blocks you see after importing
-                  your positions.
+                  Upload your Fidelity export to load the portfolio view.
                 </p>
               </div>
             </div>
