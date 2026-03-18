@@ -140,7 +140,7 @@ describe("yahoo fund symbol lookups", () => {
       },
       {
         symbol: "IXUS",
-        holdingName: "iShares Core MSCI Total Intl Stk ETF",
+        holdingName: "Rest of iShares Core MSCI Total Intl Stk ETF",
       },
       {
         symbol: "TARGET",
