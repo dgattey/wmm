@@ -56,6 +56,8 @@ function makePortfolioReturn(
     expandedRows: new Set<string>(),
     toggleExpand: vi.fn(),
     uploadFile: vi.fn(),
+    refreshData: vi.fn().mockResolvedValue(undefined),
+    isRefreshing: false,
     clearData: vi.fn(),
     viewMode: "holdings" as const,
     setViewMode: vi.fn(),

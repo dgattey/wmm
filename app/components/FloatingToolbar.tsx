@@ -26,6 +26,8 @@ interface FloatingToolbarProps {
   filters: FilterState;
   onFiltersChange: (f: FilterState) => void;
   lastUpdated: string;
+  onRefresh: () => void;
+  isRefreshing: boolean;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
   treeMapGrouping: TreeMapGrouping;
@@ -44,6 +46,8 @@ export function FloatingToolbar({
   filters,
   onFiltersChange,
   lastUpdated,
+  onRefresh,
+  isRefreshing,
   viewMode,
   onViewModeChange,
   treeMapGrouping,
@@ -122,9 +126,36 @@ export function FloatingToolbar({
                 <span className="h-4" aria-hidden="true" />
               )}
 
-              <div className="flex items-center gap-1.5 whitespace-nowrap text-xs text-white/40">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                {timeAgo}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onRefresh}
+                  disabled={isRefreshing}
+                  aria-label="Refresh data"
+                  title="Refresh quotes and holdings"
+                  className="shrink-0 rounded-lg p-1.5 text-white/50 hover:bg-white/10 hover:text-white/80 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={isRefreshing ? "animate-spin" : ""}
+                  >
+                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                    <path d="M16 21h5v-5" />
+                  </svg>
+                </button>
+                <div className="flex items-center gap-1.5 whitespace-nowrap text-xs text-white/40">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  {timeAgo}
+                </div>
               </div>
             </div>
 
@@ -238,6 +269,31 @@ export function FloatingToolbar({
                 />
               )}
 
+              <button
+                type="button"
+                onClick={onRefresh}
+                disabled={isRefreshing}
+                aria-label="Refresh data"
+                title="Refresh quotes and holdings"
+                className="h-7 w-7 shrink-0 rounded-lg p-1.5 text-white/50 hover:bg-white/10 hover:text-white/80 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={isRefreshing ? "animate-spin" : ""}
+                >
+                  <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                  <path d="M3 3v5h5" />
+                  <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                  <path d="M16 21h5v-5" />
+                </svg>
+              </button>
               <div className="flex items-center gap-1.5 whitespace-nowrap text-xs text-white/40">
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 {timeAgo}

@@ -56,6 +56,8 @@ export default function Home() {
       enableIntroAnimation={!portfolio.restoredFromStorage}
       enableValueAnimations={!portfolio.restoredFromStorage}
       fetchError={portfolio.error}
+      onRefresh={portfolio.refreshData}
+      isRefreshing={portfolio.isRefreshing}
     />
   );
 }

@@ -25,7 +25,6 @@ import {
   DESKTOP_TREE_MAP_LAYOUT,
   MOBILE_BREAKPOINT_QUERY,
   MOBILE_TREE_MAP_LAYOUT,
-  POLL_INTERVAL_MS,
 } from "@/lib/portfolioLayout";
 import { parseCSV } from "@/lib/parseCSV";
 import {
@@ -109,6 +108,8 @@ export interface UsePortfolioResult {
   expandedRows: Set<string>;
   toggleExpand: (symbol: string) => void;
   uploadFile: (file: File) => Promise<void>;
+  refreshData: () => Promise<void>;
+  isRefreshing: boolean;
   clearData: () => void;
   viewMode: ViewMode;
   setViewMode: Dispatch<SetStateAction<ViewMode>>;
@@ -141,13 +142,10 @@ export function usePortfolio(): UsePortfolioResult {
   const [selectedFunds, setSelectedFundsState] = useState<string[]>([]);
 
   const mountedRef = useRef(false);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const positionsRef = useRef<FidelityPosition[] | null>(null);
   const filtersRef = useRef(filters);
   const selectedFundsRef = useRef(selectedFunds);
-  const lastLayoutModeRef = useRef<"mobile" | "desktop">(
-    isMobile ? "mobile" : "desktop"
-  );
 
   positionsRef.current = positions;
   filtersRef.current = filters;
@@ -156,7 +154,6 @@ export function usePortfolio(): UsePortfolioResult {
   const treeMapLayout = isMobile
     ? MOBILE_TREE_MAP_LAYOUT
     : DESKTOP_TREE_MAP_LAYOUT;
-  const layoutMode = isMobile ? "mobile" : "desktop";
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -228,52 +225,12 @@ export function usePortfolio(): UsePortfolioResult {
     fetchData(saved, "/api/portfolio").finally(() => setIsLoading(false));
   }, [fetchData]);
 
-  useEffect(() => {
-    if (lastLayoutModeRef.current === layoutMode) {
-      return;
-    }
-
-    lastLayoutModeRef.current = layoutMode;
-
-    if (!positionsRef.current || !mountedRef.current) {
-      return;
-    }
-
-    void fetchData(positionsRef.current, "/api/portfolio/refresh");
-  }, [fetchData, layoutMode]);
-
-  useEffect(() => {
-    if (!positions) {
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
-      }
-      return;
-    }
-
-    function poll() {
-      if (document.visibilityState === "visible" && positionsRef.current) {
-        fetchData(positionsRef.current, "/api/portfolio/refresh");
-      }
-    }
-
-    pollRef.current = setInterval(poll, POLL_INTERVAL_MS);
-
-    function handleVisibility() {
-      if (document.visibilityState === "visible" && positionsRef.current) {
-        fetchData(positionsRef.current, "/api/portfolio/refresh");
-      }
-    }
-
-    document.addEventListener("visibilitychange", handleVisibility);
-
-    return () => {
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-      }
-      document.removeEventListener("visibilitychange", handleVisibility);
-    };
-  }, [fetchData, positions]);
+  const refreshData = useCallback(async () => {
+    if (!positionsRef.current) return;
+    setIsRefreshing(true);
+    await fetchData(positionsRef.current, "/api/portfolio/refresh");
+    setIsRefreshing(false);
+  }, [fetchData]);
 
   const sourceRows =
     viewMode === "holdings"
@@ -370,15 +327,8 @@ export function usePortfolio(): UsePortfolioResult {
     setTreeMapGrouping("fund");
     setSortConfig(createDefaultSortConfig());
     setViewMode("holdings");
-    const nextIsMobile = getInitialIsMobile();
-    setIsMobile(nextIsMobile);
-    lastLayoutModeRef.current = nextIsMobile ? "mobile" : "desktop";
+    setIsMobile(getInitialIsMobile());
     mountedRef.current = false;
-
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
   }
 
   function toggleExpand(symbol: string) {
@@ -450,6 +400,8 @@ export function usePortfolio(): UsePortfolioResult {
     expandedRows,
     toggleExpand,
     uploadFile,
+    refreshData,
+    isRefreshing,
     clearData,
     viewMode,
     setViewMode,

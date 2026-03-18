@@ -477,10 +477,16 @@ async function fetchDirectHoldingsForSymbolUncached(
         return holdings;
       }
     } catch (candidateError) {
-      console.error(
-        `Error fetching holdings for proxy ${candidateSymbol} of ${symbol}:`,
-        candidateError
-      );
+      const msg =
+        candidateError instanceof Error ? candidateError.message : String(candidateError);
+      const isExpectedForStock =
+        /no fundamentals data found/i.test(msg) || /quote not found/i.test(msg);
+      if (!isExpectedForStock) {
+        console.error(
+          `Error fetching holdings for proxy ${candidateSymbol} of ${symbol}:`,
+          candidateError
+        );
+      }
     }
   }
 

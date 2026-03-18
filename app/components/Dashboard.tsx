@@ -50,6 +50,8 @@ interface DashboardProps {
   enableIntroAnimation?: boolean;
   enableValueAnimations?: boolean;
   fetchError?: string | null;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export function Dashboard({
@@ -80,6 +82,8 @@ export function Dashboard({
   enableIntroAnimation = true,
   enableValueAnimations = true,
   fetchError,
+  onRefresh,
+  isRefreshing = false,
 }: DashboardProps) {
   const { summary, lastUpdated } = portfolioData;
 
@@ -262,6 +266,8 @@ export function Dashboard({
             filters={filters}
             onFiltersChange={onFiltersChange}
             lastUpdated={lastUpdated}
+            onRefresh={onRefresh ?? (() => {})}
+            isRefreshing={isRefreshing}
             viewMode={viewMode}
             onViewModeChange={onViewModeChange}
             treeMapGrouping={treeMapGrouping}
@@ -304,6 +310,8 @@ export function Dashboard({
           filters={filters}
           onFiltersChange={onFiltersChange}
           lastUpdated={lastUpdated}
+          onRefresh={onRefresh ?? (() => {})}
+          isRefreshing={isRefreshing}
           viewMode={viewMode}
           onViewModeChange={onViewModeChange}
           treeMapGrouping={treeMapGrouping}
