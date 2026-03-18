@@ -135,4 +135,14 @@ describe("FloatingToolbar", () => {
         Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
   });
+
+  it("uses a stable desktop width for the toolbar shell", () => {
+    const props = makeProps();
+    const { container } = render(<FloatingToolbar {...props} />);
+
+    const panel = container.firstElementChild?.firstElementChild;
+
+    expect(panel).toHaveClass("lg:w-[72vw]");
+    expect(panel).toHaveClass("lg:max-w-[1080px]");
+  });
 });

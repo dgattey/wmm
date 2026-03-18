@@ -118,6 +118,8 @@ export interface PositionSource {
   percentOfPortfolio: number;
   account: string;
   investmentType: string;
+  totalGainLossDollar?: number;
+  costBasisTotal?: number;
 }
 
 // === UI State (client-only) ===
