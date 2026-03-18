@@ -4,7 +4,7 @@ import {
 } from "./portfolioFilters";
 import type { FidelityPosition, FilterState } from "./types";
 
-export interface FilterSelectionState {
+interface FilterSelectionState {
   filters: FilterState;
   selectedFunds: string[];
 }

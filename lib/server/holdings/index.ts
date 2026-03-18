@@ -1,7 +1,7 @@
 import type { FundHolding } from "@/lib/types";
 import { fetchSecNportHoldings } from "./secNport";
 
-export interface HoldingsProviderRequest {
+interface HoldingsProviderRequest {
   symbol: string;
   description?: string;
   fetchYahooHoldings: (symbol: string) => Promise<FundHolding[]>;
