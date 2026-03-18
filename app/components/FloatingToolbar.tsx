@@ -15,6 +15,10 @@ import type {
   ViewMode,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import {
+  isFidelityLinkable,
+  getFidelityQuoteUrl,
+} from "@/lib/fidelitySymbolLink";
 
 interface FloatingToolbarProps {
   summary: PortfolioSummary;
@@ -373,6 +377,7 @@ export function FloatingToolbar({
                   </button>
                   {fundOptions.map((fund, index) => {
                     const isSelected = selectedFunds.includes(fund.symbol);
+                    const canLink = isFidelityLinkable(fund.symbol);
 
                     return (
                       <button
@@ -397,7 +402,19 @@ export function FloatingToolbar({
                           } as CSSProperties
                         }
                       >
-                        {fund.symbol}
+                        {canLink ? (
+                          <a
+                            href={getFidelityQuoteUrl(fund.symbol)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {fund.symbol}
+                          </a>
+                        ) : (
+                          fund.symbol
+                        )}
                       </button>
                     );
                   })}

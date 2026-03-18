@@ -36,7 +36,13 @@ describe("TreeMapTooltip", () => {
     expect(container).toBeEmptyDOMElement();
     expect(screen.getByText("ASSET-A")).toBeInTheDocument();
     expect(screen.getByText(/derived from/i)).toBeInTheDocument();
-    expect(screen.getByText("Synthetic Allocation Fund (FUND-A)")).toBeInTheDocument();
+    expect(screen.getByText(/Synthetic Allocation Fund/)).toBeInTheDocument();
+    const fidelityLink = screen.getByRole("link", { name: "FUND-A" });
+    expect(fidelityLink).toHaveAttribute(
+      "href",
+      expect.stringContaining("symbol=FUND-A")
+    );
+    expect(fidelityLink).toHaveAttribute("target", "_blank");
     expect(screen.getByText("37.5% of this fund")).toBeInTheDocument();
   });
 

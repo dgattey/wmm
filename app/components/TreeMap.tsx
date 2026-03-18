@@ -10,6 +10,10 @@ import {
 import type { TreeMapGrouping, TreeMapNode } from "@/lib/types";
 import { isFundInvestmentType } from "@/lib/treemap";
 import { cn, formatCompact } from "@/lib/utils";
+import {
+  isFidelityLinkable,
+  getFidelityQuoteUrl,
+} from "@/lib/fidelitySymbolLink";
 import { TreeMapTooltip } from "./TreeMapTooltip";
 
 interface TreeMapProps {
@@ -227,7 +231,19 @@ export function TreeMap({
                   maxWidth: pos.width - 8,
                 }}
               >
-                {node.symbol}
+                {isFidelityLinkable(node.symbol) ? (
+                  <a
+                    href={getFidelityQuoteUrl(node.symbol)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:opacity-100 hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {node.symbol}
+                  </a>
+                ) : (
+                  node.symbol
+                )}
               </span>
             </div>
           );
@@ -284,7 +300,19 @@ export function TreeMap({
             >
               {showSymbol && (
                 <span className="text-white font-bold text-xs drop-shadow-sm leading-none">
-                  {node.symbol}
+                  {isFidelityLinkable(node.symbol) ? (
+                    <a
+                      href={getFidelityQuoteUrl(node.symbol)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {node.symbol}
+                    </a>
+                  ) : (
+                    node.symbol
+                  )}
                 </span>
               )}
               {showValue && (
