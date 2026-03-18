@@ -71,6 +71,14 @@ All four should pass. Run them before committing.
 | `pnpm lint` | ESLint |
 | `pnpm typecheck` | `tsc --noEmit` |
 
+## Migration & change philosophy
+
+Don’t preserve backwards compatibility by default. When changing something, prefer migrating to one new approach and removing the old one. Aim for cleaner code and simpler logic with a single, consistent way of doing things. Keep compatibility or multiple paths only when explicitly requested.
+
+## Migration & change philosophy
+
+We don't maintain backwards compatibility. When making changes, migrate to one new way of doing things (unless otherwise stated). Prefer cleaner code and simpler logic with a single approach over supporting multiple patterns.
+
 ## Code Conventions
 
 - **TypeScript**: Strict mode. Prefer `interface` for object types.
