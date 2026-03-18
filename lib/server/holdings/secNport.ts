@@ -1,6 +1,3 @@
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
-import path from "node:path";
-
 import type { FundHolding } from "@/lib/types";
 
 const SEC_BASE_URL = "https://www.sec.gov";
@@ -56,22 +53,20 @@ interface SecCachedHoldings {
   holdings: FundHolding[];
 }
 
+interface TimedSeriesClassMappings {
+  loadedAt: number;
+  mappings: SecFundMapping[];
+}
+
 type FetchTextImplementation = (url: string) => Promise<string>;
 
-const holdingsMemoryCache = new Map<string, SecCachedHoldings | null>();
+const holdingsMemoryCache = new Map<string, SecCachedHoldings>();
 
 let seriesClassMappingsPromise: Promise<SecFundMapping[]> | null = null;
 let fetchTextImpl: FetchTextImplementation = defaultFetchText;
 let nowImpl = () => Date.now();
-let cacheDirectoryOverride: string | null = null;
 let seriesClassMappingsOverride: SecFundMapping[] | null = null;
-
-function getCacheDirectory(): string {
-  return (
-    cacheDirectoryOverride ??
-    path.join(process.cwd(), ".cache", "sec-nport")
-  );
-}
+let timedSeriesClassMappings: TimedSeriesClassMappings | null = null;
 
 async function defaultFetchText(url: string): Promise<string> {
   const response = await fetch(url, {
@@ -89,26 +84,6 @@ async function defaultFetchText(url: string): Promise<string> {
   }
 
   return response.text();
-}
-
-async function fileIsFresh(
-  filePath: string,
-  maxAgeMs: number
-): Promise<boolean> {
-  try {
-    const metadata = await stat(filePath);
-    return nowImpl() - metadata.mtimeMs < maxAgeMs;
-  } catch {
-    return false;
-  }
-}
-
-async function readTextIfExists(filePath: string): Promise<string | null> {
-  try {
-    return await readFile(filePath, "utf8");
-  } catch {
-    return null;
-  }
 }
 
 function normalizeLookupText(text: string): string {
@@ -221,48 +196,35 @@ async function loadSeriesClassMappings(): Promise<SecFundMapping[]> {
     return seriesClassMappingsOverride;
   }
 
+  if (
+    timedSeriesClassMappings &&
+    nowImpl() - timedSeriesClassMappings.loadedAt < SERIES_CLASS_CACHE_TTL_MS
+  ) {
+    return timedSeriesClassMappings.mappings;
+  }
+
   if (seriesClassMappingsPromise) {
     return seriesClassMappingsPromise;
   }
 
   seriesClassMappingsPromise = (async () => {
-    const cacheDirectory = getCacheDirectory();
-    const cachePath = path.join(cacheDirectory, "series-class.csv");
-
-    let csvText: string | null = null;
-    if (await fileIsFresh(cachePath, SERIES_CLASS_CACHE_TTL_MS)) {
-      csvText = await readTextIfExists(cachePath);
+    const landingPage = await fetchTextImpl(SERIES_CLASS_PAGE_URL);
+    const csvMatch = landingPage.match(
+      /href="([^"]*investment[-_]company[-_]series[-_]class[^"]+\.csv)"/i
+    );
+    if (!csvMatch) {
+      throw new Error("Could not locate SEC series/class CSV download");
     }
 
-    if (!csvText) {
-      try {
-        const landingPage = await fetchTextImpl(SERIES_CLASS_PAGE_URL);
-        const csvMatch = landingPage.match(
-          /href="([^"]*investment[-_]company[-_]series[-_]class[^"]+\.csv)"/i
-        );
-        if (!csvMatch) {
-          throw new Error("Could not locate SEC series/class CSV download");
-        }
-
-        const csvUrl = new URL(csvMatch[1], SEC_BASE_URL).toString();
-        csvText = await fetchTextImpl(csvUrl);
-
-        await mkdir(cacheDirectory, { recursive: true });
-        await writeFile(cachePath, csvText, "utf8");
-      } catch (error) {
-        csvText = await readTextIfExists(cachePath);
-        if (!csvText) {
-          throw error;
-        }
-      }
-    }
+    const csvUrl = new URL(csvMatch[1], SEC_BASE_URL).toString();
+    const csvText = await fetchTextImpl(csvUrl);
 
     const lines = csvText
       .split(/\r?\n/)
       .map((line) => line.trim())
       .filter(Boolean);
 
-    return lines
+    const mappings = lines
       .slice(1)
       .map((line) => parseCsvLine(line))
       .filter((values) => values.length >= 9)
@@ -284,9 +246,20 @@ async function loadSeriesClassMappings(): Promise<SecFundMapping[]> {
           normalizedClassName: normalizeLookupText(className),
         };
       });
+
+    timedSeriesClassMappings = {
+      loadedAt: nowImpl(),
+      mappings,
+    };
+
+    return mappings;
   })();
 
-  return seriesClassMappingsPromise;
+  try {
+    return await seriesClassMappingsPromise;
+  } finally {
+    seriesClassMappingsPromise = null;
+  }
 }
 
 async function findFundMapping(
@@ -424,35 +397,10 @@ function normalizeHoldingsFromFiling(xmlText: string): {
 }
 
 async function readCachedHoldings(seriesId: string): Promise<SecCachedHoldings | null> {
-  if (holdingsMemoryCache.has(seriesId)) {
-    return holdingsMemoryCache.get(seriesId) ?? null;
-  }
-
-  const cachePath = path.join(getCacheDirectory(), "holdings", `${seriesId}.json`);
-  const cachedText = await readTextIfExists(cachePath);
-  if (!cachedText) {
-    holdingsMemoryCache.set(seriesId, null);
-    return null;
-  }
-
-  try {
-    const cachedEntry = JSON.parse(cachedText) as SecCachedHoldings;
-    holdingsMemoryCache.set(seriesId, cachedEntry);
-    return cachedEntry;
-  } catch {
-    holdingsMemoryCache.set(seriesId, null);
-    return null;
-  }
+  return holdingsMemoryCache.get(seriesId) ?? null;
 }
 
 async function writeCachedHoldings(entry: SecCachedHoldings): Promise<void> {
-  const holdingsDirectory = path.join(getCacheDirectory(), "holdings");
-  await mkdir(holdingsDirectory, { recursive: true });
-  await writeFile(
-    path.join(holdingsDirectory, `${entry.seriesId}.json`),
-    JSON.stringify(entry, null, 2),
-    "utf8"
-  );
   holdingsMemoryCache.set(entry.seriesId, entry);
 }
 
@@ -531,15 +479,12 @@ export const __testing = {
   setNowImplementation(implementation: (() => number) | null) {
     nowImpl = implementation ?? (() => Date.now());
   },
-  setCacheDirectory(directory: string | null) {
-    cacheDirectoryOverride = directory;
-  },
   reset() {
     holdingsMemoryCache.clear();
     seriesClassMappingsPromise = null;
     seriesClassMappingsOverride = null;
+    timedSeriesClassMappings = null;
     fetchTextImpl = defaultFetchText;
     nowImpl = () => Date.now();
-    cacheDirectoryOverride = null;
   },
 };

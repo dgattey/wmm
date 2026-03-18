@@ -1,8 +1,4 @@
-import os from "node:os";
-import path from "node:path";
-import { mkdtemp, rm } from "node:fs/promises";
-
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { __testing, fetchSecNportHoldings } from "../holdings/secNport";
 
@@ -19,16 +15,8 @@ const sampleMapping = {
 };
 
 describe("SEC N-PORT holdings provider", () => {
-  let cacheDirectory: string;
-
-  beforeEach(async () => {
+  beforeEach(() => {
     __testing.reset();
-    cacheDirectory = await mkdtemp(path.join(os.tmpdir(), "sec-nport-test-"));
-    __testing.setCacheDirectory(cacheDirectory);
-  });
-
-  afterEach(async () => {
-    await rm(cacheDirectory, { recursive: true, force: true });
   });
 
   it("returns normalized holdings from a fresh SEC filing", async () => {
