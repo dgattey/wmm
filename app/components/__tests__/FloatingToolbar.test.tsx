@@ -75,7 +75,7 @@ describe("FloatingToolbar", () => {
     const props = makeProps();
     render(<FloatingToolbar {...props} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+    fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
     expect(screen.getByText("Account")).toBeInTheDocument();
     expect(screen.getByText("Funds")).toBeInTheDocument();
     expect(screen.getByText("Types")).toBeInTheDocument();
@@ -93,10 +93,28 @@ describe("FloatingToolbar", () => {
     const props = makeProps();
     render(<FloatingToolbar {...props} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+    fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
     fireEvent.click(screen.getByRole("button", { name: "VTI" }));
 
     expect(props.onToggleFund).toHaveBeenCalledWith("VTI");
+  });
+
+  it("clears selected types from the filters card", () => {
+    const props = makeProps();
+    props.filters = {
+      investmentTypes: ["Stocks"],
+      accounts: [],
+    };
+
+    render(<FloatingToolbar {...props} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
+    fireEvent.click(screen.getByRole("button", { name: "All types" }));
+
+    expect(props.onFiltersChange).toHaveBeenCalledWith({
+      investmentTypes: [],
+      accounts: [],
+    });
   });
 
   it("shows the active filter count in the filters button", () => {

@@ -57,6 +57,10 @@ export function FloatingToolbar({
     onFiltersChange({ ...filters, investmentTypes: updated });
   }
 
+  function clearInvestmentTypes() {
+    onFiltersChange({ ...filters, investmentTypes: [] });
+  }
+
   function handleAccountChange(e: ChangeEvent<HTMLSelectElement>) {
     const value = e.target.value;
     onFiltersChange({
@@ -356,6 +360,19 @@ export function FloatingToolbar({
                 style={{ "--enter-delay": "120ms" } as CSSProperties}
               >
                 <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={clearInvestmentTypes}
+                    className={cn(
+                      "px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer whitespace-nowrap hover-lift press-down animate-soft-pop",
+                      filters.investmentTypes.length === 0
+                        ? "bg-white/15 text-white shadow-sm"
+                        : "text-white/60 hover:text-white hover:bg-white/10 border border-white/10"
+                    )}
+                    style={{ "--enter-delay": "160ms" } as CSSProperties}
+                  >
+                    All types
+                  </button>
                   {summary.investmentTypes.map((type, index) => (
                     <button
                       key={type}
@@ -369,7 +386,7 @@ export function FloatingToolbar({
                       )}
                       style={
                         {
-                          "--enter-delay": `${160 + index * 30}ms`,
+                          "--enter-delay": `${200 + index * 30}ms`,
                         } as CSSProperties
                       }
                     >
