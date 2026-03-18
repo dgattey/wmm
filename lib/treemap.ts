@@ -4,6 +4,7 @@ import { isFundInvestmentType } from "./investmentTypes";
 import {
   matchesRowSourceFundSelection,
   matchesSourceFilters,
+  matchesTableRowSearch,
 } from "./portfolioFilters";
 import type { FilterState, FundOption, TableRow, TreeMapNode } from "./types";
 
@@ -207,17 +208,10 @@ export function buildFlatHoldingTreeMapNodes({
   const visibleRows: Omit<FlatNodeData, "color">[] = [];
 
   for (const row of rows) {
-    let visibleValue = 0;
-    const accounts = new Set<string>();
-    const investmentTypes = new Set<string>();
-
-    for (const source of row.sources) {
-      if (!matchesSourceFilters(source.account, source.investmentType, filters)) {
-        continue;
-      }
-
-      if (
-        !matchesRowSourceFundSelection(
+    const visibleSources = row.sources.filter(
+      (source) =>
+        matchesSourceFilters(source.account, source.investmentType, filters) &&
+        matchesRowSourceFundSelection(
           {
             rowSymbol: row.symbol,
             sourceType: source.type,
@@ -225,21 +219,32 @@ export function buildFlatHoldingTreeMapNodes({
           },
           selectedFunds
         )
-      ) {
-        continue;
-      }
+    );
 
-      visibleValue += source.value;
-      accounts.add(source.account);
-      investmentTypes.add(source.investmentType);
-    }
-
-    if (visibleValue <= 0) {
+    if (
+      visibleSources.length === 0 ||
+      !matchesTableRowSearch(
+        {
+          symbol: row.symbol,
+          name: row.name,
+          sources: visibleSources,
+        },
+        filters.searchQuery
+      )
+    ) {
       continue;
     }
 
-    const visibleInvestmentTypes = [...investmentTypes];
-    const visibleAccounts = [...accounts];
+    const visibleValue = visibleSources.reduce(
+      (sum, source) => sum + source.value,
+      0
+    );
+    const visibleInvestmentTypes = [
+      ...new Set(visibleSources.map((source) => source.investmentType)),
+    ];
+    const visibleAccounts = [
+      ...new Set(visibleSources.map((source) => source.account)),
+    ];
     const hasOnlyDirectSources = row.sources.every((source) => source.type === "direct");
 
     visibleRows.push({

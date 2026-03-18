@@ -4,11 +4,15 @@ import {
 } from "./portfolioLayout";
 import {
   hasActivePortfolioFilters,
+  hasSearchQuery,
   matchesPositionFilters,
   matchesPositionFundSelection,
+  matchesPositionSearch,
   matchesRowSourceFundSelection,
   matchesSourceFilters,
+  matchesTableRowSearch,
   matchesTreeMapNodeFilters,
+  matchesTreeMapNodeSearch,
 } from "./portfolioFilters";
 import { sortTableRows } from "./tableSort";
 import { relayoutTreeMapNodes } from "./treemap";
@@ -67,11 +71,9 @@ export function getActivePortfolioSummary(
   const matchedPositions = positions.filter(
     (position) =>
       matchesPositionFilters(position, filters) &&
-      matchesPositionFundSelection(position, selectedFunds)
+      matchesPositionFundSelection(position, selectedFunds) &&
+      matchesPositionSearch(position, filters.searchQuery)
   );
-  if (matchedPositions.length === 0) {
-    return null;
-  }
 
   const value = matchedPositions.reduce(
     (sum, position) => sum + position.currentValue,
@@ -104,14 +106,23 @@ export function getFilteredTreeMapNodes(
     return [];
   }
 
-  if (filters.investmentTypes.length === 0 && filters.accounts.length === 0) {
+  const hasAttributeFilters =
+    filters.investmentTypes.length > 0 || filters.accounts.length > 0;
+  const searchActive = hasSearchQuery(filters);
+
+  if (!hasAttributeFilters && !searchActive) {
     return portfolioData.treeMapNodes;
   }
 
-  return relayoutTreeMapNodes(
+  const visibleNodes = filterTreeMapNodesBySearch(
     portfolioData.treeMapNodes.filter((node) =>
       matchesTreeMapNodeFilters(node, filters)
     ),
+    filters.searchQuery
+  );
+
+  return relayoutTreeMapNodes(
+    visibleNodes,
     width,
     height
   );
@@ -125,6 +136,12 @@ function getActiveSummaryLabel(
   const hasAccountFilter = filters.accounts.length > 0;
   const hasTypeFilter = filters.investmentTypes.length > 0;
   const hasFundFilter = selectedFunds.length > 0;
+  const searchActive = hasSearchQuery(filters);
+  const searchLabel = filters.searchQuery?.trim();
+
+  if (searchActive && !hasAccountFilter && !hasTypeFilter && !hasFundFilter) {
+    return searchLabel ? `Search: ${searchLabel}` : "Filtered portfolio";
+  }
 
   if (!hasAccountFilter && !hasTypeFilter && hasFundFilter) {
     if (selectedFunds.length === 1) {
@@ -168,7 +185,17 @@ function buildVisibleRow(
       )
   );
 
-  if (visibleSources.length === 0) {
+  if (
+    visibleSources.length === 0 ||
+    !matchesTableRowSearch(
+      {
+        symbol: row.symbol,
+        name: row.name,
+        sources: visibleSources,
+      },
+      filters.searchQuery
+    )
+  ) {
     return null;
   }
 
@@ -196,4 +223,55 @@ function buildVisibleRow(
     isExpandable: visibleSources.length > 1,
     sources: visibleSources,
   };
+}
+
+function filterTreeMapNodesBySearch(
+  nodes: TreeMapNode[],
+  searchQuery?: string
+): TreeMapNode[] {
+  if (!searchQuery?.trim()) {
+    return nodes;
+  }
+
+  const childrenByParentKey = new Map<string, TreeMapNode[]>();
+  for (const node of nodes) {
+    if (node.depth !== 2 || !node.parentSymbol) {
+      continue;
+    }
+
+    const key = getTreeMapGroupKey(node.parentSymbol, node.account);
+    const siblings = childrenByParentKey.get(key);
+    if (siblings) {
+      siblings.push(node);
+    } else {
+      childrenByParentKey.set(key, [node]);
+    }
+  }
+
+  const visibleNodeIds = new Set<string>();
+  for (const node of nodes) {
+    if (node.depth !== 1) {
+      continue;
+    }
+
+    const childNodes =
+      childrenByParentKey.get(getTreeMapGroupKey(node.symbol, node.account)) ?? [];
+    const parentMatches = matchesTreeMapNodeSearch(node, searchQuery);
+    const visibleChildren = parentMatches
+      ? childNodes
+      : childNodes.filter((childNode) =>
+          matchesTreeMapNodeSearch(childNode, searchQuery)
+        );
+
+    if (parentMatches || visibleChildren.length > 0) {
+      visibleNodeIds.add(node.id);
+      visibleChildren.forEach((childNode) => visibleNodeIds.add(childNode.id));
+    }
+  }
+
+  return nodes.filter((node) => visibleNodeIds.has(node.id));
+}
+
+function getTreeMapGroupKey(symbol: string, account?: string): string {
+  return `${symbol}::${account ?? ""}`;
 }

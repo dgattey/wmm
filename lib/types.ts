@@ -132,6 +132,7 @@ export interface SortConfig {
 export interface FilterState {
   investmentTypes: string[]; // empty = show all
   accounts: string[]; // empty = show all
+  searchQuery?: string; // empty = show all
 }
 
 // === Server-internal types ===

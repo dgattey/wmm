@@ -304,7 +304,8 @@ export function usePortfolio(): UsePortfolioResult {
       !areStringArraysEqual(
         filters.investmentTypes,
         sanitized.filters.investmentTypes
-      )
+      ) ||
+      (filters.searchQuery ?? "") !== (sanitized.filters.searchQuery ?? "")
     ) {
       setFiltersState(sanitized.filters);
     }

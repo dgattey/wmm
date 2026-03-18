@@ -2,6 +2,7 @@ import type {
   FidelityPosition,
   FilterState,
   PositionSource,
+  TableRow,
   TreeMapNode,
 } from "./types";
 
@@ -18,8 +19,13 @@ export function hasActivePortfolioFilters(
   return (
     filters.investmentTypes.length > 0 ||
     filters.accounts.length > 0 ||
+    hasSearchQuery(filters) ||
     selectedFunds.length > 0
   );
+}
+
+export function hasSearchQuery(filters: FilterState): boolean {
+  return normalizeSearchQuery(filters.searchQuery).length > 0;
 }
 
 export function matchesSourceFilters(
@@ -85,4 +91,62 @@ export function matchesTreeMapNodeFilters(
       : false);
 
   return matchesAccount && matchesType;
+}
+
+export function matchesPositionSearch(
+  position: Pick<FidelityPosition, "symbol" | "description">,
+  searchQuery?: string
+): boolean {
+  return matchesSearchQuery([position.symbol, position.description], searchQuery);
+}
+
+export function matchesTableRowSearch(
+  row: Pick<TableRow, "symbol" | "name" | "sources">,
+  searchQuery?: string
+): boolean {
+  return (
+    matchesSearchQuery([row.symbol, row.name], searchQuery) ||
+    row.sources.some((source) => matchesFundSourceSearch(source, searchQuery))
+  );
+}
+
+export function matchesFundSourceSearch(
+  source: Pick<PositionSource, "type" | "sourceSymbol" | "sourceName">,
+  searchQuery?: string
+): boolean {
+  if (source.type !== "fund") {
+    return false;
+  }
+
+  return matchesSearchQuery([source.sourceSymbol, source.sourceName], searchQuery);
+}
+
+export function matchesTreeMapNodeSearch(
+  node: Pick<TreeMapNode, "symbol" | "name">,
+  searchQuery?: string
+): boolean {
+  return matchesSearchQuery([node.symbol, node.name], searchQuery);
+}
+
+export function normalizeSearchQuery(searchQuery?: string): string {
+  return (searchQuery ?? "").trim().toLowerCase();
+}
+
+function matchesSearchQuery(
+  values: Array<string | undefined>,
+  searchQuery?: string
+): boolean {
+  const terms = normalizeSearchQuery(searchQuery)
+    .split(/\s+/)
+    .filter(Boolean);
+  if (terms.length === 0) {
+    return true;
+  }
+
+  const haystack = values
+    .filter((value): value is string => Boolean(value))
+    .join(" ")
+    .toLowerCase();
+
+  return terms.every((term) => haystack.includes(term));
 }

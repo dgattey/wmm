@@ -251,6 +251,63 @@ describe("treemap helpers", () => {
     );
   });
 
+  it("filters flat holdings by name, symbol, or matching fund source", () => {
+    const rows: TableRow[] = [
+      makeRow({
+        symbol: "EQTY-A",
+        name: "Synthetic Equity A",
+        accounts: ["Account A"],
+        sources: [
+          makeSource({
+            type: "fund",
+            sourceSymbol: "FUND-A",
+            sourceName: "Synthetic Market Fund",
+            value: 200,
+            percentOfSource: 3,
+            account: "Account A",
+            investmentType: "ETFs",
+          }),
+        ],
+      }),
+      makeRow({
+        symbol: "EQTY-B",
+        name: "Synthetic Equity B",
+        accounts: ["Account A"],
+        sources: [
+          makeSource({
+            type: "direct",
+            sourceSymbol: "DIRECT",
+            sourceName: "Account A",
+            value: 150,
+            percentOfSource: 100,
+            account: "Account A",
+            investmentType: "Stocks",
+          }),
+        ],
+      }),
+    ];
+
+    const matchedByFund = buildFlatHoldingTreeMapNodes({
+      rows,
+      filters: { investmentTypes: [], accounts: [], searchQuery: "fund-a" },
+      selectedFunds: [],
+      totalPortfolioValue: 350,
+      width: 1200,
+      height: 400,
+    });
+    const matchedByName = buildFlatHoldingTreeMapNodes({
+      rows,
+      filters: { investmentTypes: [], accounts: [], searchQuery: "equity b" },
+      selectedFunds: [],
+      totalPortfolioValue: 350,
+      width: 1200,
+      height: 400,
+    });
+
+    expect(matchedByFund.map((node) => node.symbol)).toEqual(["EQTY-A"]);
+    expect(matchedByName.map((node) => node.symbol)).toEqual(["EQTY-B"]);
+  });
+
   it("returns only selectable fund chips and filters grouped nodes by selection", () => {
     const groupedNodes: TreeMapNode[] = [
       {

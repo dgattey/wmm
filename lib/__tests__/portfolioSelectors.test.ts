@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  getActivePortfolioSummary,
   getFilteredRows,
   getFilteredTreeMapNodes,
 } from "@/lib/portfolioSelectors";
-import type { PortfolioData, TableRow, TreeMapNode } from "@/lib/types";
+import type {
+  FidelityPosition,
+  PortfolioData,
+  TableRow,
+  TreeMapNode,
+} from "@/lib/types";
 
 const SORT_CONFIG = { key: "totalValue", direction: "desc" } as const;
 
@@ -41,6 +47,31 @@ function makeTreeMapNode(overrides: Partial<TreeMapNode>): TreeMapNode {
     depth: 1,
     investmentType: "ETFs",
     account: "Account A",
+    ...overrides,
+  };
+}
+
+function makePosition(
+  overrides: Partial<FidelityPosition> = {}
+): FidelityPosition {
+  return {
+    accountNumber: "TEST-0001",
+    accountName: "Account A",
+    investmentType: "ETFs",
+    symbol: "FUND-A",
+    description: "Synthetic Market Fund",
+    quantity: 1,
+    lastPrice: 100,
+    lastPriceChange: 0,
+    currentValue: 100,
+    todayGainLossDollar: 0,
+    todayGainLossPercent: 0,
+    totalGainLossDollar: 10,
+    totalGainLossPercent: 11.11,
+    percentOfAccount: 100,
+    costBasisTotal: 90,
+    averageCostBasis: 90,
+    type: "Mutual Fund",
     ...overrides,
   };
 }
@@ -220,5 +251,141 @@ describe("portfolio selectors", () => {
     const topLevelNodes = filtered.filter((node) => node.depth === 1);
     expect(Math.min(...topLevelNodes.map((node) => node.x0))).toBeLessThan(5);
     expect(Math.max(...topLevelNodes.map((node) => node.x1))).toBeGreaterThan(1190);
+  });
+
+  it("keeps the parent fund when a nested holding matches the search", () => {
+    const portfolioData: PortfolioData = {
+      treeMapNodes: [
+        makeTreeMapNode({
+          id: "fund-a",
+          symbol: "FUND-A",
+          name: "Synthetic Market Fund",
+        }),
+        makeTreeMapNode({
+          id: "holding-a",
+          symbol: "EQTY-A",
+          name: "Synthetic Equity A",
+          parentSymbol: "FUND-A",
+          depth: 2,
+        }),
+        makeTreeMapNode({
+          id: "fund-b",
+          symbol: "FUND-B",
+          name: "Synthetic Growth Fund",
+          x0: 120,
+          x1: 220,
+        }),
+      ],
+      tableRows: [],
+      positionRows: [],
+      summary: {
+        totalValue: 200,
+        totalGainLoss: 0,
+        totalGainLossPercent: 0,
+        accounts: ["Account A"],
+        investmentTypes: ["ETFs"],
+      },
+      lastUpdated: new Date().toISOString(),
+    };
+
+    const filtered = getFilteredTreeMapNodes(portfolioData, {
+      accounts: [],
+      investmentTypes: [],
+      searchQuery: "eqty-a",
+    });
+
+    expect(filtered.map((node) => node.symbol)).toEqual(["FUND-A", "EQTY-A"]);
+  });
+
+  it("keeps nested holdings when a top-level fund matches the search", () => {
+    const portfolioData: PortfolioData = {
+      treeMapNodes: [
+        makeTreeMapNode({
+          id: "fund-a",
+          symbol: "FUND-A",
+          name: "Synthetic Market Fund",
+        }),
+        makeTreeMapNode({
+          id: "holding-a",
+          symbol: "EQTY-A",
+          name: "Synthetic Equity A",
+          parentSymbol: "FUND-A",
+          depth: 2,
+        }),
+      ],
+      tableRows: [],
+      positionRows: [],
+      summary: {
+        totalValue: 100,
+        totalGainLoss: 0,
+        totalGainLossPercent: 0,
+        accounts: ["Account A"],
+        investmentTypes: ["ETFs"],
+      },
+      lastUpdated: new Date().toISOString(),
+    };
+
+    const filtered = getFilteredTreeMapNodes(portfolioData, {
+      accounts: [],
+      investmentTypes: [],
+      searchQuery: "market",
+    });
+
+    expect(filtered.map((node) => node.symbol)).toEqual(["FUND-A", "EQTY-A"]);
+  });
+
+  it("filters the active summary by name or symbol search", () => {
+    const positions = [
+      makePosition({
+        symbol: "EQTY-A",
+        description: "Synthetic Equity A",
+        currentValue: 300,
+        totalGainLossDollar: 45,
+        costBasisTotal: 255,
+      }),
+      makePosition({
+        symbol: "EQTY-B",
+        description: "Synthetic Equity B",
+        currentValue: 150,
+        totalGainLossDollar: 15,
+        costBasisTotal: 135,
+      }),
+    ];
+
+    const summary = getActivePortfolioSummary(
+      positions,
+      {
+        accounts: [],
+        investmentTypes: [],
+        searchQuery: "equity a",
+      },
+      []
+    );
+
+    expect(summary).toMatchObject({
+      value: 300,
+      gainLoss: 45,
+      label: "Search: equity a",
+    });
+    expect(summary?.gainLossPercent).toBeCloseTo(17.65, 2);
+  });
+
+  it("returns zero totals when the search has no matches", () => {
+    const summary = getActivePortfolioSummary(
+      [makePosition()],
+      {
+        accounts: [],
+        investmentTypes: [],
+        searchQuery: "missing",
+      },
+      []
+    );
+
+    expect(summary).toEqual({
+      value: 0,
+      gainLoss: 0,
+      gainLossPercent: 0,
+      label: "Search: missing",
+    });
   });
 });
