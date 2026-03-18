@@ -28,11 +28,19 @@ export function AnimatedNumber({
 
     if (prevValue.current !== value) {
       const direction = value > prevValue.current ? "positive" : "negative";
-      setFlashClass(direction);
       prevValue.current = value;
+      let clearTimer: number | undefined;
+      const startTimer = window.setTimeout(() => {
+        setFlashClass(direction);
+        clearTimer = window.setTimeout(() => setFlashClass(null), 600);
+      }, 0);
 
-      const timer = setTimeout(() => setFlashClass(null), 600);
-      return () => clearTimeout(timer);
+      return () => {
+        window.clearTimeout(startTimer);
+        if (clearTimer !== undefined) {
+          window.clearTimeout(clearTimer);
+        }
+      };
     }
   }, [animate, value]);
 

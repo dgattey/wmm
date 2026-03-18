@@ -36,17 +36,22 @@ export function SlidingNumber({
 
     if (prevValue.current !== value) {
       const dir = value > prevValue.current ? "up" : "down";
-      setSlideDirection(dir);
-      setIsTransitioning(true);
       prevValue.current = value;
+      const startTimer = window.setTimeout(() => {
+        setSlideDirection(dir);
+        setIsTransitioning(true);
+      }, 0);
 
       // After the exit animation, swap the text and slide it back in
-      const swapTimer = setTimeout(() => {
+      const swapTimer = window.setTimeout(() => {
         setDisplay(formatted);
         setIsTransitioning(false);
       }, 180);
 
-      return () => clearTimeout(swapTimer);
+      return () => {
+        window.clearTimeout(startTimer);
+        window.clearTimeout(swapTimer);
+      };
     }
   }, [animate, value, formatted]);
 
