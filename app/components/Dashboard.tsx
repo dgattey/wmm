@@ -1,6 +1,7 @@
 "use client";
 
 import type {
+  ActivePortfolioSummary,
   FundOption,
   PortfolioData,
   TreeMapNode,
@@ -16,7 +17,6 @@ import { GainLoss } from "./primitives/GainLoss";
 import { TreeMap } from "./TreeMap";
 import { PortfolioTable } from "./PortfolioTable";
 import { FloatingToolbar } from "./FloatingToolbar";
-import { HeaderFundSelector } from "./HeaderFundSelector";
 import { cn } from "@/lib/utils";
 
 interface DashboardProps {
@@ -39,12 +39,7 @@ interface DashboardProps {
   onToggleFund: (symbol: string) => void;
   onClearFunds: () => void;
   fundOptions: FundOption[];
-  selectedFundsSummary: {
-    value: number;
-    gainLoss: number;
-    gainLossPercent: number;
-    label: string;
-  } | null;
+  activeSummary: ActivePortfolioSummary | null;
 }
 
 export function Dashboard({
@@ -67,18 +62,15 @@ export function Dashboard({
   onToggleFund,
   onClearFunds,
   fundOptions,
-  selectedFundsSummary,
+  activeSummary,
 }: DashboardProps) {
   const { summary, lastUpdated } = portfolioData;
 
-  const displayValue = selectedFundsSummary?.value ?? summary.totalValue;
-  const displayGainLoss =
-    selectedFundsSummary?.gainLoss ?? summary.totalGainLoss;
+  const displayValue = activeSummary?.value ?? summary.totalValue;
+  const displayGainLoss = activeSummary?.gainLoss ?? summary.totalGainLoss;
   const displayGainLossPercent =
-    selectedFundsSummary?.gainLossPercent ?? summary.totalGainLossPercent;
-  const headerLabel = selectedFundsSummary
-    ? selectedFundsSummary.label
-    : "Portfolio Allocation";
+    activeSummary?.gainLossPercent ?? summary.totalGainLossPercent;
+  const headerLabel = activeSummary ? activeSummary.label : "Portfolio Allocation";
 
   return (
     <div className="min-h-screen pb-20 animate-fade-in">
@@ -91,7 +83,7 @@ export function Dashboard({
                 <h1
                   className={cn(
                     "text-sm font-medium transition-colors duration-300 truncate max-w-[500px]",
-                    selectedFundsSummary ? "text-text-primary" : "text-text-muted"
+                    activeSummary ? "text-text-primary" : "text-text-muted"
                   )}
                 >
                   {headerLabel}
@@ -110,13 +102,6 @@ export function Dashboard({
                   size="md"
                 />
               </div>
-
-              <HeaderFundSelector
-                funds={fundOptions}
-                selectedFunds={selectedFunds}
-                onToggleFund={onToggleFund}
-                onClearFunds={onClearFunds}
-              />
             </div>
 
             <div className="flex shrink-0 flex-col items-start gap-2 md:items-end">
@@ -195,6 +180,10 @@ export function Dashboard({
         onViewModeChange={onViewModeChange}
         treeMapGrouping={treeMapGrouping}
         onTreeMapGroupingChange={onTreeMapGroupingChange}
+        fundOptions={fundOptions}
+        selectedFunds={selectedFunds}
+        onToggleFund={onToggleFund}
+        onClearFunds={onClearFunds}
       />
     </div>
   );

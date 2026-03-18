@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import type {
+  ActivePortfolioSummary,
   FidelityPosition,
   PortfolioData,
   FilterState,
@@ -163,9 +164,9 @@ export function usePortfolio() {
           height: TREE_MAP_HEIGHT,
         });
 
-  // Compute selected fund summary for the header
-  const selectedFundsSummary = getSelectedFundsSummary(
-    portfolioData,
+  const activeSummary = getActivePortfolioSummary(
+    positions,
+    filters,
     selectedFunds
   );
 
@@ -260,7 +261,7 @@ export function usePortfolio() {
     toggleFundSelection,
     clearSelectedFunds,
     fundOptions,
-    selectedFundsSummary,
+    activeSummary,
   };
 }
 
@@ -296,83 +297,99 @@ function getFilteredRows(
   return sortTableRows(filtered, sortConfig);
 }
 
-function getSelectedFundsSummary(
-  portfolioData: PortfolioData | null,
+function getActivePortfolioSummary(
+  positions: FidelityPosition[] | null,
+  filters: FilterState,
   selectedFunds: string[]
-): {
-  value: number;
-  gainLoss: number;
-  gainLossPercent: number;
-  label: string;
-} | null {
-  if (!portfolioData || selectedFunds.length === 0) return null;
+): ActivePortfolioSummary | null {
+  const hasActiveFilters =
+    filters.investmentTypes.length > 0 ||
+    filters.accounts.length > 0 ||
+    selectedFunds.length > 0;
 
-  const fundGroups = new Map<
-    string,
-    {
-      name: string;
-      value: number;
-      gainLoss: number;
-      estimatedCostBasis: number;
-    }
-  >();
+  if (!positions || !hasActiveFilters) return null;
 
-  for (const node of portfolioData.treeMapNodes) {
-    if (node.depth !== 1 || !selectedFunds.includes(node.symbol)) {
-      continue;
-    }
+  const matchedPositions = positions.filter(
+    (position) =>
+      matchesPositionFilters(position, filters) &&
+      matchesFundSelection(position, selectedFunds)
+  );
+  if (matchedPositions.length === 0) return null;
 
-    const existing = fundGroups.get(node.symbol);
-    if (existing) {
-      existing.value += node.value;
-      existing.gainLoss += node.totalGainLossDollar ?? 0;
-      existing.estimatedCostBasis += estimateCostBasis(node);
-      continue;
-    }
-
-    fundGroups.set(node.symbol, {
-      name: node.name,
-      value: node.value,
-      gainLoss: node.totalGainLossDollar ?? 0,
-      estimatedCostBasis: estimateCostBasis(node),
-    });
-  }
-
-  const fundGroupsList = [...fundGroups.values()];
-  if (fundGroupsList.length === 0) return null;
-
-  const value = fundGroupsList.reduce((sum, group) => sum + group.value, 0);
-  const gainLoss = fundGroupsList.reduce(
-    (sum, group) => sum + group.gainLoss,
+  const value = matchedPositions.reduce(
+    (sum, position) => sum + position.currentValue,
     0
   );
-  const estimatedCostBasis = fundGroupsList.reduce(
-    (sum, group) => sum + group.estimatedCostBasis,
+  const gainLoss = matchedPositions.reduce(
+    (sum, position) => sum + position.totalGainLossDollar,
+    0
+  );
+  const costBasis = matchedPositions.reduce(
+    (sum, position) => sum + position.costBasisTotal,
     0
   );
 
   return {
     value,
     gainLoss,
-    gainLossPercent:
-      estimatedCostBasis > 0 ? (gainLoss / estimatedCostBasis) * 100 : 0,
-    label:
-      fundGroupsList.length === 1
-        ? fundGroupsList[0].name
-        : `${fundGroupsList.length} funds selected`,
+    gainLossPercent: costBasis > 0 ? (gainLoss / costBasis) * 100 : 0,
+    label: getActiveSummaryLabel(matchedPositions, filters, selectedFunds),
   };
 }
 
-function estimateCostBasis(node: TreeMapNode): number {
-  const gainLoss = node.totalGainLossDollar ?? 0;
-  const gainLossPercent = node.totalGainLossPercent ?? 0;
+function getActiveSummaryLabel(
+  matchedPositions: FidelityPosition[],
+  filters: FilterState,
+  selectedFunds: string[]
+): string {
+  const hasAccountFilter = filters.accounts.length > 0;
+  const hasTypeFilter = filters.investmentTypes.length > 0;
+  const hasFundFilter = selectedFunds.length > 0;
 
-  if (gainLossPercent === 0) {
-    return Math.max(node.value - gainLoss, 0);
+  if (!hasAccountFilter && !hasTypeFilter && hasFundFilter) {
+    if (selectedFunds.length === 1) {
+      return matchedPositions.find(
+        (position) => position.symbol === selectedFunds[0]
+      )?.description ?? selectedFunds[0];
+    }
+
+    return `${selectedFunds.length} funds selected`;
   }
 
-  const estimated = gainLoss / (gainLossPercent / 100);
-  return Number.isFinite(estimated) ? Math.abs(estimated) : 0;
+  if (hasAccountFilter && !hasTypeFilter && !hasFundFilter) {
+    return filters.accounts[0];
+  }
+
+  if (!hasAccountFilter && hasTypeFilter && !hasFundFilter) {
+    return filters.investmentTypes.length === 1
+      ? filters.investmentTypes[0]
+      : `${filters.investmentTypes.length} types selected`;
+  }
+
+  return "Filtered portfolio";
+}
+
+function matchesPositionFilters(
+  position: FidelityPosition,
+  filters: FilterState
+): boolean {
+  const matchType =
+    filters.investmentTypes.length === 0 ||
+    filters.investmentTypes.includes(position.investmentType);
+  const matchAccount =
+    filters.accounts.length === 0 ||
+    filters.accounts.includes(position.accountName);
+
+  return matchType && matchAccount;
+}
+
+function matchesFundSelection(
+  position: FidelityPosition,
+  selectedFunds: string[]
+): boolean {
+  return (
+    selectedFunds.length === 0 || selectedFunds.includes(position.symbol)
+  );
 }
 
 function getFilteredTreeMapNodes(
@@ -388,13 +405,7 @@ function getFilteredTreeMapNodes(
 
     if (positions) {
       for (const pos of positions) {
-        const matchType =
-          filters.investmentTypes.length === 0 ||
-          filters.investmentTypes.includes(pos.investmentType);
-        const matchAccount =
-          filters.accounts.length === 0 ||
-          filters.accounts.includes(pos.accountName);
-        if (matchType && matchAccount) {
+        if (matchesPositionFilters(pos, filters)) {
           filteredSymbols.add(pos.symbol);
         }
       }

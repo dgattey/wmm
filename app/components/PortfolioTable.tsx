@@ -22,13 +22,18 @@ const SORTABLE_COLUMNS: {
   key: string;
   label: string;
   align?: "left" | "right";
+  minWidthClass?: string;
 }[] = [
   { key: "totalValue", label: "Value", align: "right" },
   { key: "percentOfPortfolio", label: "% Port", align: "right" },
   { key: "currentPrice", label: "Price", align: "right" },
   { key: "totalGainLossDollar", label: "$ Change", align: "right" },
   { key: "totalGainLossPercent", label: "% Change", align: "right" },
-  { key: FIFTY_TWO_WEEK_POSITION_SORT_KEY, label: "52W Range" },
+  {
+    key: FIFTY_TWO_WEEK_POSITION_SORT_KEY,
+    label: "52W Range",
+    minWidthClass: "min-w-[12rem]",
+  },
 ];
 
 export function PortfolioTable({
@@ -48,7 +53,7 @@ export function PortfolioTable({
 
   return (
     <div className="w-full overflow-x-auto rounded-2xl border border-border/60 bg-surface shadow-[var(--shadow-md)]">
-      <table className="w-full border-collapse min-w-[900px]">
+      <table className="w-full border-collapse min-w-[1040px]">
         <thead>
           <tr className="border-b border-border">
             {/* Sticky: Identity column */}
@@ -83,6 +88,7 @@ export function PortfolioTable({
                 key={col.key}
                 className={cn(
                   "px-3 py-3",
+                  col.minWidthClass,
                   col.align === "right" ? "text-right" : "text-left"
                 )}
               >
@@ -207,7 +213,7 @@ function TableRowGroup({
           <GainLoss percent={row.totalGainLossPercent} size="sm" />
         </td>
         {/* 52-Week Range */}
-        <td className="px-3 py-3">
+        <td className="min-w-[12rem] px-3 py-3">
           <FiftyTwoWeekRange
             low={row.fiftyTwoWeekLow}
             high={row.fiftyTwoWeekHigh}
