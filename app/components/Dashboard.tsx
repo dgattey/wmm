@@ -122,9 +122,7 @@ export function Dashboard({
   }, [filters]);
 
   const stickyTopPx = isMobile ? 92 : 112; // 5.75rem, 7rem
-  const [searchShellRef, isSearchDocked] = useIsStickyDocked<HTMLDivElement>(
-    stickyTopPx
-  );
+  const [dockSentinelRef, isSearchDocked] = useIsStickyDocked(stickyTopPx);
 
   const handleSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -337,8 +335,8 @@ export function Dashboard({
         )}
         style={{ "--enter-delay": "220ms" } as CSSProperties}
       >
+        <div ref={dockSentinelRef} className="h-px" aria-hidden />
         <div
-          ref={searchShellRef}
           data-testid="portfolio-search-shell"
           className={cn(
             "sticky z-30 mb-4 py-3",

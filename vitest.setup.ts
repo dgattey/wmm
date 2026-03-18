@@ -18,4 +18,20 @@ if (typeof window !== "undefined" && !window.matchMedia) {
   });
 }
 
+if (typeof window !== "undefined" && typeof IntersectionObserver === "undefined") {
+  class MockIntersectionObserver implements IntersectionObserver {
+    readonly root = null;
+    readonly rootMargin = "";
+    readonly thresholds: number[] = [];
+    observe = () => undefined;
+    unobserve = () => undefined;
+    disconnect = () => undefined;
+    takeRecords = (): IntersectionObserverEntry[] => [];
+  }
+  Object.defineProperty(window, "IntersectionObserver", {
+    value: MockIntersectionObserver,
+    writable: true,
+  });
+}
+
 afterEach(() => cleanup());

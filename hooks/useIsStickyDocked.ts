@@ -1,44 +1,38 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
- * Detects when a sticky element is in its "docked" (stuck) state.
- * Returns true when the element's top has reached the sticky offset.
+ * Detects when a sticky element is in its "docked" (stuck) state using
+ * IntersectionObserver. Fires only when intersection state changes—no scroll
+ * or resize listeners. Caller must render a sentinel element at the dock point.
  */
-export function useIsStickyDocked<T extends HTMLElement>(
-  stickyTopPx: number
-): [React.RefObject<T | null>, boolean] {
-  const ref = useRef<T | null>(null);
+export function useIsStickyDocked(stickyTopPx: number): [
+  React.RefObject<HTMLDivElement | null>,
+  boolean
+] {
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [isDocked, setIsDocked] = useState(false);
 
-  const check = useCallback(() => {
-    const el = ref.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const tolerance = 2;
-    const docked = rect.top <= stickyTopPx + tolerance;
-    setIsDocked(docked);
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Sentinel above the dock line = search bar is docked
+        setIsDocked(!entry.isIntersecting);
+      },
+      {
+        root: null,
+        rootMargin: `-${stickyTopPx}px 0 0 0`,
+        threshold: 0,
+      }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
   }, [stickyTopPx]);
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    check();
-    const scrollTarget = document.scrollingElement ?? document.documentElement;
-    scrollTarget.addEventListener("scroll", check, { passive: true });
-    window.addEventListener("resize", check);
-    const observer =
-      typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(check)
-        : null;
-    if (observer) observer.observe(el);
-    return () => {
-      scrollTarget.removeEventListener("scroll", check);
-      window.removeEventListener("resize", check);
-      observer?.disconnect();
-    };
-  }, [check]);
-
-  return [ref, isDocked];
+  return [sentinelRef, isDocked];
 }
