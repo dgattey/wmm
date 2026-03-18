@@ -63,7 +63,7 @@ export function PortfolioTable({
             {/* Sticky: Identity column */}
             <th
               className={cn(
-                "sticky left-0 z-30 bg-surface",
+                "sticky left-0 z-20 bg-surface",
                 "text-left px-4 py-3",
                 "after:absolute after:right-0 after:top-0 after:bottom-0 after:w-4",
                 "after:bg-gradient-to-r after:from-transparent after:to-surface after:pointer-events-none"

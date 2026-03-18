@@ -4,6 +4,7 @@ import {
   formatPercent,
   formatPrice,
   formatCompact,
+  formatHeaderCurrency,
   cn,
   hashString,
 } from "../utils";
@@ -78,6 +79,20 @@ describe("formatCompact", () => {
 
   it("handles non-finite", () => {
     expect(formatCompact(NaN)).toBe("$0");
+  });
+});
+
+describe("formatHeaderCurrency", () => {
+  it("formats millions with extra precision", () => {
+    expect(formatHeaderCurrency(2_248_626.48)).toBe("$2.25M");
+  });
+
+  it("formats larger thousands without decimals", () => {
+    expect(formatHeaderCurrency(761_651.52)).toBe("$761k");
+  });
+
+  it("formats negative values", () => {
+    expect(formatHeaderCurrency(-9_420)).toBe("-$9.4k");
   });
 });
 

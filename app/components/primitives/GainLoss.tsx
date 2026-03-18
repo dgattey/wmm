@@ -7,6 +7,8 @@ interface GainLossProps {
   percent?: number;
   size?: "sm" | "md";
   className?: string;
+  formatDollarValue?: (value: number) => string;
+  formatPercentValue?: (value: number) => string;
 }
 
 export function GainLoss({
@@ -14,6 +16,8 @@ export function GainLoss({
   percent,
   size = "md",
   className,
+  formatDollarValue = formatDollar,
+  formatPercentValue = formatPercent,
 }: GainLossProps) {
   const value = dollar ?? percent ?? 0;
   const isPositive = value > 0;
@@ -30,11 +34,11 @@ export function GainLoss({
         className
       )}
     >
-      {dollar !== undefined && formatDollar(dollar)}
+      {dollar !== undefined && formatDollarValue(dollar)}
       {dollar !== undefined && percent !== undefined && (
         <span className="text-text-muted mx-0.5">/</span>
       )}
-      {percent !== undefined && formatPercent(percent)}
+      {percent !== undefined && formatPercentValue(percent)}
     </span>
   );
 }

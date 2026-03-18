@@ -48,6 +48,35 @@ export function formatCompact(n: number): string {
 }
 
 /**
+ * Format a header metric compactly with slightly more precision.
+ * Examples: $2.25M, $761k, -$9.4k
+ */
+export function formatHeaderCurrency(n: number): string {
+  if (!isFinite(n)) return "$0";
+
+  const abs = Math.abs(n);
+  const sign = n < 0 ? "-" : "";
+
+  if (abs >= 1_000_000_000) {
+    return `${sign}$${trimTrailingZeros((abs / 1_000_000_000).toFixed(abs >= 10_000_000_000 ? 1 : 2))}B`;
+  }
+
+  if (abs >= 1_000_000) {
+    return `${sign}$${trimTrailingZeros((abs / 1_000_000).toFixed(abs >= 10_000_000 ? 1 : 2))}M`;
+  }
+
+  if (abs >= 1_000) {
+    if (abs >= 100_000) {
+      return `${sign}$${Math.floor(abs / 1_000)}k`;
+    }
+
+    return `${sign}$${trimTrailingZeros((abs / 1_000).toFixed(1))}k`;
+  }
+
+  return `${sign}$${abs.toFixed(0)}`;
+}
+
+/**
  * Conditional class name joiner (like clsx/cn)
  */
 export function cn(
@@ -66,4 +95,8 @@ export function hashString(str: string, max: number): number {
     hash |= 0;
   }
   return Math.abs(hash) % max;
+}
+
+function trimTrailingZeros(value: string): string {
+  return value.replace(/\.0+$|(\.\d*[1-9])0+$/, "$1");
 }

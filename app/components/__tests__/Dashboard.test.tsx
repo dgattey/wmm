@@ -39,6 +39,7 @@ function renderDashboard(onClearData = vi.fn()) {
         filteredRows={[]}
         filters={{ investmentTypes: [], accounts: [] }}
         onFiltersChange={vi.fn()}
+        onResetFilters={vi.fn()}
         sortConfig={{ key: "totalValue", direction: "desc" }}
         onSort={vi.fn()}
         expandedRows={new Set()}
@@ -60,6 +61,12 @@ function renderDashboard(onClearData = vi.fn()) {
 }
 
 describe("Dashboard clear action", () => {
+  it("shows Full portfolio when nothing is filtered", () => {
+    renderDashboard();
+
+    expect(screen.getByText("Full portfolio")).toBeInTheDocument();
+  });
+
   it("renders a visible larger clear button", () => {
     renderDashboard();
 
@@ -77,6 +84,7 @@ describe("Dashboard clear action", () => {
   });
 
   it("shows the active summary label in the header", () => {
+    const onResetFilters = vi.fn();
     render(
       <Dashboard
         portfolioData={portfolioData}
@@ -84,6 +92,7 @@ describe("Dashboard clear action", () => {
         filteredRows={[]}
         filters={{ investmentTypes: [], accounts: [] }}
         onFiltersChange={vi.fn()}
+        onResetFilters={onResetFilters}
         sortConfig={{ key: "totalValue", direction: "desc" }}
         onSort={vi.fn()}
         expandedRows={new Set()}
@@ -108,5 +117,7 @@ describe("Dashboard clear action", () => {
     );
 
     expect(screen.getByText("2 funds selected")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Reset filters" }));
+    expect(onResetFilters).toHaveBeenCalledTimes(1);
   });
 });
