@@ -25,7 +25,7 @@ export function useIsStickyDocked(stickyTopPx: number): [
       },
       {
         root: null,
-        rootMargin: `-${stickyTopPx}px 0 0 0`,
+        rootMargin: `-${stickyTopPx}px 0px 0px 0px`,
         threshold: 0,
       }
     );
