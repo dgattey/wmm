@@ -28,8 +28,10 @@ export async function POST(request: Request) {
           p.investmentType === "Mutual Funds" ||
           p.investmentType === "Others"
       )
-      .map((p) => p.symbol);
-    const uniqueFundSymbols = [...new Set(fundSymbols)];
+      .map((p) => ({ symbol: p.symbol, description: p.description }));
+    const uniqueFundSymbols = Array.from(
+      new Map(fundSymbols.map((fund) => [fund.symbol, fund])).values()
+    );
 
     // Fetch quotes and holdings in parallel
     const [quotes, holdings] = await Promise.all([

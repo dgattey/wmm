@@ -90,13 +90,18 @@ export function TreeMapTooltip({ node, mouseX, mouseY }: TreeMapTooltipProps) {
 
           {node.parentName && (
             <div className="pt-1.5 mt-1.5 border-t border-border">
-              <span className="text-[10px] text-text-muted">
-                Via{" "}
+              <span className="text-[10px] text-text-muted block leading-4">
+                Derived from{" "}
                 <strong className="text-text-primary">
-                  {node.parentSymbol}
-                </strong>{" "}
-                ({node.percentOfParent?.toFixed(1)}%)
+                  {node.parentName}
+                  {node.parentSymbol ? ` (${node.parentSymbol})` : ""}
+                </strong>
               </span>
+              {node.percentOfParent !== undefined && (
+                <span className="text-[10px] text-text-muted block mt-0.5">
+                  {node.percentOfParent.toFixed(1)}% of this fund
+                </span>
+              )}
             </div>
           )}
 

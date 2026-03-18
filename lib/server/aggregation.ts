@@ -346,13 +346,11 @@ function buildHoldingsView(
     }
   >();
 
-  // 1. Add direct stock + cash positions
+  // 1. Add positions that should remain as direct rows in holdings view.
+  // If we have constituent holdings for a fund, we'll decompose it below instead.
   for (const pos of positions) {
-    // Skip fund-level positions — they'll be decomposed into holdings
-    if (
-      pos.investmentType === "ETFs" ||
-      pos.investmentType === "Mutual Funds"
-    ) {
+    const hasHoldingsData = (holdings[pos.symbol]?.length ?? 0) > 0;
+    if (hasHoldingsData) {
       continue;
     }
 
@@ -400,63 +398,13 @@ function buildHoldingsView(
     }
   }
 
-  // 2. Decompose fund/ETF/mutual fund holdings into individual symbol rows
+  // 2. Decompose only positions with actual constituent holdings data
   const fundPositions = positions.filter(
-    (p) =>
-      p.investmentType === "ETFs" ||
-      p.investmentType === "Mutual Funds" ||
-      p.investmentType === "Others"
+    (p) => (holdings[p.symbol]?.length ?? 0) > 0
   );
 
   for (const fund of fundPositions) {
     const fundHoldings = holdings[fund.symbol] || [];
-
-    if (fundHoldings.length === 0) {
-      // Fund without holdings data — show as its own row (e.g. 401K funds)
-      const key = fund.symbol;
-      const existing = rowMap.get(key);
-      if (existing) {
-        existing.totalDirectValue += fund.currentValue;
-        existing.totalGainLossDollar += fund.totalGainLossDollar;
-        existing.costBasis += fund.costBasisTotal;
-        existing.investmentTypes.add(fund.investmentType);
-        existing.accounts.add(fund.accountName);
-        existing.sources.push({
-          type: "direct",
-          sourceSymbol: "DIRECT",
-          sourceName: fund.accountName,
-          value: fund.currentValue,
-          percentOfSource: 100,
-          account: fund.accountName,
-          investmentType: fund.investmentType,
-        });
-      } else {
-        rowMap.set(key, {
-          symbol: fund.symbol,
-          name:
-            quotes[fund.symbol]?.longName ||
-            quotes[fund.symbol]?.shortName ||
-            fund.description,
-          totalDirectValue: fund.currentValue,
-          totalGainLossDollar: fund.totalGainLossDollar,
-          costBasis: fund.costBasisTotal,
-          investmentTypes: new Set([fund.investmentType]),
-          accounts: new Set([fund.accountName]),
-          sources: [
-            {
-              type: "direct",
-              sourceSymbol: "DIRECT",
-              sourceName: fund.accountName,
-              value: fund.currentValue,
-              percentOfSource: 100,
-              account: fund.accountName,
-              investmentType: fund.investmentType,
-            },
-          ],
-        });
-      }
-      continue;
-    }
 
     // Distribute fund value across its holdings
     for (const h of fundHoldings) {

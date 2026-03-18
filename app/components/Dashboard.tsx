@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import type {
   PortfolioData,
   TreeMapNode,
@@ -60,7 +59,6 @@ export function Dashboard({
   onFocusFund,
   focusedSummary,
 }: DashboardProps) {
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const { summary, lastUpdated } = portfolioData;
 
   const displayValue = focusedSummary?.value ?? summary.totalValue;
@@ -84,79 +82,27 @@ export function Dashboard({
       {/* Sticky Header */}
       <header className="sticky-header sticky top-0 z-30 px-6 py-5">
         <div className="max-w-[1400px] mx-auto">
-          <div className="flex items-end justify-between gap-4">
-            <div className="group/header">
-              {/* Title row with hover-reveal back button */}
-              <div className="flex items-center gap-2 mb-1">
-                {/* Back button — appears on hover */}
-                <button
-                  onClick={() => {
-                    if (showClearConfirm) {
-                      onClearData();
-                      setShowClearConfirm(false);
-                    } else {
-                      setShowClearConfirm(true);
-                      // Auto-dismiss after 3 seconds
-                      setTimeout(() => setShowClearConfirm(false), 3000);
-                    }
-                  }}
-                  className={cn(
-                    "flex items-center justify-center w-6 h-6 rounded-lg",
-                    "transition-all duration-200 cursor-pointer",
-                    "-ml-8 mr-0",
-                    showClearConfirm
-                      ? "opacity-100 translate-x-0 bg-negative/10 text-negative hover:bg-negative/20"
-                      : "opacity-0 -translate-x-1 group-hover/header:opacity-60 group-hover/header:translate-x-0 hover:!opacity-100 hover:bg-surface-hover text-text-muted"
-                  )}
-                  title={
-                    showClearConfirm
-                      ? "Click again to confirm"
-                      : "Start over with a new file"
-                  }
-                >
-                  {showClearConfirm ? (
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M18 6 6 18M6 6l12 12" />
-                    </svg>
-                  ) : (
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="m15 18-6-6 6-6" />
-                    </svg>
-                  )}
-                </button>
-
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0">
+              <div className="mb-1">
                 <h1
                   className={cn(
                     "text-sm font-medium transition-colors duration-300 truncate max-w-[500px]",
                     focusedSummary ? "text-text-primary" : "text-text-muted"
                   )}
                 >
-                  {showClearConfirm ? (
-                    <span className="text-negative animate-fade-in">
-                      Click ← again to start over
-                    </span>
-                  ) : (
-                    headerLabel
-                  )}
+                  {headerLabel}
                 </h1>
+                {focusedSummary && focusedFund && (
+                  <p className="mt-2 max-w-2xl text-xs leading-5 text-text-muted">
+                    Showing holdings derived from{" "}
+                    <span className="font-medium text-text-primary">
+                      {focusedSummary.name} ({focusedFund})
+                    </span>
+                    . Values below are allocated from this fund so it is clear
+                    where the breakdown comes from.
+                  </p>
+                )}
               </div>
 
               <div className="flex items-baseline gap-4">
@@ -173,12 +119,44 @@ export function Dashboard({
               </div>
             </div>
 
-            {isLoading && (
-              <div className="flex items-center gap-2 text-xs text-text-muted">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                Loading...
-              </div>
-            )}
+            <div className="flex shrink-0 flex-col items-start gap-2 md:items-end">
+              <button
+                type="button"
+                onClick={onClearData}
+                className={cn(
+                  "inline-flex min-h-11 items-center gap-2 rounded-full px-4 py-2.5",
+                  "text-sm font-medium shadow-sm transition-all duration-200 cursor-pointer",
+                  "border border-red-200/70 bg-red-50 text-red-700 hover:bg-red-100",
+                  "dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/15"
+                )}
+                title="Clear the uploaded file"
+                aria-label="Clear file"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M3 6h18" />
+                  <path d="M8 6V4h8v2" />
+                  <path d="m19 6-1 14H6L5 6" />
+                </svg>
+                <span>Clear file</span>
+              </button>
+
+              {isLoading && (
+                <div className="flex items-center gap-2 text-xs text-text-muted">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                  Loading...
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>

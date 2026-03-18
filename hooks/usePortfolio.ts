@@ -157,8 +157,14 @@ export function usePortfolio() {
     setError(null);
     setExpandedRows(new Set());
     setFilters({ investmentTypes: [], accounts: [] });
+    setSortConfig({ key: "totalValue", direction: "desc" });
+    setViewMode("holdings");
+    setFocusedFund(null);
     mountedRef.current = false;
-    if (pollRef.current) clearInterval(pollRef.current);
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
   }
 
   function toggleExpand(symbol: string) {
