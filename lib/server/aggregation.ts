@@ -242,10 +242,10 @@ function buildTreeMap(
   const treemapLayout = treemap<HierarchyData>()
     .size([width, height])
     .tile(treemapSquarify)
-    .paddingOuter(3)
+    .paddingOuter(4)
     // Reserve a label band for fund groups, but not for the root container.
     .paddingTop((node) => (node.depth === 0 ? 0 : 20))
-    .paddingInner(2);
+    .paddingInner(4);
 
   const laid = treemapLayout(h);
 

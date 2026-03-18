@@ -156,11 +156,11 @@ export function relayoutTreeMapNodes(
   const laidOut = treemap<RelayoutHierarchyData>()
     .size([width, height])
     .tile(treemapSquarify)
-    .paddingOuter(3)
+    .paddingOuter(4)
     .paddingTop((node) =>
       node.depth === 0 ? 0 : node.children && node.children.length > 0 ? 20 : 0
     )
-    .paddingInner(2)(root);
+    .paddingInner(4)(root);
 
   return laidOut
     .descendants()
@@ -285,9 +285,9 @@ export function buildFlatHoldingTreeMapNodes({
   const laidOut = treemap<FlatHierarchyData>()
     .size([width, height])
     .tile(treemapSquarify)
-    .paddingOuter(3)
-    .paddingTop(3)
-    .paddingInner(2)(root);
+    .paddingOuter(4)
+    .paddingTop(4)
+    .paddingInner(4)(root);
 
   return (laidOut.children ?? []).map((node, index) => ({
     id: `${node.data.symbol!}-1-${index + 1}`,
