@@ -14,11 +14,7 @@ describe("UploadView", () => {
   it("renders the title and instructions", () => {
     render(<UploadView onFilesSelect={vi.fn()} />);
     expect(screen.getByText("Import portfolio CSVs")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Add one or more Fidelity exports to update the picker. Once they are uploaded, you can open any saved file in the portfolio visualizer."
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByText("Add Fidelity exports to the picker.")).toBeInTheDocument();
   });
 
   it("renders the streamlined upload section copy", () => {

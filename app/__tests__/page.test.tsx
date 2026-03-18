@@ -99,4 +99,20 @@ describe("Home page", () => {
     expect(await screen.findByTestId("upload-view")).toBeInTheDocument();
     expect(pushMock).toHaveBeenCalledWith("/portfolio/beta");
   });
+
+  it("omits the saved-files section when there are no uploaded portfolios", () => {
+    mockUsePortfolioLibrary.mockReturnValue({
+      portfolios: [],
+      isUploading: false,
+      error: null,
+      setError: vi.fn(),
+      refreshLibrary: vi.fn(),
+      uploadFiles: vi.fn(),
+      removePortfolioById: vi.fn(),
+    });
+
+    render(<Home />);
+
+    expect(screen.queryByTestId("portfolio-library-nav")).not.toBeInTheDocument();
+  });
 });

@@ -60,9 +60,7 @@ export function UploadView({ onFilesSelect, error, isLoading }: UploadViewProps)
               Import portfolio CSVs
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">
-              Add one or more Fidelity exports to update the picker. Once they
-              are uploaded, you can open any saved file in the portfolio
-              visualizer.
+              Add Fidelity exports to the picker.
             </p>
           </div>
 
