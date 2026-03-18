@@ -68,7 +68,7 @@ describe("yahoo fund symbol lookups", () => {
     expect(result["09261F572"]).toEqual([
       {
         symbol: "09261F572",
-        holdingName: "BTC LPATH IDX 2055 M",
+        holdingName: "Rest of BTC LPATH IDX 2055 M",
         holdingPercent: 0.6246722,
       },
       {
@@ -144,7 +144,7 @@ describe("yahoo fund symbol lookups", () => {
       },
       {
         symbol: "TARGET",
-        holdingName: "TARGET",
+        holdingName: "Rest of TARGET",
       },
     ]);
     expect(result.TARGET[0]?.holdingPercent).toBeCloseTo(0.3);

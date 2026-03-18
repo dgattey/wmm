@@ -429,7 +429,9 @@ function buildHoldingsView(
         rowMap.set(h.symbol, {
           symbol: h.symbol,
           name:
-            hQuote?.longName || hQuote?.shortName || h.holdingName,
+            h.symbol === fund.symbol
+              ? h.holdingName
+              : hQuote?.longName || hQuote?.shortName || h.holdingName,
           totalDirectValue: 0,
           totalGainLossDollar: 0,
           costBasis: 0,

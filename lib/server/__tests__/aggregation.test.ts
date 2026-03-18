@@ -81,4 +81,65 @@ describe("computePortfolioData", () => {
       40
     );
   });
+
+  it("labels retained remainder as rest of the fund in treemap and table", () => {
+    const positions = [
+      makePosition({
+        investmentType: "ETFs",
+        symbol: "VTI",
+        description: "Vanguard Total Stock Market ETF",
+        currentValue: 100,
+        totalGainLossDollar: 10,
+        costBasisTotal: 90,
+      }),
+    ];
+
+    const result = computePortfolioData(
+      positions,
+      {
+        VTI: {
+          symbol: "VTI",
+          regularMarketPrice: 100,
+          regularMarketChange: 1,
+          regularMarketChangePercent: 1,
+          fiftyTwoWeekHigh: 110,
+          fiftyTwoWeekLow: 90,
+          shortName: "VTI",
+          longName: "Vanguard Total Stock Market ETF",
+        },
+      },
+      {
+        VTI: [
+          {
+            symbol: "AAPL",
+            holdingName: "Apple Inc.",
+            holdingPercent: 0.6,
+          },
+          {
+            symbol: "VTI",
+            holdingName: "Rest of Vanguard Total Stock Market ETF",
+            holdingPercent: 0.4,
+          },
+        ],
+      },
+      1200,
+      400
+    );
+
+    const retainedRow = result.tableRows.find((row) => row.symbol === "VTI");
+    const retainedNode = result.treeMapNodes.find(
+      (node) => node.depth === 2 && node.symbol === "VTI"
+    );
+
+    expect(retainedRow).toMatchObject({
+      symbol: "VTI",
+      name: "Rest of Vanguard Total Stock Market ETF",
+      totalValue: 40,
+    });
+    expect(retainedNode).toMatchObject({
+      symbol: "VTI",
+      name: "Rest of Vanguard Total Stock Market ETF",
+      value: 40,
+    });
+  });
 });

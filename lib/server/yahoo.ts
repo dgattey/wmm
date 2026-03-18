@@ -319,7 +319,7 @@ function buildResidualHolding(
 
   return {
     symbol,
-    holdingName: description || symbol,
+    holdingName: `Rest of ${description || symbol}`,
     holdingPercent,
   };
 }
