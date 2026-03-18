@@ -20,8 +20,10 @@ export function useIsStickyDocked(stickyTopPx: number): [
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        // Sentinel above the dock line = search bar is docked
-        setIsDocked(!entry.isIntersecting);
+        // Docked only when sentinel has scrolled above the dock line.
+        // (isIntersecting=false also when sentinel is below viewport, so we use rect)
+        const { bottom } = entry.boundingClientRect;
+        setIsDocked(bottom < stickyTopPx);
       },
       {
         root: null,
