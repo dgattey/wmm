@@ -3,12 +3,18 @@
 import { useState } from "react";
 import Image from "next/image";
 import { cn, hashString } from "@/lib/utils";
+import {
+  isFidelityLinkable,
+  getFidelityQuoteUrl,
+} from "@/lib/fidelitySymbolLink";
 
 interface TickerIdentityProps {
   symbol: string;
   name: string;
   size?: "sm" | "md" | "lg";
   className?: string;
+  /** When true (default), wrap symbol in Fidelity quote link when linkable */
+  linkToFidelity?: boolean;
 }
 
 const AVATAR_COLORS = [
@@ -28,12 +34,20 @@ export function TickerIdentity({
   name,
   size = "md",
   className,
+  linkToFidelity = true,
 }: TickerIdentityProps) {
   const [imgError, setImgError] = useState(false);
   const config = SIZE_CONFIG[size];
   const avatarColor = AVATAR_COLORS[hashString(symbol, AVATAR_COLORS.length)];
   const avatarText = symbol.replace(/[^A-Z0-9]/gi, "").slice(0, 2) || symbol.slice(0, 2);
   const logoUrl = `https://financialmodelingprep.com/image-stock/${encodeURIComponent(symbol)}.png`;
+  const canLink = linkToFidelity && isFidelityLinkable(symbol);
+
+  const symbolEl = (
+    <span className={cn("font-semibold text-text-primary", config.text)}>
+      {symbol}
+    </span>
+  );
 
   return (
     <div className={cn("flex items-center", config.gap, className)}>
@@ -67,9 +81,19 @@ export function TickerIdentity({
 
       {/* Symbol + Name */}
       <div className="min-w-0">
-        <div className={cn("font-semibold text-text-primary", config.text)}>
-          {symbol}
-        </div>
+        {canLink ? (
+          <a
+            href={getFidelityQuoteUrl(symbol)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-accent hover:underline focus:outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-2 focus:ring-offset-bg rounded"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {symbolEl}
+          </a>
+        ) : (
+          symbolEl
+        )}
         <div
           className={cn(
             "text-text-muted truncate max-w-[180px]",

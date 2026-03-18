@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  useState,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
-  useCallback,
+  useState,
   type Dispatch,
   type SetStateAction,
 } from "react";
@@ -39,11 +39,11 @@ import {
   getFilteredTreeMapNodes,
 } from "@/lib/portfolioSelectors";
 import {
-  savePortfolio,
-  savePortfolioData,
+  clearPortfolio,
   loadPortfolio,
   loadPortfolioData,
-  clearPortfolio,
+  savePortfolio,
+  savePortfolioData,
 } from "@/lib/storage";
 import {
   buildFlatHoldingTreeMapNodes,
@@ -63,6 +63,26 @@ function createDefaultSortConfig(): SortConfig {
     key: "totalValue",
     direction: "desc",
   };
+}
+
+function getFetchErrorMessage(
+  payload: { error?: unknown; details?: unknown },
+  status: number
+): string {
+  const error =
+    typeof payload.error === "string" && payload.error.trim().length > 0
+      ? payload.error.trim()
+      : `Server error: ${status}`;
+  const details =
+    typeof payload.details === "string" && payload.details.trim().length > 0
+      ? payload.details.trim()
+      : null;
+
+  if (!details || details === error) {
+    return error;
+  }
+
+  return `${error}: ${details}`;
 }
 
 function getInitialIsMobile(): boolean {
@@ -125,7 +145,9 @@ export function usePortfolio(): UsePortfolioResult {
   const positionsRef = useRef<FidelityPosition[] | null>(null);
   const filtersRef = useRef(filters);
   const selectedFundsRef = useRef(selectedFunds);
-  const lastLayoutModeRef = useRef<"mobile" | "desktop" | null>(null);
+  const lastLayoutModeRef = useRef<"mobile" | "desktop">(
+    isMobile ? "mobile" : "desktop"
+  );
 
   positionsRef.current = positions;
   filtersRef.current = filters;
@@ -134,6 +156,7 @@ export function usePortfolio(): UsePortfolioResult {
   const treeMapLayout = isMobile
     ? MOBILE_TREE_MAP_LAYOUT
     : DESKTOP_TREE_MAP_LAYOUT;
+  const layoutMode = isMobile ? "mobile" : "desktop";
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -165,7 +188,7 @@ export function usePortfolio(): UsePortfolioResult {
         });
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || `Server error: ${res.status}`);
+          throw new Error(getFetchErrorMessage(errData, res.status));
         }
 
         const data: PortfolioData = await res.json();
@@ -206,7 +229,6 @@ export function usePortfolio(): UsePortfolioResult {
   }, [fetchData]);
 
   useEffect(() => {
-    const layoutMode = isMobile ? "mobile" : "desktop";
     if (lastLayoutModeRef.current === layoutMode) {
       return;
     }
@@ -218,7 +240,7 @@ export function usePortfolio(): UsePortfolioResult {
     }
 
     void fetchData(positionsRef.current, "/api/portfolio/refresh");
-  }, [fetchData, isMobile]);
+  }, [fetchData, layoutMode]);
 
   useEffect(() => {
     if (!positions) {
@@ -348,7 +370,9 @@ export function usePortfolio(): UsePortfolioResult {
     setTreeMapGrouping("fund");
     setSortConfig(createDefaultSortConfig());
     setViewMode("holdings");
-    setIsMobile(getInitialIsMobile());
+    const nextIsMobile = getInitialIsMobile();
+    setIsMobile(nextIsMobile);
+    lastLayoutModeRef.current = nextIsMobile ? "mobile" : "desktop";
     mountedRef.current = false;
 
     if (pollRef.current) {
@@ -455,6 +479,7 @@ function resetInitialScrollPosition() {
     window.history.scrollRestoration = previousScrollRestoration;
   }, 0);
 }
+
 function areStringArraysEqual(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((value, index) => value === b[index]);
 }

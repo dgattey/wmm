@@ -82,6 +82,7 @@ describe("usePortfolio startup cache restore", () => {
 
     expect(result.current.isLoading).toBe(true);
     expect(scrollToSpy).toHaveBeenCalledWith(0, 0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith("/api/portfolio", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

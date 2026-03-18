@@ -19,6 +19,7 @@ import { ResetFiltersButton } from "./primitives/ResetFiltersButton";
 import { TreeMap } from "./TreeMap";
 import { PortfolioTable } from "./PortfolioTable";
 import { FloatingToolbar } from "./FloatingToolbar";
+import { FetchStatusBadge } from "./primitives/FetchStatusBadge";
 import { cn } from "@/lib/utils";
 
 interface DashboardProps {
@@ -48,6 +49,7 @@ interface DashboardProps {
   treeMapHeight: number;
   enableIntroAnimation?: boolean;
   enableValueAnimations?: boolean;
+  fetchError?: string | null;
 }
 
 export function Dashboard({
@@ -77,6 +79,7 @@ export function Dashboard({
   treeMapHeight,
   enableIntroAnimation = true,
   enableValueAnimations = true,
+  fetchError,
 }: DashboardProps) {
   const { summary, lastUpdated } = portfolioData;
 
@@ -180,6 +183,14 @@ export function Dashboard({
               )}
               style={{ "--enter-delay": "120ms" } as CSSProperties}
             >
+              {fetchError && (
+                <FetchStatusBadge
+                  error={fetchError}
+                  hasData
+                  className="max-w-full self-stretch md:self-auto"
+                />
+              )}
+
               <button
                 type="button"
                 onClick={onClearData}

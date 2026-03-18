@@ -3,6 +3,10 @@
 import { createPortal } from "react-dom";
 import type { TreeMapNode } from "@/lib/types";
 import { formatDollar, formatPercent, formatPrice } from "@/lib/utils";
+import {
+  isFidelityLinkable,
+  getFidelityQuoteUrl,
+} from "@/lib/fidelitySymbolLink";
 import { GainLoss } from "./primitives/GainLoss";
 import { FiftyTwoWeekRange } from "./primitives/FiftyTwoWeekRange";
 import { Badge } from "./primitives/Badge";
@@ -61,9 +65,20 @@ export function TreeMapTooltip({ node, mouseX, mouseY }: TreeMapTooltipProps) {
       >
         {/* Header */}
         <div className="flex items-center gap-2 mb-2">
-          <span className="font-bold text-text-primary text-sm">
-            {node.symbol}
-          </span>
+          {isFidelityLinkable(node.symbol) ? (
+            <a
+              href={getFidelityQuoteUrl(node.symbol)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-text-primary text-sm hover:text-accent hover:underline pointer-events-auto"
+            >
+              {node.symbol}
+            </a>
+          ) : (
+            <span className="font-bold text-text-primary text-sm">
+              {node.symbol}
+            </span>
+          )}
           {node.investmentType && (
             <Badge label={node.investmentType} />
           )}
@@ -115,7 +130,26 @@ export function TreeMapTooltip({ node, mouseX, mouseY }: TreeMapTooltipProps) {
                 Derived from{" "}
                 <strong className="text-text-primary">
                   {node.parentName}
-                  {node.parentSymbol ? ` (${node.parentSymbol})` : ""}
+                  {node.parentSymbol ? (
+                    <>
+                      {" ("}
+                      {isFidelityLinkable(node.parentSymbol) ? (
+                        <a
+                          href={getFidelityQuoteUrl(node.parentSymbol)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-accent hover:underline pointer-events-auto"
+                        >
+                          {node.parentSymbol}
+                        </a>
+                      ) : (
+                        node.parentSymbol
+                      )}
+                      {")"}
+                    </>
+                  ) : (
+                    ""
+                  )}
                 </strong>
               </span>
               {node.percentOfParent !== undefined && (

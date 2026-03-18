@@ -19,12 +19,14 @@ vi.mock("../components/Dashboard", () => ({
   Dashboard: (props: {
     enableIntroAnimation?: boolean;
     enableValueAnimations?: boolean;
+    fetchError?: string | null;
   }) => (
     <div
       data-testid="dashboard"
       data-intro-animation={props.enableIntroAnimation ? "true" : "false"}
       data-value-animations={props.enableValueAnimations ? "true" : "false"}
     >
+      {props.fetchError && <span>{props.fetchError}</span>}
       Dashboard
     </div>
   ),
@@ -178,5 +180,50 @@ describe("Home page routing", () => {
     );
     render(<Home />);
     expect(screen.getByText("Loading")).toBeInTheDocument();
+  });
+
+  it("shows the no-data fetch badge when restoring without cached portfolio data", () => {
+    mockUsePortfolio.mockReturnValue(
+      makePortfolioReturn({
+        hasData: true,
+        portfolioData: null,
+        error: "Failed to compute portfolio data: Edge: Too Many Requests",
+      })
+    );
+
+    render(<Home />);
+
+    expect(screen.getByText("Live data unavailable")).toBeInTheDocument();
+    expect(screen.getByText(/Unable to load live portfolio data yet\./i)).toBeInTheDocument();
+  });
+
+  it("passes fetch errors through to the dashboard when cached data exists", () => {
+    const mockData = {
+      treeMapNodes: [],
+      tableRows: [],
+      positionRows: [],
+      summary: {
+        totalValue: 100000,
+        totalGainLoss: 5000,
+        totalGainLossPercent: 5,
+        accounts: ["Account1"],
+        investmentTypes: ["Stocks"],
+      },
+      lastUpdated: new Date().toISOString(),
+    };
+
+    mockUsePortfolio.mockReturnValue(
+      makePortfolioReturn({
+        hasData: true,
+        portfolioData: mockData,
+        error: "Failed to refresh portfolio data: Edge: Too Many Requests",
+      })
+    );
+
+    render(<Home />);
+
+    expect(screen.getByTestId("dashboard")).toHaveTextContent(
+      "Failed to refresh portfolio data: Edge: Too Many Requests"
+    );
   });
 });

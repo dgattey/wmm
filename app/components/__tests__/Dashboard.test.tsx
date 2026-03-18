@@ -56,10 +56,12 @@ function renderDashboard({
   onClearData = vi.fn(),
   enableIntroAnimation,
   enableValueAnimations,
+  fetchError = null,
 }: {
   onClearData?: () => void;
   enableIntroAnimation?: boolean;
   enableValueAnimations?: boolean;
+  fetchError?: string | null;
 } = {}) {
   return {
     onClearData,
@@ -91,6 +93,7 @@ function renderDashboard({
         treeMapHeight={400}
         enableIntroAnimation={enableIntroAnimation}
         enableValueAnimations={enableValueAnimations}
+        fetchError={fetchError}
       />
     ),
   };
@@ -190,6 +193,7 @@ describe("Dashboard clear action", () => {
         activeSummary={null}
         treeMapWidth={720}
         treeMapHeight={640}
+        fetchError={null}
       />
     );
 
@@ -227,5 +231,17 @@ describe("Dashboard clear action", () => {
       "data-intro-animation",
       "false"
     );
+  });
+
+  it("shows a prominent live data badge when refreshes fail", () => {
+    renderDashboard({ fetchError: "Yahoo Finance rate limit hit" });
+
+    expect(screen.getByText("Live data issue")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Latest live refresh failed\. Showing the last available portfolio snapshot\./i
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Yahoo Finance rate limit hit/i)).toBeInTheDocument();
   });
 });
