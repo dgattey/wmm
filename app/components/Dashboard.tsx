@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   PortfolioData,
   TreeMapNode,
@@ -61,6 +61,9 @@ export function Dashboard({
   focusedSummary,
 }: DashboardProps) {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const clearConfirmTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const { summary, lastUpdated } = portfolioData;
 
   const displayValue = focusedSummary?.value ?? summary.totalValue;
@@ -79,6 +82,35 @@ export function Dashboard({
       }
     : null;
 
+  useEffect(() => {
+    return () => {
+      if (clearConfirmTimeoutRef.current) {
+        clearTimeout(clearConfirmTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  function handleClearDataClick() {
+    if (showClearConfirm) {
+      if (clearConfirmTimeoutRef.current) {
+        clearTimeout(clearConfirmTimeoutRef.current);
+        clearConfirmTimeoutRef.current = null;
+      }
+      onClearData();
+      setShowClearConfirm(false);
+      return;
+    }
+
+    setShowClearConfirm(true);
+    if (clearConfirmTimeoutRef.current) {
+      clearTimeout(clearConfirmTimeoutRef.current);
+    }
+    clearConfirmTimeoutRef.current = setTimeout(() => {
+      setShowClearConfirm(false);
+      clearConfirmTimeoutRef.current = null;
+    }, 3000);
+  }
+
   return (
     <div className="min-h-screen pb-20 animate-fade-in">
       {/* Sticky Header */}
@@ -86,77 +118,63 @@ export function Dashboard({
         <div className="max-w-[1400px] mx-auto">
           <div className="flex items-end justify-between gap-4">
             <div className="group/header">
-              {/* Title row with hover-reveal back button */}
-              <div className="flex items-center gap-2 mb-1">
-                {/* Back button — appears on hover */}
-                <button
-                  onClick={() => {
-                    if (showClearConfirm) {
-                      onClearData();
-                      setShowClearConfirm(false);
-                    } else {
-                      setShowClearConfirm(true);
-                      // Auto-dismiss after 3 seconds
-                      setTimeout(() => setShowClearConfirm(false), 3000);
-                    }
-                  }}
-                  className={cn(
-                    "flex items-center justify-center w-6 h-6 rounded-lg",
-                    "transition-all duration-200 cursor-pointer",
-                    "-ml-8 mr-0",
-                    showClearConfirm
-                      ? "opacity-100 translate-x-0 bg-negative/10 text-negative hover:bg-negative/20"
-                      : "opacity-0 -translate-x-1 group-hover/header:opacity-60 group-hover/header:translate-x-0 hover:!opacity-100 hover:bg-surface-hover text-text-muted"
-                  )}
-                  title={
-                    showClearConfirm
-                      ? "Click again to confirm"
-                      : "Start over with a new file"
-                  }
-                >
-                  {showClearConfirm ? (
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M18 6 6 18M6 6l12 12" />
-                    </svg>
-                  ) : (
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="m15 18-6-6 6-6" />
-                    </svg>
-                  )}
-                </button>
-
+              <div className="flex flex-wrap items-center gap-3 mb-1">
                 <h1
                   className={cn(
                     "text-sm font-medium transition-colors duration-300 truncate max-w-[500px]",
                     focusedSummary ? "text-text-primary" : "text-text-muted"
                   )}
                 >
-                  {showClearConfirm ? (
-                    <span className="text-negative animate-fade-in">
-                      Click ← again to start over
-                    </span>
-                  ) : (
-                    headerLabel
-                  )}
+                  {headerLabel}
                 </h1>
+                <button
+                  type="button"
+                  onClick={handleClearDataClick}
+                  className={cn(
+                    "inline-flex min-h-10 items-center gap-2 rounded-full px-4 py-2",
+                    "text-sm font-medium shadow-sm transition-all duration-200 cursor-pointer",
+                    "border",
+                    showClearConfirm
+                      ? "border-negative/40 bg-negative/12 text-negative hover:bg-negative/18"
+                      : "border-border bg-surface text-text-primary hover:bg-surface-hover"
+                  )}
+                  title={
+                    showClearConfirm
+                      ? "Click again to clear the uploaded file"
+                      : "Clear the uploaded file"
+                  }
+                  aria-label={
+                    showClearConfirm ? "Confirm clear file" : "Clear file"
+                  }
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    {showClearConfirm ? (
+                      <path d="M18 6 6 18M6 6l12 12" />
+                    ) : (
+                      <>
+                        <path d="M3 6h18" />
+                        <path d="M8 6V4h8v2" />
+                        <path d="m19 6-1 14H6L5 6" />
+                      </>
+                    )}
+                  </svg>
+                  <span>{showClearConfirm ? "Confirm clear" : "Clear file"}</span>
+                </button>
+                {showClearConfirm && (
+                  <span className="text-xs text-negative animate-fade-in">
+                    Click again to remove this upload
+                  </span>
+                )}
               </div>
 
               <div className="flex items-baseline gap-4">
