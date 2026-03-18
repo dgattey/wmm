@@ -28,6 +28,7 @@ const mockUsePortfolio = vi.mocked(usePortfolio);
 function makePortfolioReturn(overrides: Partial<ReturnType<typeof usePortfolio>> = {}) {
   return {
     hasData: false,
+    isMobile: false,
     isLoading: false,
     error: null,
     portfolioData: null,
@@ -51,6 +52,8 @@ function makePortfolioReturn(overrides: Partial<ReturnType<typeof usePortfolio>>
     resetFilters: vi.fn(),
     fundOptions: [],
     activeSummary: null,
+    treeMapWidth: 1200,
+    treeMapHeight: 400,
     ...overrides,
   };
 }

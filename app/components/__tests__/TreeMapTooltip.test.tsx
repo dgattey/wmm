@@ -46,4 +46,22 @@ describe("TreeMapTooltip", () => {
 
     expect(container).toBeEmptyDOMElement();
   });
+
+  it("clamps tooltip position within a narrow viewport", () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 320,
+    });
+    Object.defineProperty(window, "innerHeight", {
+      configurable: true,
+      value: 480,
+    });
+
+    const { container } = render(
+      <TreeMapTooltip node={node} mouseX={310} mouseY={470} />
+    );
+
+    const tooltip = container.firstElementChild as HTMLElement;
+    expect(tooltip).toHaveStyle({ left: "16px", top: "258px" });
+  });
 });

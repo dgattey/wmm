@@ -15,21 +15,38 @@ interface TreeMapTooltipProps {
 export function TreeMapTooltip({ node, mouseX, mouseY }: TreeMapTooltipProps) {
   if (!node) return null;
 
-  // Position tooltip offset from cursor, flip if near viewport edge
+  // Position tooltip near the pointer, then clamp it within the viewport.
   const offset = 12;
-  const tooltipWidth = 280;
+  const viewportPadding = 16;
+  let tooltipWidth = 280;
   const tooltipHeight = 200;
 
   let left = mouseX + offset;
   let top = mouseY + offset;
 
   if (typeof window !== "undefined") {
-    if (left + tooltipWidth > window.innerWidth - 20) {
+    tooltipWidth = Math.min(
+      300,
+      Math.max(220, window.innerWidth - viewportPadding * 2)
+    );
+
+    if (left + tooltipWidth > window.innerWidth - viewportPadding) {
       left = mouseX - tooltipWidth - offset;
     }
-    if (top + tooltipHeight > window.innerHeight - 20) {
+    if (top + tooltipHeight > window.innerHeight - viewportPadding) {
       top = mouseY - tooltipHeight - offset;
     }
+
+    left = clamp(
+      left,
+      viewportPadding,
+      window.innerWidth - tooltipWidth - viewportPadding
+    );
+    top = clamp(
+      top,
+      viewportPadding,
+      window.innerHeight - tooltipHeight - viewportPadding
+    );
   }
 
   return (
@@ -37,7 +54,10 @@ export function TreeMapTooltip({ node, mouseX, mouseY }: TreeMapTooltipProps) {
       className="fixed z-50 pointer-events-none animate-fade-in"
       style={{ left, top }}
     >
-      <div className="bg-surface/92 backdrop-blur-2xl saturate-150 border border-border/50 rounded-xl p-3.5 shadow-[var(--shadow-xl)] ring-1 ring-inset ring-white/[0.04] min-w-[240px] max-w-[300px]">
+      <div
+        className="bg-surface/92 backdrop-blur-2xl saturate-150 border border-border/50 rounded-xl p-3.5 shadow-[var(--shadow-xl)] ring-1 ring-inset ring-white/[0.04]"
+        style={{ width: tooltipWidth, maxWidth: "calc(100vw - 32px)" }}
+      >
         {/* Header */}
         <div className="flex items-center gap-2 mb-2">
           <span className="font-bold text-text-primary text-sm">
@@ -125,4 +145,9 @@ function TooltipRow({ label, value }: { label: string; value: string }) {
       </span>
     </div>
   );
+}
+
+function clamp(value: number, min: number, max: number) {
+  if (max < min) return min;
+  return Math.min(Math.max(value, min), max);
 }

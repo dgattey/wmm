@@ -141,6 +141,28 @@ describe("FloatingToolbar", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders as an inline panel on mobile", () => {
+    const props = makeProps();
+    props.filters = {
+      investmentTypes: ["Stocks"],
+      accounts: [],
+    };
+    const { container } = render(<FloatingToolbar {...props} isMobile />);
+
+    expect(container.firstElementChild).toHaveClass("w-full");
+    expect(container.querySelector(".fixed")).not.toBeInTheDocument();
+
+    const resetButton = screen.getByRole("button", { name: "Reset filters" });
+    const holdingsButton = screen.getByRole("button", { name: "Holdings" });
+
+    expect(
+      resetButton.compareDocumentPosition(holdingsButton) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(screen.getByText("Type")).toBeInTheDocument();
+    expect(screen.getByText("Stocks")).toBeInTheDocument();
+  });
+
   it("uses a stable desktop width for the toolbar shell", () => {
     const props = makeProps();
     const { container } = render(<FloatingToolbar {...props} />);

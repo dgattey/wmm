@@ -20,6 +20,7 @@ interface TreeMapProps {
   selectedFunds: string[];
   onToggleFund?: (symbol: string) => void;
   onClearFunds?: () => void;
+  isMobile?: boolean;
 }
 
 export function TreeMap({
@@ -30,6 +31,7 @@ export function TreeMap({
   selectedFunds,
   onToggleFund,
   onClearFunds,
+  isMobile = false,
 }: TreeMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(originalWidth);
@@ -129,7 +131,12 @@ export function TreeMap({
 
   if (nodes.length === 0) {
     return (
-      <div className="w-full h-[400px] rounded-xl bg-surface border border-border flex items-center justify-center text-text-muted">
+      <div
+        className={cn(
+          "w-full rounded-xl bg-surface border border-border flex items-center justify-center text-text-muted",
+          isMobile ? "h-[280px]" : "h-[400px]"
+        )}
+      >
         Loading treemap...
       </div>
     );
@@ -162,7 +169,7 @@ export function TreeMap({
     <div className="relative">
       <div
         ref={containerRef}
-        className="relative w-full overflow-hidden rounded-2xl bg-surface border border-border/60 shadow-[var(--shadow-md)] cursor-default animate-soft-rise"
+        className="relative w-full overflow-hidden rounded-2xl bg-surface border border-border/60 shadow-[var(--shadow-md)] cursor-default touch-manipulation animate-soft-rise"
         style={
           {
             height: scaledHeight,
@@ -232,8 +239,8 @@ export function TreeMap({
           const pos = getTransformedPos(rawPos.x, rawPos.y, rawPos.w, rawPos.h);
           const w = pos.width;
           const h = pos.height;
-          const showSymbol = visible && w > 45 && h > 25;
-          const showValue = visible && w > 75 && h > 40;
+          const showSymbol = visible && w > (isMobile ? 36 : 45) && h > (isMobile ? 20 : 25);
+          const showValue = visible && w > (isMobile ? 58 : 75) && h > (isMobile ? 30 : 40);
 
           return (
             <div
@@ -288,6 +295,12 @@ export function TreeMap({
         mouseX={mousePos.x}
         mouseY={mousePos.y}
       />
+
+      {isMobile && grouping === "fund" && (
+        <p className="mt-2 px-1 text-xs text-text-muted">
+          Tap a fund to focus the treemap. Tap empty space to reset.
+        </p>
+      )}
     </div>
   );
 }

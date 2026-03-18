@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { FIFTY_TWO_WEEK_POSITION_SORT_KEY } from "@/lib/tableSort";
 import type { TableRow, SortConfig } from "@/lib/types";
 import { cn, formatDollar, formatPercent, formatPrice } from "@/lib/utils";
@@ -17,6 +17,7 @@ interface PortfolioTableProps {
   onSort: (key: string) => void;
   expandedRows: Set<string>;
   onToggleExpand: (symbol: string) => void;
+  isMobile?: boolean;
 }
 
 const SORTABLE_COLUMNS: {
@@ -43,11 +44,65 @@ export function PortfolioTable({
   onSort,
   expandedRows,
   onToggleExpand,
+  isMobile = false,
 }: PortfolioTableProps) {
   if (rows.length === 0) {
     return (
       <div className="text-center py-12 text-text-muted text-sm">
         No positions to display
+      </div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-border/60 bg-surface p-4 shadow-[var(--shadow-md)]">
+          <div className="mb-3">
+            <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-text-muted">
+              Sort holdings
+            </span>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <label className="min-w-0 flex-1">
+              <span className="sr-only">Sort by</span>
+              <select
+                aria-label="Sort holdings"
+                value={sortConfig.key}
+                onChange={(event) => {
+                  if (event.target.value !== sortConfig.key) {
+                    onSort(event.target.value);
+                  }
+                }}
+                className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors hover:border-border/80"
+              >
+                {SORTABLE_COLUMNS.map((column) => (
+                  <option key={column.key} value={column.key}>
+                    {column.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={() => onSort(sortConfig.key)}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface-hover"
+            >
+              {sortConfig.direction === "desc" ? "Descending" : "Ascending"}
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {rows.map((row) => (
+            <MobileRowCard
+              key={row.symbol}
+              row={row}
+              isExpanded={expandedRows.has(row.symbol)}
+              onToggle={() => onToggleExpand(row.symbol)}
+            />
+          ))}
+        </div>
       </div>
     );
   }
@@ -120,6 +175,151 @@ export function PortfolioTable({
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function MobileRowCard({
+  row,
+  isExpanded,
+  onToggle,
+}: {
+  row: TableRow;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <article className="rounded-2xl border border-border/60 bg-surface p-4 shadow-[var(--shadow-md)]">
+      <div className="flex items-start justify-between gap-3">
+        <TickerIdentity symbol={row.symbol} name={row.name} size="md" />
+        {row.isExpandable && (
+          <button
+            type="button"
+            onClick={onToggle}
+            className="inline-flex min-h-9 items-center rounded-full border border-border bg-bg px-3 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-surface-hover"
+          >
+            {isExpanded ? "Hide breakdown" : "Show breakdown"}
+          </button>
+        )}
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {row.investmentTypes.map((type) => (
+          <Badge key={type} label={type} />
+        ))}
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
+        <MetricCell label="Accounts" className="col-span-2">
+          <span className="text-sm text-text-primary break-words">
+            {row.accounts.join(", ")}
+          </span>
+        </MetricCell>
+        <MetricCell label="Value">
+          <AnimatedNumber
+            value={row.totalValue}
+            format={formatDollar}
+            className="text-sm font-semibold text-text-primary"
+          />
+        </MetricCell>
+        <MetricCell label="% Port">
+          <span className="text-sm text-text-primary tabular-nums">
+            {formatPercent(row.percentOfPortfolio)}
+          </span>
+        </MetricCell>
+        <MetricCell label="Price">
+          <AnimatedNumber
+            value={row.currentPrice}
+            format={formatPrice}
+            className="text-sm text-text-primary"
+          />
+        </MetricCell>
+        <MetricCell label="Change">
+          <GainLoss
+            dollar={row.totalGainLossDollar}
+            percent={row.totalGainLossPercent}
+            size="sm"
+          />
+        </MetricCell>
+        <MetricCell label="52W Range" className="col-span-2">
+          <FiftyTwoWeekRange
+            low={row.fiftyTwoWeekLow}
+            high={row.fiftyTwoWeekHigh}
+            current={row.currentPrice}
+            size="sm"
+          />
+        </MetricCell>
+      </div>
+
+      {isExpanded && row.sources.length > 0 && (
+        <div className="mt-4 space-y-2 border-t border-border pt-4">
+          <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-text-muted">
+            Source breakdown
+          </span>
+          {row.sources.map((source, index) => (
+            <div
+              key={`${row.symbol}-${source.sourceSymbol}-${index}`}
+              className="rounded-xl border border-border/50 bg-bg px-3 py-3"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-text-primary break-words">
+                    {source.type === "direct" ? source.account : source.sourceName}
+                  </div>
+                  <div className="text-xs text-text-muted break-words">
+                    {source.type === "direct"
+                      ? "Direct holding"
+                      : `${source.sourceName} (${source.sourceSymbol})`}
+                  </div>
+                </div>
+                <Badge label={source.investmentType} />
+              </div>
+
+              <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
+                <MetricCell label="Account">
+                  <span className="text-xs text-text-primary break-words">
+                    {source.account}
+                  </span>
+                </MetricCell>
+                <MetricCell label="Value">
+                  <span className="text-xs font-medium text-text-primary tabular-nums">
+                    {formatDollar(source.value)}
+                  </span>
+                </MetricCell>
+                <MetricCell label="% Source">
+                  <span className="text-xs text-text-primary tabular-nums">
+                    {formatPercent(source.percentOfSource)}
+                  </span>
+                </MetricCell>
+                <MetricCell label="% Port">
+                  <span className="text-xs text-text-primary tabular-nums">
+                    {formatPercent(source.percentOfPortfolio)}
+                  </span>
+                </MetricCell>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </article>
+  );
+}
+
+function MetricCell({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("min-w-0", className)}>
+      <div className="mb-1 text-[11px] font-medium uppercase tracking-[0.12em] text-text-muted">
+        {label}
+      </div>
+      <div className="min-w-0">{children}</div>
     </div>
   );
 }
