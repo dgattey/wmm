@@ -1,105 +1,71 @@
 "use client";
 
-import { Suspense } from "react";
-import { usePortfolio } from "@/hooks/usePortfolio";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { PortfolioLibraryNav } from "./components/PortfolioLibraryNav";
 import { UploadView } from "./components/UploadView";
-import { Dashboard } from "./components/Dashboard";
-import { FetchStatusBadge } from "./components/primitives/FetchStatusBadge";
+import { usePortfolioLibrary } from "@/hooks/usePortfolioLibrary";
 
 export default function Home() {
-  return (
-    <Suspense fallback={<LoadingSkeleton />}>
-      <PortfolioContent />
-    </Suspense>
-  );
-}
+  const router = useRouter();
+  const {
+    portfolios,
+    isUploading,
+    error,
+    uploadFiles,
+    removePortfolioById,
+  } = usePortfolioLibrary();
 
-function PortfolioContent() {
-  const portfolio = usePortfolio();
-
-  if (!portfolio.hasData) {
-    return (
-      <UploadView
-        onFileSelect={portfolio.uploadFile}
-        error={portfolio.error}
-        isLoading={portfolio.isLoading}
-      />
-    );
-  }
-
-  if (!portfolio.portfolioData) {
-    return (
-      <LoadingSkeleton
-        enableIntroAnimation={!portfolio.restoredFromStorage}
-        error={portfolio.error}
-      />
-    );
+  async function handleFilesSelect(files: File[]) {
+    const { uploadedPortfolios } = await uploadFiles(files);
+    if (uploadedPortfolios.length > 0) {
+      router.push(
+        `/portfolio/${uploadedPortfolios[uploadedPortfolios.length - 1].id}`
+      );
+    }
   }
 
   return (
-    <Dashboard
-      portfolioData={portfolio.portfolioData}
-      filteredTreeMapNodes={portfolio.filteredTreeMapNodes}
-      filteredRows={portfolio.filteredRows}
-      isMobile={portfolio.isMobile}
-      filters={portfolio.filters}
-      onFiltersChange={portfolio.setFilters}
-      onResetFilters={portfolio.resetFilters}
-      sortConfig={portfolio.sortConfig}
-      onSort={portfolio.handleSort}
-      expandedRows={portfolio.expandedRows}
-      onToggleExpand={portfolio.toggleExpand}
-      onClearData={portfolio.clearData}
-      isLoading={portfolio.isLoading}
-      viewMode={portfolio.viewMode}
-      onViewModeChange={portfolio.setViewMode}
-      treeMapGrouping={portfolio.treeMapGrouping}
-      onTreeMapGroupingChange={portfolio.setTreeMapGrouping}
-      selectedFunds={portfolio.selectedFunds}
-      onToggleFund={portfolio.toggleFundSelection}
-      onClearFunds={portfolio.clearSelectedFunds}
-      fundOptions={portfolio.fundOptions}
-      activeSummary={portfolio.activeSummary}
-      treeMapWidth={portfolio.treeMapWidth}
-      treeMapHeight={portfolio.treeMapHeight}
-      enableIntroAnimation={!portfolio.restoredFromStorage}
-      enableValueAnimations={!portfolio.restoredFromStorage}
-      fetchError={portfolio.error}
-      onRefresh={portfolio.refreshData}
-      isRefreshing={portfolio.isRefreshing}
-    />
-  );
-}
+    <main className="min-h-screen px-4 py-8 md:px-6 md:py-10">
+      <div className="mx-auto flex max-w-[1100px] flex-col gap-6 md:gap-8">
+        <section className="flex items-start gap-3 md:gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-surface shadow-[var(--shadow)] md:h-14 md:w-14">
+            <Image
+              src="/icon.svg"
+              alt=""
+              width={28}
+              height={28}
+              aria-hidden="true"
+              priority
+            />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold text-text-primary md:text-4xl">
+              Portfolio allocation
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted md:text-base">
+              Visualize your Fidelity portfolio allocations, live and in detail.
+            </p>
+          </div>
+        </section>
 
-function LoadingSkeleton({
-  enableIntroAnimation = true,
-  error,
-}: {
-  enableIntroAnimation?: boolean;
-  error?: string | null;
-}) {
-  return (
-    <div
-      className={[
-        "min-h-screen p-6 max-w-[1400px] mx-auto",
-        enableIntroAnimation ? "animate-fade-in" : "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
-      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div>
-          <div className="text-sm font-medium text-text-muted">Your portfolio</div>
-          <div className="mt-2 skeleton h-9 w-48" />
-        </div>
-        {error && <FetchStatusBadge error={error} hasData={false} />}
+        {portfolios.length > 0 && (
+          <section className="rounded-[30px] border border-border/70 bg-surface px-5 py-5 shadow-[var(--shadow-lg)] md:px-8 md:py-8">
+            <PortfolioLibraryNav
+              portfolios={portfolios}
+              onRemovePortfolio={removePortfolioById}
+            />
+          </section>
+        )}
+
+        <section className="rounded-[30px] border border-border/70 bg-surface px-5 py-5 shadow-[var(--shadow-lg)] md:px-8 md:py-8">
+          <UploadView
+            onFilesSelect={handleFilesSelect}
+            error={error}
+            isLoading={isUploading}
+          />
+        </section>
       </div>
-      <div className="skeleton h-[400px] rounded-xl mb-6" />
-      <div className="space-y-2">
-        {Array.from({ length: 8 }, (_, i) => (
-          <div key={i} className="skeleton h-12 rounded-lg" />
-        ))}
-      </div>
-    </div>
+    </main>
   );
 }

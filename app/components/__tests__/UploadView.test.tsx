@@ -12,36 +12,30 @@ import { UploadView } from "../UploadView";
 
 describe("UploadView", () => {
   it("renders the title and instructions", () => {
-    render(<UploadView onFileSelect={vi.fn()} />);
-    expect(screen.getByText("Your portfolio")).toBeInTheDocument();
-    expect(
-      screen.getByText("Visualize your investment portfolio breakdown")
-    ).toBeInTheDocument();
+    render(<UploadView onFilesSelect={vi.fn()} />);
+    expect(screen.getByText("Import portfolio CSVs")).toBeInTheDocument();
+    expect(screen.getByText("Add Fidelity exports to the picker.")).toBeInTheDocument();
   });
 
-  it("shows the upload preview card without icon-specific copy", () => {
-    render(<UploadView onFileSelect={vi.fn()} />);
-    expect(screen.getByAltText("Portfolio preview graphic")).toBeInTheDocument();
-    expect(screen.getByText("Import your positions CSV")).toBeInTheDocument();
-    expect(
-      screen.getByText("Upload your Fidelity export to load the portfolio view.")
-    ).toBeInTheDocument();
+  it("renders the streamlined upload section copy", () => {
+    render(<UploadView onFilesSelect={vi.fn()} />);
+    expect(screen.getByText("Add files")).toBeInTheDocument();
     expect(screen.queryByText(/favicon/i)).not.toBeInTheDocument();
   });
 
   it("renders all three instruction steps", () => {
-    render(<UploadView onFileSelect={vi.fn()} />);
+    render(<UploadView onFilesSelect={vi.fn()} />);
     expect(screen.getByText("1")).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
     expect(screen.getByLabelText("More actions menu")).toBeInTheDocument();
     expect(screen.getByText(/menu on the right/i)).toHaveTextContent(
-      "Open the menu on the right, then click Download to export your positions as CSV"
+      "Open the menu on the right, then click Download."
     );
   });
 
   it("renders a link to Fidelity Positions", () => {
-    render(<UploadView onFileSelect={vi.fn()} />);
+    render(<UploadView onFilesSelect={vi.fn()} />);
     const link = screen.getByRole("link", { name: /fidelity positions/i });
     expect(link).toHaveAttribute(
       "href",
@@ -51,37 +45,37 @@ describe("UploadView", () => {
   });
 
   it("shows drop zone text in default state", () => {
-    render(<UploadView onFileSelect={vi.fn()} />);
+    render(<UploadView onFilesSelect={vi.fn()} />);
     expect(
-      screen.getByText("Drag & drop CSV or click to browse")
+      screen.getByText("Drag and drop CSVs or click to browse")
     ).toBeInTheDocument();
   });
 
   it("shows loading spinner when isLoading", () => {
-    render(<UploadView onFileSelect={vi.fn()} isLoading />);
-    expect(screen.getByText("Processing...")).toBeInTheDocument();
+    render(<UploadView onFilesSelect={vi.fn()} isLoading />);
+    expect(screen.getByText("Processing files")).toBeInTheDocument();
     expect(
-      screen.queryByText("Drag & drop CSV or click to browse")
+      screen.queryByText("Drag and drop CSVs or click to browse")
     ).not.toBeInTheDocument();
   });
 
   it("shows error message when error prop provided", () => {
     render(
-      <UploadView onFileSelect={vi.fn()} error="Something went wrong" />
+      <UploadView onFilesSelect={vi.fn()} error="Something went wrong" />
     );
     expect(screen.getByText("Something went wrong")).toBeInTheDocument();
   });
 
   it("does not show error when no error", () => {
-    render(<UploadView onFileSelect={vi.fn()} />);
+    render(<UploadView onFilesSelect={vi.fn()} />);
     expect(
       screen.queryByText("Something went wrong")
     ).not.toBeInTheDocument();
   });
 
-  it("calls onFileSelect when a file is selected via input", () => {
-    const onFileSelect = vi.fn();
-    render(<UploadView onFileSelect={onFileSelect} />);
+  it("calls onFilesSelect when files are selected via input", () => {
+    const onFilesSelect = vi.fn();
+    render(<UploadView onFilesSelect={onFilesSelect} />);
 
     const input = document.querySelector(
       'input[type="file"]'
@@ -91,15 +85,19 @@ describe("UploadView", () => {
     const file = new File(["test content"], "test.csv", {
       type: "text/csv",
     });
-    fireEvent.change(input, { target: { files: [file] } });
-    expect(onFileSelect).toHaveBeenCalledWith(file);
+    const anotherFile = new File(["other content"], "other.csv", {
+      type: "text/csv",
+    });
+    fireEvent.change(input, { target: { files: [file, anotherFile] } });
+    expect(onFilesSelect).toHaveBeenCalledWith([file, anotherFile]);
   });
 
-  it("accepts .csv files", () => {
-    render(<UploadView onFileSelect={vi.fn()} />);
+  it("accepts multiple .csv files", () => {
+    render(<UploadView onFilesSelect={vi.fn()} />);
     const input = document.querySelector(
       'input[type="file"]'
     ) as HTMLInputElement;
     expect(input).toHaveAttribute("accept", ".csv,text/csv");
+    expect(input).toHaveAttribute("multiple");
   });
 });

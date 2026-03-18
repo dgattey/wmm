@@ -8,6 +8,7 @@ import type {
   TreeMapGrouping,
   ViewMode,
 } from "@/lib/types";
+import { hasSearchQuery } from "@/lib/portfolioFilters";
 import { cn } from "@/lib/utils";
 import { useTimeAgo } from "@/hooks/useTimeAgo";
 import { ResetFiltersButton } from "./primitives/ResetFiltersButton";
@@ -63,10 +64,12 @@ export function FloatingToolbar({
   const hasFilters =
     filters.investmentTypes.length > 0 ||
     filters.accounts.length > 0 ||
+    hasSearchQuery(filters) ||
     selectedFunds.length > 0;
   const activeFilterCount =
     filters.investmentTypes.length +
     filters.accounts.length +
+    (hasSearchQuery(filters) ? 1 : 0) +
     selectedFunds.length;
   const filterSummaryItems = buildFilterSummaryItems(filters, selectedFunds);
   const timeAgo = useTimeAgo(lastUpdated);

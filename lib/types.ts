@@ -20,6 +20,16 @@ export interface FidelityPosition {
   type: string;
 }
 
+export interface StoredPortfolioSummary {
+  id: string;
+  name: string;
+  sourceFileName: string;
+  uploadedAt: string;
+  lastViewedAt: string;
+  positionCount: number;
+  totalValue?: number;
+}
+
 export type InvestmentType =
   | "Stocks"
   | "ETFs"

@@ -53,32 +53,33 @@ const portfolioData: PortfolioData = {
 };
 
 function renderDashboard({
-  onClearData = vi.fn(),
+  onBackToPicker = vi.fn(),
   enableIntroAnimation,
   enableValueAnimations,
   fetchError = null,
 }: {
-  onClearData?: () => void;
+  onBackToPicker?: () => void;
   enableIntroAnimation?: boolean;
   enableValueAnimations?: boolean;
   fetchError?: string | null;
 } = {}) {
   return {
-    onClearData,
+    onBackToPicker,
     ...render(
       <Dashboard
         portfolioData={portfolioData}
+        portfolioName="Sample beta portfolio"
         filteredTreeMapNodes={[]}
         filteredRows={[]}
         isMobile={false}
-        filters={{ investmentTypes: [], accounts: [] }}
+        filters={{ investmentTypes: [], accounts: [], searchQuery: "" }}
         onFiltersChange={vi.fn()}
         onResetFilters={vi.fn()}
         sortConfig={{ key: "totalValue", direction: "desc" }}
         onSort={vi.fn()}
         expandedRows={new Set()}
         onToggleExpand={vi.fn()}
-        onClearData={onClearData}
+        onBackToPicker={onBackToPicker}
         isLoading={false}
         viewMode="holdings"
         onViewModeChange={vi.fn()}
@@ -99,28 +100,27 @@ function renderDashboard({
   };
 }
 
-describe("Dashboard clear action", () => {
+describe("Dashboard portfolio actions", () => {
   it("shows Your portfolio when nothing is filtered", () => {
     renderDashboard();
 
     expect(screen.getByText("Your portfolio")).toBeInTheDocument();
-    expect(screen.getByText("Your portfolio").parentElement).toHaveClass("min-h-9");
+    expect(screen.getByText("Sample beta portfolio")).toBeInTheDocument();
   });
 
-  it("renders a visible larger clear button", () => {
+  it("renders a back button when nothing is filtered", () => {
     renderDashboard();
 
-    const button = screen.getByRole("button", { name: /clear file/i });
+    const button = screen.getByRole("button", { name: /back to portfolios/i });
     expect(button).toBeInTheDocument();
-    expect(button).toHaveTextContent("Clear file");
-    expect(button).toHaveClass("min-h-11");
+    expect(screen.queryByRole("button", { name: /remove portfolio/i })).not.toBeInTheDocument();
   });
 
-  it("clears uploaded data in a single click", () => {
-    const { onClearData } = renderDashboard();
+  it("goes back to the picker in a single click", () => {
+    const { onBackToPicker } = renderDashboard();
 
-    fireEvent.click(screen.getByRole("button", { name: /clear file/i }));
-    expect(onClearData).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: /back to portfolios/i }));
+    expect(onBackToPicker).toHaveBeenCalledTimes(1);
   });
 
   it("shows the active summary label in the header", () => {
@@ -128,17 +128,18 @@ describe("Dashboard clear action", () => {
     render(
       <Dashboard
         portfolioData={portfolioData}
+        portfolioName="Sample beta portfolio"
         filteredTreeMapNodes={[]}
         filteredRows={[]}
         isMobile={false}
-        filters={{ investmentTypes: [], accounts: [] }}
+        filters={{ investmentTypes: [], accounts: [], searchQuery: "" }}
         onFiltersChange={vi.fn()}
         onResetFilters={onResetFilters}
         sortConfig={{ key: "totalValue", direction: "desc" }}
         onSort={vi.fn()}
         expandedRows={new Set()}
         onToggleExpand={vi.fn()}
-        onClearData={vi.fn()}
+        onBackToPicker={vi.fn()}
         isLoading={false}
         viewMode="holdings"
         onViewModeChange={vi.fn()}
@@ -159,10 +160,11 @@ describe("Dashboard clear action", () => {
       />
     );
 
+    expect(screen.getByText("Sample beta portfolio")).toBeInTheDocument();
     expect(screen.getByText("2 funds selected")).toBeInTheDocument();
     const resetButton = screen.getByRole("button", { name: "Reset filters" });
     expect(resetButton).toHaveAttribute("title", "Reset all filters");
-    expect(screen.queryByText("Reset filters")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /back to portfolios/i })).not.toBeInTheDocument();
     fireEvent.click(resetButton);
     expect(onResetFilters).toHaveBeenCalledTimes(1);
   });
@@ -173,17 +175,18 @@ describe("Dashboard clear action", () => {
     render(
       <Dashboard
         portfolioData={portfolioData}
+        portfolioName="Sample beta portfolio"
         filteredTreeMapNodes={[]}
         filteredRows={[]}
         isMobile={false}
-        filters={{ investmentTypes: [], accounts: [] }}
+        filters={{ investmentTypes: [], accounts: [], searchQuery: "" }}
         onFiltersChange={onFiltersChange}
         onResetFilters={vi.fn()}
         sortConfig={{ key: "totalValue", direction: "desc" }}
         onSort={vi.fn()}
         expandedRows={new Set()}
         onToggleExpand={vi.fn()}
-        onClearData={vi.fn()}
+        onBackToPicker={vi.fn()}
         isLoading={false}
         viewMode="holdings"
         onViewModeChange={vi.fn()}
@@ -210,8 +213,6 @@ describe("Dashboard clear action", () => {
       "placeholder",
       "Search by name or symbol"
     );
-    expect(screen.queryByText("Search portfolio")).not.toBeInTheDocument();
-    expect(screen.queryByText(/Showing \d+ holdings?/)).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByRole("searchbox", { name: "Search portfolio" }), {
       target: { value: "aapl" },
@@ -249,6 +250,7 @@ describe("Dashboard clear action", () => {
             },
           ],
         }}
+        portfolioName="Sample beta portfolio"
         filteredTreeMapNodes={[]}
         filteredRows={[
           {
@@ -275,7 +277,7 @@ describe("Dashboard clear action", () => {
         onSort={vi.fn()}
         expandedRows={new Set()}
         onToggleExpand={vi.fn()}
-        onClearData={vi.fn()}
+        onBackToPicker={vi.fn()}
         isLoading={false}
         viewMode="holdings"
         onViewModeChange={vi.fn()}
@@ -301,24 +303,24 @@ describe("Dashboard clear action", () => {
     expect(screen.getByRole("searchbox", { name: "Search portfolio" })).toHaveValue(
       "AAPL"
     );
-    expect(screen.queryByRole("button", { name: "Clear" })).not.toBeInTheDocument();
   });
 
   it("renders the mobile variants inline on small screens", () => {
     render(
       <Dashboard
         portfolioData={portfolioData}
+        portfolioName="Sample beta portfolio"
         filteredTreeMapNodes={[]}
         filteredRows={[]}
         isMobile
-        filters={{ investmentTypes: [], accounts: [] }}
+        filters={{ investmentTypes: [], accounts: [], searchQuery: "" }}
         onFiltersChange={vi.fn()}
         onResetFilters={vi.fn()}
         sortConfig={{ key: "totalValue", direction: "desc" }}
         onSort={vi.fn()}
         expandedRows={new Set()}
         onToggleExpand={vi.fn()}
-        onClearData={vi.fn()}
+        onBackToPicker={vi.fn()}
         isLoading={false}
         viewMode="holdings"
         onViewModeChange={vi.fn()}
