@@ -45,6 +45,26 @@ const MOBILE_TREE_MAP_LAYOUT = {
 };
 const MOBILE_BREAKPOINT_QUERY = "(max-width: 767px)";
 
+function getFetchErrorMessage(
+  payload: { error?: unknown; details?: unknown },
+  status: number
+): string {
+  const error =
+    typeof payload.error === "string" && payload.error.trim().length > 0
+      ? payload.error.trim()
+      : `Server error: ${status}`;
+  const details =
+    typeof payload.details === "string" && payload.details.trim().length > 0
+      ? payload.details.trim()
+      : null;
+
+  if (!details || details === error) {
+    return error;
+  }
+
+  return `${error}: ${details}`;
+}
+
 export function usePortfolio() {
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === "undefined") {
@@ -79,7 +99,9 @@ export function usePortfolio() {
   const positionsRef = useRef<FidelityPosition[] | null>(null);
   const filtersRef = useRef(filters);
   const selectedFundsRef = useRef(selectedFunds);
-  const lastLayoutModeRef = useRef<"mobile" | "desktop" | null>(null);
+  const lastLayoutModeRef = useRef<"mobile" | "desktop">(
+    isMobile ? "mobile" : "desktop"
+  );
 
   positionsRef.current = positions;
   filtersRef.current = filters;
@@ -87,6 +109,7 @@ export function usePortfolio() {
   const treeMapLayout = isMobile
     ? MOBILE_TREE_MAP_LAYOUT
     : DESKTOP_TREE_MAP_LAYOUT;
+  const layoutMode = isMobile ? "mobile" : "desktop";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -115,7 +138,7 @@ export function usePortfolio() {
         });
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || `Server error: ${res.status}`);
+          throw new Error(getFetchErrorMessage(errData, res.status));
         }
         const data: PortfolioData = await res.json();
         setPortfolioData(data);
@@ -151,7 +174,6 @@ export function usePortfolio() {
   }, [fetchData]);
 
   useEffect(() => {
-    const layoutMode = isMobile ? "mobile" : "desktop";
     if (lastLayoutModeRef.current === layoutMode) return;
     lastLayoutModeRef.current = layoutMode;
 
@@ -160,7 +182,7 @@ export function usePortfolio() {
     }
 
     void fetchData(positionsRef.current, "/api/portfolio/refresh");
-  }, [fetchData, isMobile]);
+  }, [fetchData, layoutMode]);
 
   useEffect(() => {
     if (!positions) {
@@ -285,6 +307,9 @@ export function usePortfolio() {
 
       return window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches;
     });
+    lastLayoutModeRef.current = window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches
+      ? "mobile"
+      : "desktop";
     mountedRef.current = false;
     if (pollRef.current) {
       clearInterval(pollRef.current);

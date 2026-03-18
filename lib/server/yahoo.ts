@@ -17,6 +17,166 @@ const HOLDINGS_REVALIDATE_SECONDS = 60 * 60;
 const SHOULD_BYPASS_NEXT_CACHE = process.env.NODE_ENV === "test";
 const LOOKTHROUGH_DEPTH = 1;
 const MIN_HOLDING_PERCENT = 0.000001;
+const HOLDINGS_CONCURRENCY = 4;
+const YAHOO_RETRY_ATTEMPTS = 3;
+const RETRY_BASE_DELAY_MS = process.env.NODE_ENV === "test" ? 0 : 250;
+
+const lastGoodQuotes = new Map<string, QuoteData>();
+const lastGoodHoldings = new Map<string, FundHolding[]>();
+
+function sleep(ms: number): Promise<void> {
+  if (ms <= 0) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getNumericErrorCode(error: unknown): number | null {
+  const candidates = [
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (error as any)?.code,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (error as any)?.status,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (error as any)?.statusCode,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (error as any)?.response?.status,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "number" && Number.isFinite(candidate)) {
+      return candidate;
+    }
+
+    if (typeof candidate === "string") {
+      const parsed = Number(candidate);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+  }
+
+  return null;
+}
+
+function isRetryableYahooError(error: unknown): boolean {
+  if (getNumericErrorCode(error) === 429) {
+    return true;
+  }
+
+  return error instanceof Error && /too many requests/i.test(error.message);
+}
+
+async function withYahooRetry<T>(
+  label: string,
+  operation: () => Promise<T>
+): Promise<T> {
+  let attempt = 0;
+
+  while (true) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (!isRetryableYahooError(error) || attempt >= YAHOO_RETRY_ATTEMPTS - 1) {
+        throw error;
+      }
+
+      const delayMs = RETRY_BASE_DELAY_MS * 2 ** attempt;
+      console.warn(
+        `${label} hit Yahoo rate limits, retrying in ${delayMs}ms`,
+        error
+      );
+      await sleep(delayMs);
+      attempt += 1;
+    }
+  }
+}
+
+function cloneQuoteData(quote: QuoteData): QuoteData {
+  return { ...quote };
+}
+
+function cloneHoldings(holdings: FundHolding[]): FundHolding[] {
+  return holdings.map((holding) => ({ ...holding }));
+}
+
+function getLastGoodQuote(symbol: string): QuoteData | undefined {
+  const cached = lastGoodQuotes.get(symbol);
+  return cached ? cloneQuoteData(cached) : undefined;
+}
+
+function getLastGoodQuotes(symbols: string[]): Record<string, QuoteData> {
+  const fallback: Record<string, QuoteData> = {};
+
+  for (const symbol of symbols) {
+    const cached = getLastGoodQuote(symbol);
+    if (cached) {
+      fallback[symbol] = cached;
+    }
+  }
+
+  return fallback;
+}
+
+function rememberQuote(quote: QuoteData): void {
+  lastGoodQuotes.set(quote.symbol, cloneQuoteData(quote));
+}
+
+function getLastGoodHoldings(symbol: string): FundHolding[] | null {
+  const cached = lastGoodHoldings.get(symbol);
+  return cached ? cloneHoldings(cached) : null;
+}
+
+function rememberHoldings(symbol: string, holdings: FundHolding[]): void {
+  lastGoodHoldings.set(symbol, cloneHoldings(holdings));
+}
+
+function getNumberOrFallback(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function getTextOrFallback(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.length > 0 ? value : fallback;
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T) => Promise<R>
+): Promise<PromiseSettledResult<R>[]> {
+  const results: PromiseSettledResult<R>[] = new Array(items.length);
+  let nextIndex = 0;
+
+  async function runWorker(): Promise<void> {
+    while (true) {
+      const index = nextIndex;
+      nextIndex += 1;
+
+      if (index >= items.length) {
+        return;
+      }
+
+      try {
+        results[index] = {
+          status: "fulfilled",
+          value: await worker(items[index] as T),
+        };
+      } catch (error) {
+        results[index] = {
+          status: "rejected",
+          reason: error,
+        };
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, () => runWorker())
+  );
+
+  return results;
+}
 
 // === Symbol mapping ===
 
@@ -121,7 +281,10 @@ async function resolveHoldingsLookupSymbols(description: string): Promise<string
   for (const query of queries) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const searchResult: any = await yahooFinance.search(query);
+      const searchResult: any = await withYahooRetry(
+        `Yahoo symbol search for "${query}"`,
+        () => yahooFinance.search(query)
+      );
       const quotes = Array.isArray(searchResult?.quotes) ? searchResult.quotes : [];
       for (const candidate of quotes) {
         if (isProxyCandidateQuote(candidate)) {
@@ -145,14 +308,17 @@ async function resolveHoldingsLookupSymbols(description: string): Promise<string
 async function fetchQuotesUncached(
   symbols: string[]
 ): Promise<Record<string, QuoteData>> {
-  const result: Record<string, QuoteData> = {};
+  const fallbackQuotes = getLastGoodQuotes(symbols);
+  const result: Record<string, QuoteData> = { ...fallbackQuotes };
   if (symbols.length === 0) return result;
 
   try {
     const yahooFinance = getYahooFinance();
     const yahooSymbols = symbols.map(toYahooSymbol);
 
-    const quotes = await yahooFinance.quote(yahooSymbols, {}, { validateResult: false });
+    const quotes = await withYahooRetry("Yahoo quote fetch", () =>
+      yahooFinance.quote(yahooSymbols, {}, { validateResult: false })
+    );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const quotesArray: any[] = Array.isArray(quotes) ? quotes : [quotes];
@@ -165,19 +331,42 @@ async function fetchQuotesUncached(
         symbols.find(
           (s) => toYahooSymbol(s) === q.symbol
         ) || q.symbol;
+      const previousQuote = fallbackQuotes[ourSymbol];
 
       const quoteData: QuoteData = {
         symbol: ourSymbol,
-        regularMarketPrice: q.regularMarketPrice ?? 0,
-        regularMarketChange: q.regularMarketChange ?? 0,
-        regularMarketChangePercent: q.regularMarketChangePercent ?? 0,
-        fiftyTwoWeekHigh: q.fiftyTwoWeekHigh ?? 0,
-        fiftyTwoWeekLow: q.fiftyTwoWeekLow ?? 0,
-        shortName: q.shortName ?? "",
-        longName: q.longName ?? q.shortName ?? "",
+        regularMarketPrice: getNumberOrFallback(
+          q.regularMarketPrice,
+          previousQuote?.regularMarketPrice ?? 0
+        ),
+        regularMarketChange: getNumberOrFallback(
+          q.regularMarketChange,
+          previousQuote?.regularMarketChange ?? 0
+        ),
+        regularMarketChangePercent: getNumberOrFallback(
+          q.regularMarketChangePercent,
+          previousQuote?.regularMarketChangePercent ?? 0
+        ),
+        fiftyTwoWeekHigh: getNumberOrFallback(
+          q.fiftyTwoWeekHigh,
+          previousQuote?.fiftyTwoWeekHigh ?? 0
+        ),
+        fiftyTwoWeekLow: getNumberOrFallback(
+          q.fiftyTwoWeekLow,
+          previousQuote?.fiftyTwoWeekLow ?? 0
+        ),
+        shortName: getTextOrFallback(q.shortName, previousQuote?.shortName ?? ""),
+        longName: getTextOrFallback(
+          q.longName,
+          getTextOrFallback(
+            previousQuote?.longName,
+            getTextOrFallback(q.shortName, previousQuote?.shortName ?? "")
+          )
+        ),
       };
 
       result[ourSymbol] = quoteData;
+      rememberQuote(quoteData);
     }
   } catch (error) {
     console.error("Error fetching quotes:", error);
@@ -225,9 +414,13 @@ async function fetchYahooDirectHoldingsForSymbol(
   const yahooFinance = getYahooFinance();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const summary: any = await yahooFinance.quoteSummary(symbol, {
-    modules: ["topHoldings"],
-  });
+  const summary: any = await withYahooRetry(
+    `Yahoo holdings fetch for ${symbol}`,
+    () =>
+      yahooFinance.quoteSummary(symbol, {
+        modules: ["topHoldings"],
+      })
+  );
 
   const holdings: FundHolding[] = [];
   const topHoldings = summary?.topHoldings?.holdings;
@@ -372,7 +565,7 @@ async function fetchHoldingsForSymbol(
 ): Promise<FundHolding[]> {
   const directHoldings = await fetchDirectHoldingsForSymbol(symbol, description);
   if (directHoldings.length === 0) {
-    return [];
+    return getLastGoodHoldings(symbol) ?? [];
   }
 
   const reportedPercent = sumHoldingPercents(directHoldings);
@@ -383,9 +576,11 @@ async function fetchHoldingsForSymbol(
   );
 
   if (depth >= LOOKTHROUGH_DEPTH) {
-    return aggregateHoldings(
+    const holdings = aggregateHoldings(
       residualHolding ? [...directHoldings, residualHolding] : directHoldings
     );
+    rememberHoldings(symbol, holdings);
+    return holdings;
   }
 
   const nextVisited = new Set(visited);
@@ -423,7 +618,9 @@ async function fetchHoldingsForSymbol(
     expandedHoldings.push(residualHolding);
   }
 
-  return aggregateHoldings(expandedHoldings);
+  const holdings = aggregateHoldings(expandedHoldings);
+  rememberHoldings(symbol, holdings);
+  return holdings;
 }
 
 /**
@@ -438,18 +635,34 @@ export async function fetchAllHoldings(
       : { symbol: fund.symbol, description: fund.description }
   );
 
-  const results = await Promise.allSettled(
-    normalizedFunds.map(async ({ symbol, description }) => ({
+  const results = await mapWithConcurrency(
+    normalizedFunds,
+    HOLDINGS_CONCURRENCY,
+    async ({ symbol, description }) => ({
       symbol,
       holdings: await fetchHoldingsForSymbol(symbol, description),
-    }))
+    })
   );
 
   const holdingsMap: Record<string, FundHolding[]> = {};
-  for (const result of results) {
+  for (const [index, result] of results.entries()) {
     if (result.status === "fulfilled") {
       holdingsMap[result.value.symbol] = result.value.holdings;
+      continue;
     }
+
+    const symbol = normalizedFunds[index]?.symbol;
+    if (!symbol) {
+      continue;
+    }
+
+    const fallbackHoldings = getLastGoodHoldings(symbol);
+    if (fallbackHoldings) {
+      holdingsMap[symbol] = fallbackHoldings;
+      continue;
+    }
+
+    console.error(`Error fetching holdings for ${symbol}:`, result.reason);
   }
 
   return holdingsMap;

@@ -3,6 +3,7 @@
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { UploadView } from "./components/UploadView";
 import { Dashboard } from "./components/Dashboard";
+import { FetchStatusBadge } from "./components/primitives/FetchStatusBadge";
 
 export default function Home() {
   const portfolio = usePortfolio();
@@ -19,7 +20,10 @@ export default function Home() {
 
   if (!portfolio.portfolioData) {
     return (
-      <LoadingSkeleton enableIntroAnimation={!portfolio.restoredFromStorage} />
+      <LoadingSkeleton
+        enableIntroAnimation={!portfolio.restoredFromStorage}
+        error={portfolio.error}
+      />
     );
   }
 
@@ -51,14 +55,17 @@ export default function Home() {
       treeMapHeight={portfolio.treeMapHeight}
       enableIntroAnimation={!portfolio.restoredFromStorage}
       enableValueAnimations={!portfolio.restoredFromStorage}
+      fetchError={portfolio.error}
     />
   );
 }
 
 function LoadingSkeleton({
   enableIntroAnimation = true,
+  error,
 }: {
   enableIntroAnimation?: boolean;
+  error?: string | null;
 }) {
   return (
     <div
@@ -69,9 +76,12 @@ function LoadingSkeleton({
         .filter(Boolean)
         .join(" ")}
     >
-      <div className="mb-6">
-        <div className="skeleton h-4 w-32 mb-2" />
-        <div className="skeleton h-9 w-48" />
+      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <div className="text-sm font-medium text-text-muted">Your portfolio</div>
+          <div className="mt-2 skeleton h-9 w-48" />
+        </div>
+        {error && <FetchStatusBadge error={error} hasData={false} />}
       </div>
       <div className="skeleton h-[400px] rounded-xl mb-6" />
       <div className="space-y-2">

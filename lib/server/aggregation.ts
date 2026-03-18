@@ -591,14 +591,14 @@ function convertToTableRows(
       percentOfPortfolio:
         totalValue > 0 ? (combinedValue / totalValue) * 100 : 0,
       currentPrice:
-        quote?.regularMarketPrice || findLastPrice(positions, data.symbol),
+        quote?.regularMarketPrice ?? findLastPrice(positions, data.symbol),
       totalGainLossDollar: data.totalGainLossDollar,
       totalGainLossPercent:
         data.costBasis > 0
           ? (data.totalGainLossDollar / data.costBasis) * 100
           : 0,
-      fiftyTwoWeekHigh: quote?.fiftyTwoWeekHigh || 0,
-      fiftyTwoWeekLow: quote?.fiftyTwoWeekLow || 0,
+      fiftyTwoWeekHigh: quote?.fiftyTwoWeekHigh ?? 0,
+      fiftyTwoWeekLow: quote?.fiftyTwoWeekLow ?? 0,
       isExpandable: hasMultipleSources,
       sources: data.sources,
     });

@@ -267,4 +267,113 @@ describe("yahoo fund symbol lookups", () => {
     expect(mockQuote).not.toHaveBeenCalled();
     expect(result).toEqual({});
   });
+
+  it("retries rate-limited quote fetches and reuses last good 52-week data", async () => {
+    mockQuote
+      .mockResolvedValueOnce({
+        symbol: "SPY",
+        regularMarketPrice: 500,
+        regularMarketChange: 5,
+        regularMarketChangePercent: 1,
+        fiftyTwoWeekHigh: 540,
+        fiftyTwoWeekLow: 420,
+        shortName: "SPY",
+        longName: "SPDR S&P 500 ETF",
+      })
+      .mockRejectedValueOnce(
+        Object.assign(new Error("Edge: Too Many Requests"), { code: 429 })
+      )
+      .mockResolvedValueOnce({
+        symbol: "SPY",
+        regularMarketPrice: 505,
+        regularMarketChange: 1,
+        regularMarketChangePercent: 0.2,
+        shortName: "SPY",
+      });
+
+    const { fetchQuotes } = await import("../yahoo");
+
+    const initial = await fetchQuotes(["SPY"]);
+    const refreshed = await fetchQuotes(["SPY"]);
+
+    expect(mockQuote).toHaveBeenCalledTimes(3);
+    expect(initial.SPY).toMatchObject({
+      regularMarketPrice: 500,
+      fiftyTwoWeekHigh: 540,
+      fiftyTwoWeekLow: 420,
+      longName: "SPDR S&P 500 ETF",
+    });
+    expect(refreshed.SPY).toMatchObject({
+      regularMarketPrice: 505,
+      fiftyTwoWeekHigh: 540,
+      fiftyTwoWeekLow: 420,
+      longName: "SPDR S&P 500 ETF",
+    });
+  });
+
+  it("returns the last good holdings when Yahoo rate-limits a later refresh", async () => {
+    mockQuoteSummary
+      .mockResolvedValueOnce({
+        topHoldings: {
+          holdings: [
+            {
+              symbol: "ALPKX",
+              holdingName: "Alpha LifePath Index 2055",
+              holdingPercent: 0.4,
+            },
+          ],
+        },
+      })
+      .mockRejectedValue(
+        Object.assign(new Error("Edge: Too Many Requests"), { code: 429 })
+      );
+
+    const { fetchAllHoldings } = await import("../yahoo");
+
+    const initial = await fetchAllHoldings([{ symbol: "ALPKX" }]);
+    const fallback = await fetchAllHoldings([{ symbol: "ALPKX" }]);
+
+    expect(fallback.ALPKX).toEqual(initial.ALPKX);
+    expect(mockQuoteSummary).toHaveBeenCalledTimes(4);
+  });
+
+  it("limits concurrent holdings lookups to avoid startup bursts", async () => {
+    let inFlight = 0;
+    let maxInFlight = 0;
+
+    mockQuoteSummary.mockImplementation(
+      (symbol: string) =>
+        new Promise((resolve) => {
+          inFlight += 1;
+          maxInFlight = Math.max(maxInFlight, inFlight);
+
+          setTimeout(() => {
+            inFlight -= 1;
+            resolve({
+              topHoldings: {
+                holdings: [
+                  {
+                    symbol,
+                    holdingName: `${symbol} Self`,
+                    holdingPercent: 1,
+                  },
+                ],
+              },
+            });
+          }, 0);
+        })
+    );
+
+    const { fetchAllHoldings } = await import("../yahoo");
+    await fetchAllHoldings([
+      { symbol: "FUND1" },
+      { symbol: "FUND2" },
+      { symbol: "FUND3" },
+      { symbol: "FUND4" },
+      { symbol: "FUND5" },
+      { symbol: "FUND6" },
+    ]);
+
+    expect(maxInFlight).toBeLessThanOrEqual(4);
+  });
 });
