@@ -37,16 +37,22 @@ describe("yahoo fund symbol lookups", () => {
           },
         ],
       });
-    mockQuoteSummary.mockResolvedValue({
-      topHoldings: {
-        holdings: [
-          {
-            symbol: "IXUS",
-            holdingName: "iShares Core MSCI Total Intl Stk ETF",
-            holdingPercent: 0.3753278,
+    mockQuoteSummary.mockImplementation(async (symbol: string) => {
+      if (symbol === "LIVKX") {
+        return {
+          topHoldings: {
+            holdings: [
+              {
+                symbol: "IXUS",
+                holdingName: "iShares Core MSCI Total Intl Stk ETF",
+                holdingPercent: 0.3753278,
+              },
+            ],
           },
-        ],
-      },
+        };
+      }
+
+      return {};
     });
 
     const { fetchAllHoldings } = await import("../yahoo");
@@ -61,9 +67,89 @@ describe("yahoo fund symbol lookups", () => {
     });
     expect(result["09261F572"]).toEqual([
       {
+        symbol: "09261F572",
+        holdingName: "BTC LPATH IDX 2055 M",
+        holdingPercent: 0.6246722,
+      },
+      {
         symbol: "IXUS",
         holdingName: "iShares Core MSCI Total Intl Stk ETF",
         holdingPercent: 0.3753278,
+      },
+    ]);
+  });
+
+  it("looks through one extra fund layer and keeps any unreported remainder", async () => {
+    mockQuoteSummary.mockImplementation(async (symbol: string) => {
+      if (symbol === "TARGET") {
+        return {
+          topHoldings: {
+            holdings: [
+              {
+                symbol: "IXUS",
+                holdingName: "iShares Core MSCI Total Intl Stk ETF",
+                holdingPercent: 0.6,
+              },
+              {
+                symbol: "CASHX",
+                holdingName: "Cash Sleeve",
+                holdingPercent: 0.3,
+              },
+            ],
+          },
+        };
+      }
+
+      if (symbol === "IXUS") {
+        return {
+          topHoldings: {
+            holdings: [
+              {
+                symbol: "2330.TW",
+                holdingName: "Taiwan Semiconductor Manufacturing Co Ltd",
+                holdingPercent: 0.5,
+              },
+              {
+                symbol: "005930.KS",
+                holdingName: "Samsung Electronics Co Ltd",
+                holdingPercent: 0.25,
+              },
+            ],
+          },
+        };
+      }
+
+      return {};
+    });
+
+    const { fetchAllHoldings } = await import("../yahoo");
+    const result = await fetchAllHoldings([{ symbol: "TARGET" }]);
+
+    expect(result.TARGET).toEqual([
+      {
+        symbol: "2330.TW",
+        holdingName: "Taiwan Semiconductor Manufacturing Co Ltd",
+        holdingPercent: 0.3,
+      },
+      {
+        symbol: "CASHX",
+        holdingName: "Cash Sleeve",
+        holdingPercent: 0.3,
+      },
+      {
+        symbol: "005930.KS",
+        holdingName: "Samsung Electronics Co Ltd",
+        holdingPercent: 0.15,
+      },
+      {
+        symbol: "IXUS",
+        holdingName: "iShares Core MSCI Total Intl Stk ETF",
+        holdingPercent: 0.15,
+      },
+      {
+        symbol: "TARGET",
+        holdingName: "TARGET",
+        holdingPercent: 0.1,
       },
     ]);
   });
