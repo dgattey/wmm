@@ -27,7 +27,7 @@ export function HeaderFundSelector({
   }
 
   return (
-    <div className="mt-5 max-w-[720px]">
+    <div className="mt-5 max-w-[780px] rounded-2xl border border-border/70 bg-surface/86 backdrop-blur-xl shadow-[var(--shadow-md)] px-4 py-3">
       <div className="flex flex-wrap items-center gap-2">
         <HeaderLabel>Funds</HeaderLabel>
 
@@ -36,8 +36,8 @@ export function HeaderFundSelector({
           className={cn(
             "px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border cursor-pointer whitespace-nowrap",
             selectedFunds.length === 0
-              ? "bg-white/12 text-white border-white/0 shadow-sm"
-              : "bg-white/5 text-white/70 border-white/10 hover:text-white hover:bg-white/10"
+              ? "bg-surface-hover text-text-primary border-border shadow-sm"
+              : "bg-surface text-text-muted border-border hover:text-text-primary hover:bg-surface-hover"
           )}
         >
           All funds
@@ -64,8 +64,8 @@ export function HeaderFundSelector({
           className={cn(
             "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border cursor-pointer whitespace-nowrap",
             showChooser
-              ? "bg-white/12 text-white border-white/0 shadow-sm"
-              : "bg-white/5 text-white/70 border-white/10 hover:text-white hover:bg-white/10"
+              ? "bg-surface-hover text-text-primary border-border shadow-sm"
+              : "bg-surface text-text-muted border-border hover:text-text-primary hover:bg-surface-hover"
           )}
         >
           {showChooser
@@ -77,13 +77,13 @@ export function HeaderFundSelector({
       </div>
 
       {showChooser && (
-        <div className="mt-3 rounded-2xl border border-white/8 bg-[#151b24]/88 backdrop-blur-xl shadow-[0_12px_32px_rgba(0,0,0,0.25)] p-4 animate-fade-in">
+        <div className="mt-3 rounded-2xl border border-border/70 bg-surface/94 backdrop-blur-xl shadow-[var(--shadow-lg)] p-4 animate-fade-in">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <div>
-              <p className="text-sm font-medium text-white">
+              <p className="text-sm font-medium text-text-primary">
                 Compare specific funds
               </p>
-              <p className="text-xs text-white/55">
+              <p className="text-xs text-text-muted">
                 Select one or more funds. Treemap clicks still work too.
               </p>
             </div>
@@ -91,7 +91,7 @@ export function HeaderFundSelector({
             {selectedFunds.length > 0 && (
               <button
                 onClick={onClearFunds}
-                className="text-xs font-medium text-white/60 hover:text-white transition-colors cursor-pointer"
+                className="text-xs font-medium text-text-muted hover:text-text-primary transition-colors cursor-pointer"
               >
                 Clear selection
               </button>
@@ -112,7 +112,7 @@ export function HeaderFundSelector({
                     "hover:brightness-110 active:scale-95",
                     selected
                       ? "text-white border-white/0 shadow-sm"
-                      : "bg-white/5 text-white/68 border-white/10 hover:text-white hover:bg-white/10"
+                      : "bg-surface text-text-muted border-border hover:text-text-primary hover:bg-surface-hover"
                   )}
                   style={
                     selected
@@ -136,7 +136,7 @@ export function HeaderFundSelector({
 
 function HeaderLabel({ children }: { children: ReactNode }) {
   return (
-    <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/40 whitespace-nowrap">
+    <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-text-muted whitespace-nowrap">
       {children}
     </span>
   );
