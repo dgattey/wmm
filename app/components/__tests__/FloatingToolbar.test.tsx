@@ -75,7 +75,7 @@ describe("FloatingToolbar", () => {
     const props = makeProps();
     render(<FloatingToolbar {...props} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+    fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
     expect(screen.getByText("Account")).toBeInTheDocument();
     expect(screen.getByText("Funds")).toBeInTheDocument();
     expect(screen.getByText("Types")).toBeInTheDocument();
