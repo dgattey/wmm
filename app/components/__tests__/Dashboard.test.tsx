@@ -62,7 +62,7 @@ describe("Dashboard clear action", () => {
     const button = screen.getByRole("button", { name: /clear file/i });
     expect(button).toBeInTheDocument();
     expect(button).toHaveTextContent("Clear file");
-    expect(button).toHaveClass("min-h-10");
+    expect(button).toHaveClass("min-h-11");
   });
 
   it("clears uploaded data in a single click", () => {

@@ -36,6 +36,16 @@ const YAHOO_SYMBOL_MAP: Record<string, string> = {
   "BRK-B": "BRK-B", // Already correct after CSV parser normalization
 };
 
+/**
+ * Some 401k/CIT symbols are internal plan identifiers, not public market tickers.
+ * For holdings lookups only, map them to a public share class with equivalent
+ * portfolio construction so we can decompose the target-date fund.
+ */
+const HOLDINGS_PROXY_SYMBOL_MAP: Record<string, string> = {
+  // Fidelity 401k symbol for BlackRock LifePath Index 2055 target-date fund
+  "09261F572": "LIVIX",
+};
+
 /** Known symbols that won't be found on Yahoo Finance */
 const SKIP_SYMBOLS = new Set(["FZFXX", "FDRXX", "SPAXX"]);
 
@@ -46,6 +56,10 @@ function isNonStandardSymbol(symbol: string): boolean {
 
 function toYahooSymbol(symbol: string): string {
   return YAHOO_SYMBOL_MAP[symbol] || symbol;
+}
+
+function toHoldingsLookupSymbol(symbol: string): string {
+  return HOLDINGS_PROXY_SYMBOL_MAP[symbol] || toYahooSymbol(symbol);
 }
 
 // === Quote fetching ===
@@ -131,13 +145,15 @@ async function fetchHoldingsForSymbol(
     return cached!.data;
   }
 
-  if (SKIP_SYMBOLS.has(symbol) || isNonStandardSymbol(symbol)) {
+  const lookupSymbol = toHoldingsLookupSymbol(symbol);
+
+  if (SKIP_SYMBOLS.has(lookupSymbol) || isNonStandardSymbol(lookupSymbol)) {
     return [];
   }
 
   try {
     const yahooFinance = getYahooFinance();
-    const yahooSym = toYahooSymbol(symbol);
+    const yahooSym = lookupSymbol;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const summary: any = await yahooFinance.quoteSummary(yahooSym, {
       modules: ["topHoldings"],
