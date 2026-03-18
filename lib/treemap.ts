@@ -133,7 +133,9 @@ export function relayoutTreeMapNodes(
       ),
     })),
   })
-    .sum((entry) => entry.node.value)
+    .sum((entry) =>
+      entry.children && entry.children.length > 0 ? 0 : entry.node.value
+    )
     .sort((a, b) => (b.value || 0) - (a.value || 0));
 
   const laidOut = treemap<RelayoutHierarchyData>()
