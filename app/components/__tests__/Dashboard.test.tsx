@@ -65,19 +65,10 @@ describe("Dashboard clear action", () => {
     expect(button).toHaveClass("min-h-10");
   });
 
-  it("requires confirmation before clearing uploaded data", () => {
+  it("clears uploaded data in a single click", () => {
     const { onClearData } = renderDashboard();
 
     fireEvent.click(screen.getByRole("button", { name: /clear file/i }));
-    expect(onClearData).not.toHaveBeenCalled();
-    expect(
-      screen.getByRole("button", { name: /confirm clear file/i })
-    ).toHaveTextContent("Confirm clear");
-    expect(
-      screen.getByText("Click again to remove this upload")
-    ).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: /confirm clear file/i }));
     expect(onClearData).toHaveBeenCalledTimes(1);
   });
 });

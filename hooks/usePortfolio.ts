@@ -12,7 +12,6 @@ import type {
 } from "@/lib/types";
 import { parseCSV } from "@/lib/parseCSV";
 import { savePortfolio, loadPortfolio, clearPortfolio } from "@/lib/storage";
-import { logDebugEvent } from "@/lib/debugClient";
 
 const POLL_INTERVAL = 5000;
 
@@ -109,22 +108,6 @@ export function usePortfolio() {
     };
   }, [positions, fetchData]);
 
-  useEffect(() => {
-    // #region agent log
-    logDebugEvent({
-      hypothesisId: "B",
-      location: "hooks/usePortfolio.ts:state",
-      message: "Portfolio state changed",
-      data: {
-        hasPositions: positions !== null,
-        positionsCount: positions?.length ?? 0,
-        hasPortfolioData: portfolioData !== null,
-        isLoading,
-      },
-    });
-    // #endregion
-  }, [positions, portfolioData, isLoading]);
-
   // Switch source rows based on viewMode
   const sourceRows =
     viewMode === "holdings"
@@ -168,20 +151,6 @@ export function usePortfolio() {
   }
 
   function clearData() {
-    // #region agent log
-    logDebugEvent({
-      hypothesisId: "B",
-      location: "hooks/usePortfolio.ts:clearData:entry",
-      message: "clearData invoked",
-      data: {
-        hasPositions: positionsRef.current !== null,
-        positionsCount: positionsRef.current?.length ?? 0,
-        hadPortfolioData: portfolioData !== null,
-        pollActive: pollRef.current !== null,
-      },
-    });
-    // #endregion
-
     clearPortfolio();
     setPositions(null);
     setPortfolioData(null);
