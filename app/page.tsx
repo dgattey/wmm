@@ -29,6 +29,7 @@ export default function Home() {
       isMobile={portfolio.isMobile}
       filters={portfolio.filters}
       onFiltersChange={portfolio.setFilters}
+      onResetFilters={portfolio.resetFilters}
       sortConfig={portfolio.sortConfig}
       onSort={portfolio.handleSort}
       expandedRows={portfolio.expandedRows}

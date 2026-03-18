@@ -132,6 +132,33 @@ describe("FloatingToolbar", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows top-level filter summaries when filters are active", () => {
+    const props = makeProps();
+    props.filters = {
+      investmentTypes: ["Stocks"],
+      accounts: ["Brokerage"],
+    };
+    props.selectedFunds = ["VTI"];
+
+    render(<FloatingToolbar {...props} />);
+
+    expect(screen.getByText("Account")).toBeInTheDocument();
+    expect(screen.getByText("Brokerage")).toBeInTheDocument();
+    expect(screen.getByText("Fund")).toBeInTheDocument();
+    expect(screen.getByText("VTI")).toBeInTheDocument();
+    expect(screen.getByText("Type")).toBeInTheDocument();
+    expect(screen.getByText("Stocks")).toBeInTheDocument();
+  });
+
+  it("shows all-filters hint when nothing is active", () => {
+    const props = makeProps();
+    render(<FloatingToolbar {...props} />);
+
+    expect(
+      screen.getByText("All accounts, all funds, all types")
+    ).toBeInTheDocument();
+  });
+
   it("renders as an inline panel on mobile", () => {
     const props = makeProps();
     props.filters = {
@@ -143,15 +170,15 @@ describe("FloatingToolbar", () => {
     expect(container.firstElementChild).toHaveClass("w-full");
     expect(container.querySelector(".fixed")).not.toBeInTheDocument();
 
-    const mobileCard = container.firstElementChild?.firstElementChild;
     const resetButton = screen.getByRole("button", { name: "Reset filters" });
     const holdingsButton = screen.getByRole("button", { name: "Holdings" });
 
-    expect(mobileCard?.firstElementChild).toContainElement(resetButton);
     expect(
       resetButton.compareDocumentPosition(holdingsButton) &
         Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
+    expect(screen.getByText("Type")).toBeInTheDocument();
+    expect(screen.getByText("Stocks")).toBeInTheDocument();
   });
 
   it("uses a stable desktop width for the toolbar shell", () => {
