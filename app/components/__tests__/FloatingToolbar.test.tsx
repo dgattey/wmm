@@ -21,6 +21,25 @@ function makeProps() {
     onViewModeChange: vi.fn(),
     treeMapGrouping: "fund" as const,
     onTreeMapGroupingChange: vi.fn(),
+    fundOptions: [
+      {
+        symbol: "VTI",
+        name: "Vanguard Total Stock Market ETF",
+        color: "#4E9999",
+        value: 1000,
+        hasChildren: true,
+      },
+      {
+        symbol: "VXUS",
+        name: "Vanguard Total International Stock ETF",
+        color: "#8B74AB",
+        value: 800,
+        hasChildren: true,
+      },
+    ],
+    selectedFunds: [] as string[],
+    onToggleFund: vi.fn(),
+    onClearFunds: vi.fn(),
   };
 }
 
@@ -33,12 +52,13 @@ describe("FloatingToolbar", () => {
     expect(props.onTreeMapGroupingChange).toHaveBeenCalledWith("holding");
   });
 
-  it("resets only the active filters", () => {
+  it("resets toolbar filters including funds", () => {
     const props = makeProps();
     props.filters = {
       investmentTypes: ["Stocks"],
       accounts: ["Brokerage"],
     };
+    props.selectedFunds = ["VTI"];
 
     render(<FloatingToolbar {...props} />);
 
@@ -48,13 +68,17 @@ describe("FloatingToolbar", () => {
       investmentTypes: [],
       accounts: [],
     });
+    expect(props.onClearFunds).toHaveBeenCalledTimes(1);
   });
 
-  it("opens the filter panel and updates the account filter", () => {
+  it("opens separate filter cards and updates the account filter", () => {
     const props = makeProps();
     render(<FloatingToolbar {...props} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+    expect(screen.getByText("Account")).toBeInTheDocument();
+    expect(screen.getByText("Funds")).toBeInTheDocument();
+    expect(screen.getByText("Types")).toBeInTheDocument();
     fireEvent.change(screen.getByRole("combobox"), {
       target: { value: "Roth IRA" },
     });
@@ -65,17 +89,28 @@ describe("FloatingToolbar", () => {
     });
   });
 
+  it("toggles funds from the filters card", () => {
+    const props = makeProps();
+    render(<FloatingToolbar {...props} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+    fireEvent.click(screen.getByRole("button", { name: "VTI" }));
+
+    expect(props.onToggleFund).toHaveBeenCalledWith("VTI");
+  });
+
   it("shows the active filter count in the filters button", () => {
     const props = makeProps();
     props.filters = {
       investmentTypes: ["Stocks", "ETFs"],
       accounts: ["Brokerage"],
     };
+    props.selectedFunds = ["VTI"];
 
     render(<FloatingToolbar {...props} />);
 
     expect(
-      screen.getByRole("button", { name: "Filters (3)" })
+      screen.getByRole("button", { name: "Filters (4)" })
     ).toBeInTheDocument();
   });
 });

@@ -48,6 +48,13 @@ export interface PortfolioSummary {
   investmentTypes: string[];
 }
 
+export interface ActivePortfolioSummary {
+  value: number;
+  gainLoss: number;
+  gainLossPercent: number;
+  label: string;
+}
+
 // === TreeMap Node (pre-computed with layout positions by server) ===
 
 export interface TreeMapNode {
