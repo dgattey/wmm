@@ -202,7 +202,9 @@ function MobileRowCard({
 
       <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
         <MetricCell label="Accounts" className="col-span-2">
-          <span className="text-sm text-text-primary">{row.accounts.join(", ")}</span>
+          <span className="text-sm text-text-primary break-words">
+            {row.accounts.join(", ")}
+          </span>
         </MetricCell>
         <MetricCell label="Value">
           <AnimatedNumber
@@ -252,10 +254,10 @@ function MobileRowCard({
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-sm font-medium text-text-primary">
+                  <div className="text-sm font-medium text-text-primary break-words">
                     {source.type === "direct" ? source.account : source.sourceName}
                   </div>
-                  <div className="text-xs text-text-muted">
+                  <div className="text-xs text-text-muted break-words">
                     {source.type === "direct"
                       ? "Direct holding"
                       : `${source.sourceName} (${source.sourceSymbol})`}
@@ -264,9 +266,11 @@ function MobileRowCard({
                 <Badge label={source.investmentType} />
               </div>
 
-              <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2">
+              <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
                 <MetricCell label="Account">
-                  <span className="text-xs text-text-primary">{source.account}</span>
+                  <span className="text-xs text-text-primary break-words">
+                    {source.account}
+                  </span>
                 </MetricCell>
                 <MetricCell label="Value">
                   <span className="text-xs font-medium text-text-primary tabular-nums">
