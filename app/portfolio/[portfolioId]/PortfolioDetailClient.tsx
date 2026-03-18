@@ -4,10 +4,8 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Dashboard } from "@/app/components/Dashboard";
 import { PortfolioEmptyState } from "@/app/components/PortfolioEmptyState";
-import { PortfolioLibraryNav } from "@/app/components/PortfolioLibraryNav";
 import { PortfolioLoadingState } from "@/app/components/PortfolioLoadingState";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import { usePortfolioLibrary } from "@/hooks/usePortfolioLibrary";
 import { usePortfolioViewState } from "@/hooks/usePortfolioViewState";
 import { useStoredPortfolioRecord } from "@/hooks/useStoredPortfolioRecord";
 import {
@@ -34,11 +32,6 @@ export function PortfolioDetailClient({
     height: treeMapLayout.height,
     layoutMode,
   });
-  const {
-    portfolios,
-    refreshLibrary,
-    removePortfolioById,
-  } = usePortfolioLibrary();
   const viewState = usePortfolioViewState({
     positions: record.positions,
     portfolioData: record.portfolioData,
@@ -47,16 +40,10 @@ export function PortfolioDetailClient({
   });
 
   useEffect(() => {
-    refreshLibrary();
-  }, [portfolioId, record.portfolioData?.lastUpdated, refreshLibrary]);
-
-  function handleLibraryRemove(portfolioToRemoveId: string) {
-    const nextPortfolioId = removePortfolioById(portfolioToRemoveId);
-
-    if (portfolioToRemoveId === portfolioId) {
-      router.push(nextPortfolioId ? `/portfolio/${nextPortfolioId}` : "/");
-    }
-  }
+    document.title = record.summary
+      ? `${record.summary.name} - Your portfolio`
+      : "Your portfolio";
+  }, [record.summary]);
 
   if (record.isMissing) {
     return (
@@ -82,15 +69,9 @@ export function PortfolioDetailClient({
 
   return (
     <main className="min-h-screen">
-      <div className="mx-auto max-w-[1400px] px-4 pt-4 md:px-6 md:pt-6">
-        <PortfolioLibraryNav
-          portfolios={portfolios}
-          activePortfolioId={portfolioId}
-          onRemovePortfolio={handleLibraryRemove}
-        />
-      </div>
       <Dashboard
         portfolioData={record.portfolioData}
+        portfolioName={record.summary?.name ?? "Portfolio"}
         filteredTreeMapNodes={viewState.filteredTreeMapNodes}
         filteredRows={viewState.filteredRows}
         isMobile={isMobile}
@@ -101,7 +82,7 @@ export function PortfolioDetailClient({
         onSort={viewState.handleSort}
         expandedRows={viewState.expandedRows}
         onToggleExpand={viewState.toggleExpand}
-        onRemovePortfolio={() => handleLibraryRemove(portfolioId)}
+        onBackToPicker={() => router.push("/")}
         isLoading={record.isLoading}
         viewMode={viewState.viewMode}
         onViewModeChange={viewState.setViewMode}

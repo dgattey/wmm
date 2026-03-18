@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { formatDollar } from "@/lib/utils";
 import type { StoredPortfolioSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -29,15 +28,10 @@ export function PortfolioLibraryNav({
         <div>
           <p className="text-sm font-semibold text-text-primary">Saved portfolios</p>
           <p className="text-xs text-text-muted">
-            Recent uploads stay cached, older ones keep only the source positions.
+            Pick one to visualize or delete it here. Recent uploads stay cached,
+            older ones keep only the source positions.
           </p>
         </div>
-        <Link
-          href="/"
-          className="inline-flex min-h-10 items-center rounded-full border border-border px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface-hover"
-        >
-          Upload more files
-        </Link>
       </div>
 
       {portfolios.length === 0 ? (

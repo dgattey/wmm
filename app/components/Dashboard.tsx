@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 
 interface DashboardProps {
   portfolioData: PortfolioData;
+  portfolioName: string;
   filteredTreeMapNodes: TreeMapNode[];
   filteredRows: TableRow[];
   isMobile: boolean;
@@ -34,7 +35,7 @@ interface DashboardProps {
   onSort: (key: string) => void;
   expandedRows: Set<string>;
   onToggleExpand: (symbol: string) => void;
-  onRemovePortfolio: () => void;
+  onBackToPicker: () => void;
   isLoading: boolean;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
@@ -54,6 +55,7 @@ interface DashboardProps {
 
 export function Dashboard({
   portfolioData,
+  portfolioName,
   filteredTreeMapNodes,
   filteredRows,
   isMobile,
@@ -64,7 +66,7 @@ export function Dashboard({
   onSort,
   expandedRows,
   onToggleExpand,
-  onRemovePortfolio,
+  onBackToPicker,
   isLoading,
   viewMode,
   onViewModeChange,
@@ -88,7 +90,6 @@ export function Dashboard({
   const displayGainLossPercent =
     activeSummary?.gainLossPercent ?? summary.totalGainLossPercent;
   const isFiltered = activeSummary !== null;
-  const headerLabel = isFiltered ? activeSummary.label : "Your portfolio";
 
   return (
     <div
@@ -111,8 +112,8 @@ export function Dashboard({
               className={cn("min-w-0", enableIntroAnimation && "animate-soft-rise")}
               style={{ "--enter-delay": "40ms" } as CSSProperties}
             >
-              <div className="mb-2 flex min-w-0 items-center gap-2">
-                {isFiltered && (
+              <div className="mb-2 flex min-w-0 items-center gap-3">
+                {isFiltered ? (
                   <ResetFiltersButton
                     onClick={onResetFilters}
                     className={cn(
@@ -122,15 +123,44 @@ export function Dashboard({
                       "dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/15"
                     )}
                   />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={onBackToPicker}
+                    className={cn(
+                      "inline-flex min-h-9 min-w-9 items-center justify-center rounded-full border border-border/70",
+                      "bg-surface text-text-primary shadow-sm transition-all duration-200 cursor-pointer hover:bg-surface-hover hover-lift press-down",
+                      enableIntroAnimation && "animate-scale-in"
+                    )}
+                    title="Back to portfolios"
+                    aria-label="Back to portfolios"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="m15 18-6-6 6-6" />
+                    </svg>
+                  </button>
                 )}
-                <h1
-                  className={cn(
-                    "truncate text-sm font-medium transition-colors duration-300 max-w-[500px]",
-                    isFiltered ? "text-text-primary" : "text-text-muted"
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-text-muted">Your portfolio</div>
+                  <h1 className="truncate text-sm font-semibold text-text-primary md:text-base">
+                    {portfolioName}
+                  </h1>
+                  {isFiltered && (
+                    <p className="truncate text-xs text-text-muted">
+                      {activeSummary.label}
+                    </p>
                   )}
-                >
-                  {headerLabel}
-                </h1>
+                </div>
               </div>
 
               <div
@@ -190,36 +220,6 @@ export function Dashboard({
                   className="max-w-full self-stretch md:self-auto"
                 />
               )}
-
-              <button
-                type="button"
-                onClick={onRemovePortfolio}
-                className={cn(
-                  "inline-flex min-h-11 items-center gap-2 rounded-full px-4 py-2.5",
-                  "text-sm font-medium shadow-sm transition-all duration-200 cursor-pointer hover-lift press-down",
-                  "border border-red-200/70 bg-red-50 text-red-700 hover:bg-red-100",
-                  "dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/15"
-                )}
-                title="Remove this portfolio"
-                aria-label="Remove portfolio"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M3 6h18" />
-                  <path d="M8 6V4h8v2" />
-                  <path d="m19 6-1 14H6L5 6" />
-                </svg>
-                <span>Remove portfolio</span>
-              </button>
 
               {isLoading && (
                 <div className="flex items-center gap-2 text-xs text-text-muted">

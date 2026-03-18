@@ -13,9 +13,9 @@ import { UploadView } from "../UploadView";
 describe("UploadView", () => {
   it("renders the title and instructions", () => {
     render(<UploadView onFilesSelect={vi.fn()} />);
-    expect(screen.getByText("Your portfolio")).toBeInTheDocument();
+    expect(screen.getByText("Add portfolios")).toBeInTheDocument();
     expect(
-      screen.getByText("Visualize your investment portfolio breakdown")
+      screen.getByText("Import one or more Fidelity exports for the picker.")
     ).toBeInTheDocument();
   });
 

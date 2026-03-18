@@ -53,21 +53,22 @@ const portfolioData: PortfolioData = {
 };
 
 function renderDashboard({
-  onRemovePortfolio = vi.fn(),
+  onBackToPicker = vi.fn(),
   enableIntroAnimation,
   enableValueAnimations,
   fetchError = null,
 }: {
-  onRemovePortfolio?: () => void;
+  onBackToPicker?: () => void;
   enableIntroAnimation?: boolean;
   enableValueAnimations?: boolean;
   fetchError?: string | null;
 } = {}) {
   return {
-    onRemovePortfolio,
+    onBackToPicker,
     ...render(
       <Dashboard
         portfolioData={portfolioData}
+        portfolioName="Sample beta portfolio"
         filteredTreeMapNodes={[]}
         filteredRows={[]}
         isMobile={false}
@@ -78,7 +79,7 @@ function renderDashboard({
         onSort={vi.fn()}
         expandedRows={new Set()}
         onToggleExpand={vi.fn()}
-        onRemovePortfolio={onRemovePortfolio}
+        onBackToPicker={onBackToPicker}
         isLoading={false}
         viewMode="holdings"
         onViewModeChange={vi.fn()}
@@ -104,22 +105,22 @@ describe("Dashboard portfolio actions", () => {
     renderDashboard();
 
     expect(screen.getByText("Your portfolio")).toBeInTheDocument();
+    expect(screen.getByText("Sample beta portfolio")).toBeInTheDocument();
   });
 
-  it("renders a visible larger remove button", () => {
+  it("renders a back button when nothing is filtered", () => {
     renderDashboard();
 
-    const button = screen.getByRole("button", { name: /remove portfolio/i });
+    const button = screen.getByRole("button", { name: /back to portfolios/i });
     expect(button).toBeInTheDocument();
-    expect(button).toHaveTextContent("Remove portfolio");
-    expect(button).toHaveClass("min-h-11");
+    expect(screen.queryByRole("button", { name: /remove portfolio/i })).not.toBeInTheDocument();
   });
 
-  it("removes the active portfolio in a single click", () => {
-    const { onRemovePortfolio } = renderDashboard();
+  it("goes back to the picker in a single click", () => {
+    const { onBackToPicker } = renderDashboard();
 
-    fireEvent.click(screen.getByRole("button", { name: /remove portfolio/i }));
-    expect(onRemovePortfolio).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: /back to portfolios/i }));
+    expect(onBackToPicker).toHaveBeenCalledTimes(1);
   });
 
   it("shows the active summary label in the header", () => {
@@ -127,6 +128,7 @@ describe("Dashboard portfolio actions", () => {
     render(
       <Dashboard
         portfolioData={portfolioData}
+        portfolioName="Sample beta portfolio"
         filteredTreeMapNodes={[]}
         filteredRows={[]}
         isMobile={false}
@@ -137,7 +139,7 @@ describe("Dashboard portfolio actions", () => {
         onSort={vi.fn()}
         expandedRows={new Set()}
         onToggleExpand={vi.fn()}
-        onRemovePortfolio={vi.fn()}
+        onBackToPicker={vi.fn()}
         isLoading={false}
         viewMode="holdings"
         onViewModeChange={vi.fn()}
@@ -158,10 +160,11 @@ describe("Dashboard portfolio actions", () => {
       />
     );
 
+    expect(screen.getByText("Sample beta portfolio")).toBeInTheDocument();
     expect(screen.getByText("2 funds selected")).toBeInTheDocument();
     const resetButton = screen.getByRole("button", { name: "Reset filters" });
     expect(resetButton).toHaveAttribute("title", "Reset all filters");
-    expect(screen.queryByText("Reset filters")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /back to portfolios/i })).not.toBeInTheDocument();
     fireEvent.click(resetButton);
     expect(onResetFilters).toHaveBeenCalledTimes(1);
   });
@@ -170,6 +173,7 @@ describe("Dashboard portfolio actions", () => {
     render(
       <Dashboard
         portfolioData={portfolioData}
+        portfolioName="Sample beta portfolio"
         filteredTreeMapNodes={[]}
         filteredRows={[]}
         isMobile
@@ -180,7 +184,7 @@ describe("Dashboard portfolio actions", () => {
         onSort={vi.fn()}
         expandedRows={new Set()}
         onToggleExpand={vi.fn()}
-        onRemovePortfolio={vi.fn()}
+        onBackToPicker={vi.fn()}
         isLoading={false}
         viewMode="holdings"
         onViewModeChange={vi.fn()}

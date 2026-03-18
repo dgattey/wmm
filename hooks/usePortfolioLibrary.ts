@@ -6,7 +6,6 @@ import {
   listStoredPortfolios,
   removeStoredPortfolio,
   saveUploadedPortfolio,
-  touchStoredPortfolio,
 } from "@/lib/storage";
 import type { StoredPortfolioSummary } from "@/lib/types";
 
@@ -83,14 +82,6 @@ export function usePortfolioLibrary() {
     [refreshLibrary]
   );
 
-  const markPortfolioViewed = useCallback(
-    (portfolioId: string) => {
-      touchStoredPortfolio(portfolioId);
-      refreshLibrary();
-    },
-    [refreshLibrary]
-  );
-
   return {
     portfolios,
     isUploading,
@@ -99,6 +90,5 @@ export function usePortfolioLibrary() {
     refreshLibrary,
     uploadFiles,
     removePortfolioById,
-    markPortfolioViewed,
   };
 }

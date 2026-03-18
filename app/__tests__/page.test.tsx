@@ -66,11 +66,11 @@ describe("Home page", () => {
       refreshLibrary: vi.fn(),
       uploadFiles: vi.fn(),
       removePortfolioById: vi.fn(),
-      markPortfolioViewed: vi.fn(),
     });
 
     render(<Home />);
 
+    expect(screen.getByText("Portfolio picker")).toBeInTheDocument();
     expect(screen.getByTestId("upload-view")).toBeInTheDocument();
     expect(screen.getByTestId("portfolio-library-nav")).toHaveTextContent("alpha");
   });
@@ -90,7 +90,6 @@ describe("Home page", () => {
         failedUploads: [],
       }),
       removePortfolioById: vi.fn(),
-      markPortfolioViewed: vi.fn(),
     });
 
     render(<Home />);
