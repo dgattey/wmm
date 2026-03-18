@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockQuote = vi.fn();
 const mockQuoteSummary = vi.fn();
 const mockSearch = vi.fn();
+const mockFetchDirectFundHoldings = vi.fn();
 
 vi.mock("yahoo-finance2", () => {
   class MockYahooFinance {
@@ -15,6 +16,10 @@ vi.mock("yahoo-finance2", () => {
     default: MockYahooFinance,
   };
 });
+
+vi.mock("../holdings", () => ({
+  fetchDirectFundHoldings: mockFetchDirectFundHoldings,
+}));
 
 describe("shouldSkipYahooSymbol", () => {
   it("keeps exchange-qualified numeric symbols fetchable", async () => {
@@ -46,6 +51,16 @@ describe("yahoo fund symbol lookups", () => {
     mockQuote.mockReset();
     mockQuoteSummary.mockReset();
     mockSearch.mockReset();
+    mockFetchDirectFundHoldings.mockReset();
+    mockFetchDirectFundHoldings.mockImplementation(
+      async ({
+        symbol,
+        fetchYahooHoldings,
+      }: {
+        symbol: string;
+        fetchYahooHoldings: (lookupSymbol: string) => Promise<unknown>;
+      }) => fetchYahooHoldings(symbol)
+    );
   });
 
   it("automatically resolves a public proxy share class from description", async () => {
@@ -179,6 +194,107 @@ describe("yahoo fund symbol lookups", () => {
     expect(
       result.TARGET.reduce((sum, holding) => sum + holding.holdingPercent, 0)
     ).toBeCloseTo(1);
+  });
+
+  it("falls back to Yahoo top holdings when SEC data is unavailable", async () => {
+    mockFetchDirectFundHoldings.mockImplementation(
+      async ({
+        symbol,
+        fetchYahooHoldings,
+      }: {
+        symbol: string;
+        fetchYahooHoldings: (lookupSymbol: string) => Promise<unknown>;
+      }) => fetchYahooHoldings(symbol)
+    );
+    mockQuoteSummary.mockResolvedValueOnce({
+      topHoldings: {
+        holdings: [
+          {
+            symbol: "AAPL",
+            holdingName: "Apple Inc.",
+            holdingPercent: 0.12,
+          },
+        ],
+      },
+    });
+
+    const { fetchAllHoldings } = await import("../yahoo");
+    const result = await fetchAllHoldings([{ symbol: "LIVKX" }]);
+
+    expect(mockFetchDirectFundHoldings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        symbol: "LIVKX",
+      })
+    );
+    expect(mockQuoteSummary).toHaveBeenCalledWith("LIVKX", {
+      modules: ["topHoldings"],
+    });
+    expect(result.LIVKX).toEqual([
+      {
+        symbol: "LIVKX",
+        holdingName: "Rest of LIVKX",
+        holdingPercent: 0.88,
+      },
+      {
+        symbol: "AAPL",
+        holdingName: "Apple Inc.",
+        holdingPercent: 0.12,
+      },
+    ]);
+  });
+
+  it("passes proxy-resolved funds through SEC-backed lookup before falling back", async () => {
+    mockSearch
+      .mockResolvedValueOnce({ quotes: [] })
+      .mockResolvedValueOnce({
+        quotes: [
+          {
+            symbol: "LIVKX",
+            longname: "BlackRock LifePath Index 2055 K",
+            shortname: "BlackRock LifePath Index 2055",
+            quoteType: "MUTUALFUND",
+          },
+        ],
+      });
+    mockFetchDirectFundHoldings.mockImplementation(
+      async ({ symbol }: { symbol: string }) => {
+        if (symbol === "LIVKX") {
+          return [
+            {
+              symbol: "46434V373",
+              holdingName: "iShares Core MSCI Total Intl Stk ETF",
+              holdingPercent: 0.55,
+            },
+          ];
+        }
+
+        return [];
+      }
+    );
+
+    const { fetchAllHoldings } = await import("../yahoo");
+    const result = await fetchAllHoldings([
+      { symbol: "09261F572", description: "BTC LPATH IDX 2055 M" },
+    ]);
+
+    expect(mockFetchDirectFundHoldings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        symbol: "LIVKX",
+        description: "BTC LPATH IDX 2055 M",
+      })
+    );
+    expect(mockQuoteSummary).not.toHaveBeenCalled();
+    expect(result["09261F572"]).toHaveLength(2);
+    expect(result["09261F572"][0]).toMatchObject({
+      symbol: "46434V373",
+      holdingName: "iShares Core MSCI Total Intl Stk ETF",
+    });
+    expect(result["09261F572"][0]?.holdingPercent).toBeCloseTo(0.55);
+    expect(result["09261F572"][1]).toMatchObject({
+      symbol: "09261F572",
+      holdingName: "Rest of BTC LPATH IDX 2055 M",
+    });
+    expect(result["09261F572"][1]?.holdingPercent).toBeCloseTo(0.45);
   });
 
   it("still skips quote lookups for internal non-market symbols", async () => {

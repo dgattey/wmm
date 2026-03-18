@@ -1,6 +1,8 @@
 import type { QuoteData, FundHolding } from "../types";
 
+import { cacheLife } from "next/cache";
 import YahooFinance from "yahoo-finance2";
+import { fetchDirectFundHoldings } from "./holdings";
 
 // Singleton instance
 let yahooFinanceInstance: InstanceType<typeof YahooFinance> | null = null;
@@ -11,25 +13,11 @@ function getYahooFinance(): InstanceType<typeof YahooFinance> {
   return yahooFinanceInstance;
 }
 
-// === In-memory caching ===
-
-interface CacheEntry<T> {
-  data: T;
-  timestamp: number;
-}
-
-const quoteCache = new Map<string, CacheEntry<QuoteData>>();
-const holdingsCache = new Map<string, CacheEntry<FundHolding[]>>();
-
-const QUOTE_TTL = 4_000; // 4 seconds
-const HOLDINGS_TTL = 3_600_000; // 1 hour
+const QUOTE_REVALIDATE_SECONDS = 4;
+const HOLDINGS_REVALIDATE_SECONDS = 60 * 60;
+const SHOULD_BYPASS_NEXT_CACHE = process.env.NODE_ENV === "test";
 const LOOKTHROUGH_DEPTH = 1;
 const MIN_HOLDING_PERCENT = 0.000001;
-
-function isCacheValid<T>(entry: CacheEntry<T> | undefined, ttl: number): boolean {
-  if (!entry) return false;
-  return Date.now() - entry.timestamp < ttl;
-}
 
 // === Symbol mapping ===
 
@@ -154,30 +142,16 @@ async function resolveHoldingsLookupSymbols(description: string): Promise<string
 /**
  * Fetch quotes for multiple symbols in batch.
  * Returns a map of symbol → QuoteData.
- * Uses caching to avoid redundant requests.
  */
-export async function fetchQuotes(
+async function fetchQuotesUncached(
   symbols: string[]
 ): Promise<Record<string, QuoteData>> {
   const result: Record<string, QuoteData> = {};
-  const toFetch: string[] = [];
-
-  // Check cache first
-  for (const sym of symbols) {
-    if (SKIP_SYMBOLS.has(sym) || shouldSkipYahooSymbol(sym)) continue;
-    const cached = quoteCache.get(sym);
-    if (isCacheValid(cached, QUOTE_TTL)) {
-      result[sym] = cached!.data;
-    } else {
-      toFetch.push(sym);
-    }
-  }
-
-  if (toFetch.length === 0) return result;
+  if (symbols.length === 0) return result;
 
   try {
     const yahooFinance = getYahooFinance();
-    const yahooSymbols = toFetch.map(toYahooSymbol);
+    const yahooSymbols = symbols.map(toYahooSymbol);
 
     const quotes = await yahooFinance.quote(yahooSymbols, {}, { validateResult: false });
 
@@ -189,7 +163,7 @@ export async function fetchQuotes(
 
       // Map Yahoo symbol back to our symbol
       const ourSymbol =
-        toFetch.find(
+        symbols.find(
           (s) => toYahooSymbol(s) === q.symbol
         ) || q.symbol;
 
@@ -205,34 +179,83 @@ export async function fetchQuotes(
       };
 
       result[ourSymbol] = quoteData;
-      quoteCache.set(ourSymbol, {
-        data: quoteData,
-        timestamp: Date.now(),
-      });
     }
   } catch (error) {
     console.error("Error fetching quotes:", error);
-    // Return whatever we have from cache
   }
 
   return result;
 }
 
+async function fetchQuotesCached(
+  symbols: string[]
+): Promise<Record<string, QuoteData>> {
+  "use cache";
+  cacheLife({
+    stale: 0,
+    revalidate: QUOTE_REVALIDATE_SECONDS,
+    expire: 60,
+  });
+
+  return fetchQuotesUncached(symbols);
+}
+
+export async function fetchQuotes(
+  symbols: string[]
+): Promise<Record<string, QuoteData>> {
+  const normalizedSymbols = [...new Set(symbols)]
+    .filter((sym) => !SKIP_SYMBOLS.has(sym) && !shouldSkipYahooSymbol(sym))
+    .sort();
+
+  if (normalizedSymbols.length === 0) {
+    return {};
+  }
+
+  if (SHOULD_BYPASS_NEXT_CACHE) {
+    return fetchQuotesUncached(normalizedSymbols);
+  }
+
+  return fetchQuotesCached(normalizedSymbols);
+}
+
 // === Holdings fetching ===
 
+async function fetchYahooDirectHoldingsForSymbol(
+  symbol: string
+): Promise<FundHolding[]> {
+  const yahooFinance = getYahooFinance();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const summary: any = await yahooFinance.quoteSummary(symbol, {
+    modules: ["topHoldings"],
+  });
+
+  const holdings: FundHolding[] = [];
+  const topHoldings = summary?.topHoldings?.holdings;
+
+  if (topHoldings && Array.isArray(topHoldings)) {
+    for (const h of topHoldings) {
+      if (h.symbol && h.holdingPercent !== undefined) {
+        holdings.push({
+          symbol: h.symbol,
+          holdingName: h.holdingName || h.symbol,
+          holdingPercent: h.holdingPercent,
+        });
+      }
+    }
+  }
+
+  return holdings;
+}
+
 /**
- * Fetch the direct holdings Yahoo reports for a single fund/ETF symbol.
+ * Fetch the direct holdings reported for a single fund/ETF symbol.
+ * SEC N-PORT is preferred when supported; Yahoo topHoldings is the fallback.
  */
-async function fetchDirectHoldingsForSymbol(
+async function fetchDirectHoldingsForSymbolUncached(
   symbol: string,
   description?: string
 ): Promise<FundHolding[]> {
-  // Check cache
-  const cached = holdingsCache.get(symbol);
-  if (isCacheValid(cached, HOLDINGS_TTL)) {
-    return cached!.data;
-  }
-
   if (SKIP_SYMBOLS.has(symbol)) {
     return [];
   }
@@ -242,61 +265,63 @@ async function fetchDirectHoldingsForSymbol(
     if (!description) return [];
     const resolvedSymbols = await resolveHoldingsLookupSymbols(description);
     if (resolvedSymbols.length === 0) {
-      holdingsCache.set(symbol, { data: [], timestamp: Date.now() });
       return [];
     }
     lookupCandidates.splice(0, lookupCandidates.length, ...resolvedSymbols);
   }
 
-  try {
-    const yahooFinance = getYahooFinance();
-    for (const candidateSymbol of lookupCandidates) {
-      if (
-        SKIP_SYMBOLS.has(candidateSymbol) ||
-        isNonStandardSymbol(candidateSymbol)
-      ) {
-        continue;
-      }
-
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const summary: any = await yahooFinance.quoteSummary(candidateSymbol, {
-          modules: ["topHoldings"],
-        });
-
-        const holdings: FundHolding[] = [];
-        const topHoldings = summary?.topHoldings?.holdings;
-
-        if (topHoldings && Array.isArray(topHoldings)) {
-          for (const h of topHoldings) {
-            if (h.symbol && h.holdingPercent !== undefined) {
-              holdings.push({
-                symbol: h.symbol,
-                holdingName: h.holdingName || h.symbol,
-                holdingPercent: h.holdingPercent,
-              });
-            }
-          }
-        }
-
-        if (holdings.length > 0) {
-          holdingsCache.set(symbol, { data: holdings, timestamp: Date.now() });
-          return holdings;
-        }
-      } catch (candidateError) {
-        console.error(
-          `Error fetching holdings for proxy ${candidateSymbol} of ${symbol}:`,
-          candidateError
-        );
-      }
+  for (const candidateSymbol of lookupCandidates) {
+    if (
+      SKIP_SYMBOLS.has(candidateSymbol) ||
+      isNonStandardSymbol(candidateSymbol)
+    ) {
+      continue;
     }
-  } catch (error) {
-    console.error(`Error fetching holdings for ${symbol}:`, error);
+
+    try {
+      const holdings = await fetchDirectFundHoldings({
+        symbol: candidateSymbol,
+        description,
+        fetchYahooHoldings: fetchYahooDirectHoldingsForSymbol,
+      });
+
+      if (holdings.length > 0) {
+        return holdings;
+      }
+    } catch (candidateError) {
+      console.error(
+        `Error fetching holdings for proxy ${candidateSymbol} of ${symbol}:`,
+        candidateError
+      );
+    }
   }
 
-  // Cache even empty results (means this symbol has no holdings data)
-  holdingsCache.set(symbol, { data: [], timestamp: Date.now() });
   return [];
+}
+
+async function fetchDirectHoldingsForSymbolCached(
+  symbol: string,
+  description: string | null
+): Promise<FundHolding[]> {
+  "use cache";
+  cacheLife({
+    stale: 5 * 60,
+    revalidate: HOLDINGS_REVALIDATE_SECONDS,
+    expire: 2 * 24 * 60 * 60,
+  });
+
+  return fetchDirectHoldingsForSymbolUncached(symbol, description ?? undefined);
+}
+
+async function fetchDirectHoldingsForSymbol(
+  symbol: string,
+  description?: string
+): Promise<FundHolding[]> {
+  if (SHOULD_BYPASS_NEXT_CACHE) {
+    return fetchDirectHoldingsForSymbolUncached(symbol, description);
+  }
+
+  return fetchDirectHoldingsForSymbolCached(symbol, description ?? null);
 }
 
 function sumHoldingPercents(holdings: FundHolding[]): number {
