@@ -642,7 +642,7 @@ function filterExistingInvestmentTypes(
 ): string[] {
   if (investmentTypes.length === 0) return investmentTypes;
 
-  const validInvestmentTypes = new Set(
+  const validInvestmentTypes = new Set<string>(
     positions.map((position) => position.investmentType)
   );
   return investmentTypes.filter((investmentType) =>
