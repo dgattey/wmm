@@ -24,14 +24,18 @@ export function PortfolioLibraryNav({
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-muted">
           Saved files
         </p>
-        <h2 className="mt-1 text-2xl font-semibold text-text-primary">
-          Choose a portfolio to open
-        </h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">
-          Open any saved Fidelity export from here, or delete one you do not
-          need. Recent uploads stay cached; older ones keep only the source
-          positions.
-        </p>
+        {portfolios.length > 0 && (
+          <>
+            <h2 className="mt-1 text-2xl font-semibold text-text-primary">
+              Choose a portfolio to open
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">
+              Open any saved Fidelity export from here, or delete one you do not
+              need. Recent uploads stay cached; older ones keep only the source
+              positions.
+            </p>
+          </>
+        )}
       </div>
 
       {portfolios.length === 0 ? (

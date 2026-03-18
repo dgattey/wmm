@@ -40,11 +40,8 @@ export default function Home() {
             />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-muted">
-              Portfolio picker
-            </p>
-            <h1 className="mt-1 text-3xl font-semibold text-text-primary md:text-4xl">
-              Manage portfolio files
+            <h1 className="text-3xl font-semibold text-text-primary md:text-4xl">
+              Portfolio allocation
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-text-muted md:text-base">
               Pick a saved Fidelity export to visualize, remove one you no
@@ -54,20 +51,19 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-[30px] border border-border/70 bg-surface shadow-[var(--shadow-lg)]">
-          <div className="p-6 md:p-8">
-            <PortfolioLibraryNav
-              portfolios={portfolios}
-              onRemovePortfolio={removePortfolioById}
-            />
-          </div>
-          <div className="border-t border-border-subtle px-6 py-6 md:px-8 md:py-8">
-            <UploadView
-              onFilesSelect={handleFilesSelect}
-              error={error}
-              isLoading={isUploading}
-            />
-          </div>
+        <section className="rounded-[30px] border border-border/70 bg-surface px-6 py-6 shadow-[var(--shadow-lg)] md:px-8 md:py-8">
+          <PortfolioLibraryNav
+            portfolios={portfolios}
+            onRemovePortfolio={removePortfolioById}
+          />
+        </section>
+
+        <section className="rounded-[30px] border border-border/70 bg-surface px-6 py-6 shadow-[var(--shadow-lg)] md:px-8 md:py-8">
+          <UploadView
+            onFilesSelect={handleFilesSelect}
+            error={error}
+            isLoading={isUploading}
+          />
         </section>
       </div>
     </main>
