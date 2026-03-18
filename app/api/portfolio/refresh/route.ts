@@ -30,8 +30,10 @@ export async function POST(request: Request) {
           p.investmentType === "Mutual Funds" ||
           p.investmentType === "Others"
       )
-      .map((p) => p.symbol);
-    const uniqueFundSymbols = [...new Set(fundSymbols)];
+      .map((p) => ({ symbol: p.symbol, description: p.description }));
+    const uniqueFundSymbols = Array.from(
+      new Map(fundSymbols.map((fund) => [fund.symbol, fund])).values()
+    );
 
     // Holdings will be served from cache (1hr TTL)
     // Quotes will be re-fetched (4s TTL)

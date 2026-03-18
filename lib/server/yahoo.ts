@@ -36,14 +36,19 @@ const YAHOO_SYMBOL_MAP: Record<string, string> = {
   "BRK-B": "BRK-B", // Already correct after CSV parser normalization
 };
 
-/**
- * Some 401k/CIT symbols are internal plan identifiers, not public market tickers.
- * For holdings lookups only, map them to a public share class with equivalent
- * portfolio construction so we can decompose the target-date fund.
- */
-const HOLDINGS_PROXY_SYMBOL_MAP: Record<string, string> = {
-  // Fidelity 401k symbol for BlackRock LifePath Index 2055 target-date fund
-  "09261F572": "LIVIX",
+/** Generic abbreviation expansions for retirement-plan fund names */
+const FUND_DESCRIPTION_TERM_MAP: Record<string, string> = {
+  IDX: "INDEX",
+  LPATH: "LIFEPATH",
+  RET: "RETIREMENT",
+  INTL: "INTERNATIONAL",
+  STK: "STOCK",
+  MKT: "MARKET",
+  EQ: "EQUITY",
+  BD: "BOND",
+  INC: "INCOME",
+  GR: "GROWTH",
+  VAL: "VALUE",
 };
 
 /** Known symbols that won't be found on Yahoo Finance */
@@ -58,8 +63,72 @@ function toYahooSymbol(symbol: string): string {
   return YAHOO_SYMBOL_MAP[symbol] || symbol;
 }
 
-function toHoldingsLookupSymbol(symbol: string): string {
-  return HOLDINGS_PROXY_SYMBOL_MAP[symbol] || toYahooSymbol(symbol);
+function normalizeFundDescription(description: string): string {
+  const normalized = description
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
+    .trim();
+
+  return normalized
+    .split(/\s+/)
+    .map((token) => FUND_DESCRIPTION_TERM_MAP[token] || token)
+    .join(" ");
+}
+
+function buildFundSearchQueries(description: string): string[] {
+  const normalized = normalizeFundDescription(description);
+  if (!normalized) return [];
+
+  const tokens = normalized.split(/\s+/);
+  const fullQuery = tokens
+    .filter((token) => token.length > 1)
+    .join(" ");
+  const contentQuery = tokens
+    .filter(
+      (token) =>
+        /^\d{4}$/.test(token) ||
+        token.length > 3 ||
+        token === "ETF" ||
+        token === "FUND"
+    )
+    .join(" ");
+
+  return [...new Set([fullQuery, contentQuery].filter(Boolean))];
+}
+
+function isProxyCandidateQuote(quote: {
+  quoteType?: string;
+  symbol?: string;
+  longname?: string;
+  shortname?: string;
+}): boolean {
+  if (!quote.symbol) return false;
+  if (!["MUTUALFUND", "ETF"].includes(quote.quoteType || "")) return false;
+  return !SKIP_SYMBOLS.has(quote.symbol);
+}
+
+async function resolveHoldingsLookupSymbols(description: string): Promise<string[]> {
+  const queries = buildFundSearchQueries(description);
+  if (queries.length === 0) return [];
+
+  const yahooFinance = getYahooFinance();
+  const candidates = new Set<string>();
+  for (const query of queries) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const searchResult: any = await yahooFinance.search(query);
+      const quotes = Array.isArray(searchResult?.quotes) ? searchResult.quotes : [];
+      for (const candidate of quotes) {
+        if (isProxyCandidateQuote(candidate)) {
+          candidates.add(candidate.symbol);
+        }
+      }
+    } catch (error) {
+      console.error(`Error searching proxy symbol for "${description}":`, error);
+    }
+  }
+
+  return [...candidates];
 }
 
 // === Quote fetching ===
@@ -137,7 +206,8 @@ export async function fetchQuotes(
  * Fetch top holdings for a single fund/ETF symbol.
  */
 async function fetchHoldingsForSymbol(
-  symbol: string
+  symbol: string,
+  description?: string
 ): Promise<FundHolding[]> {
   // Check cache
   const cached = holdingsCache.get(symbol);
@@ -145,56 +215,85 @@ async function fetchHoldingsForSymbol(
     return cached!.data;
   }
 
-  const lookupSymbol = toHoldingsLookupSymbol(symbol);
-
-  if (SKIP_SYMBOLS.has(lookupSymbol) || isNonStandardSymbol(lookupSymbol)) {
-    return [];
+  let lookupSymbol = toYahooSymbol(symbol);
+  const lookupCandidates = [lookupSymbol];
+  if (isNonStandardSymbol(symbol)) {
+    if (!description) return [];
+    const resolvedSymbols = await resolveHoldingsLookupSymbols(description);
+    if (resolvedSymbols.length === 0) {
+      holdingsCache.set(symbol, { data: [], timestamp: Date.now() });
+      return [];
+    }
+    lookupCandidates.splice(0, lookupCandidates.length, ...resolvedSymbols);
   }
 
   try {
     const yahooFinance = getYahooFinance();
-    const yahooSym = lookupSymbol;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const summary: any = await yahooFinance.quoteSummary(yahooSym, {
-      modules: ["topHoldings"],
-    });
+    for (const candidateSymbol of lookupCandidates) {
+      if (
+        SKIP_SYMBOLS.has(candidateSymbol) ||
+        isNonStandardSymbol(candidateSymbol)
+      ) {
+        continue;
+      }
 
-    const holdings: FundHolding[] = [];
-    const topHoldings = summary?.topHoldings?.holdings;
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const summary: any = await yahooFinance.quoteSummary(candidateSymbol, {
+          modules: ["topHoldings"],
+        });
 
-    if (topHoldings && Array.isArray(topHoldings)) {
-      for (const h of topHoldings) {
-        if (h.symbol && h.holdingPercent !== undefined) {
-          holdings.push({
-            symbol: h.symbol,
-            holdingName: h.holdingName || h.symbol,
-            holdingPercent: h.holdingPercent,
-          });
+        const holdings: FundHolding[] = [];
+        const topHoldings = summary?.topHoldings?.holdings;
+
+        if (topHoldings && Array.isArray(topHoldings)) {
+          for (const h of topHoldings) {
+            if (h.symbol && h.holdingPercent !== undefined) {
+              holdings.push({
+                symbol: h.symbol,
+                holdingName: h.holdingName || h.symbol,
+                holdingPercent: h.holdingPercent,
+              });
+            }
+          }
         }
+
+        if (holdings.length > 0) {
+          holdingsCache.set(symbol, { data: holdings, timestamp: Date.now() });
+          return holdings;
+        }
+      } catch (candidateError) {
+        console.error(
+          `Error fetching holdings for proxy ${candidateSymbol} of ${symbol}:`,
+          candidateError
+        );
       }
     }
-
-    // Cache even empty results (means this symbol has no holdings data)
-    holdingsCache.set(symbol, { data: holdings, timestamp: Date.now() });
-    return holdings;
   } catch (error) {
     console.error(`Error fetching holdings for ${symbol}:`, error);
-    // Cache empty result to avoid retrying immediately
-    holdingsCache.set(symbol, { data: [], timestamp: Date.now() });
-    return [];
   }
+
+  // Cache even empty results (means this symbol has no holdings data)
+  holdingsCache.set(symbol, { data: [], timestamp: Date.now() });
+  return [];
 }
 
 /**
  * Fetch holdings for multiple fund symbols in parallel.
  */
 export async function fetchAllHoldings(
-  fundSymbols: string[]
+  funds: Array<string | { symbol: string; description?: string }>
 ): Promise<Record<string, FundHolding[]>> {
+  const normalizedFunds = funds.map((fund) =>
+    typeof fund === "string"
+      ? { symbol: fund, description: undefined }
+      : { symbol: fund.symbol, description: fund.description }
+  );
+
   const results = await Promise.allSettled(
-    fundSymbols.map(async (sym) => ({
-      symbol: sym,
-      holdings: await fetchHoldingsForSymbol(sym),
+    normalizedFunds.map(async ({ symbol, description }) => ({
+      symbol,
+      holdings: await fetchHoldingsForSymbol(symbol, description),
     }))
   );
 

@@ -2,11 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockQuote = vi.fn();
 const mockQuoteSummary = vi.fn();
+const mockSearch = vi.fn();
 
 vi.mock("yahoo-finance2", () => {
   class MockYahooFinance {
     quote = mockQuote;
     quoteSummary = mockQuoteSummary;
+    search = mockSearch;
   }
 
   return {
@@ -19,9 +21,22 @@ describe("yahoo fund symbol lookups", () => {
     vi.resetModules();
     mockQuote.mockReset();
     mockQuoteSummary.mockReset();
+    mockSearch.mockReset();
   });
 
-  it("uses a public proxy share class for internal 401k fund holdings", async () => {
+  it("automatically resolves a public proxy share class from description", async () => {
+    mockSearch
+      .mockResolvedValueOnce({ quotes: [] })
+      .mockResolvedValueOnce({
+        quotes: [
+          {
+            symbol: "LIVKX",
+            longname: "BlackRock LifePath Index 2055 K",
+            shortname: "BlackRock LifePath Index 2055",
+            quoteType: "MUTUALFUND",
+          },
+        ],
+      });
     mockQuoteSummary.mockResolvedValue({
       topHoldings: {
         holdings: [
@@ -35,9 +50,13 @@ describe("yahoo fund symbol lookups", () => {
     });
 
     const { fetchAllHoldings } = await import("../yahoo");
-    const result = await fetchAllHoldings(["09261F572"]);
+    const result = await fetchAllHoldings([
+      { symbol: "09261F572", description: "BTC LPATH IDX 2055 M" },
+    ]);
 
-    expect(mockQuoteSummary).toHaveBeenCalledWith("LIVIX", {
+    expect(mockSearch).toHaveBeenNthCalledWith(1, "BTC LIFEPATH INDEX 2055");
+    expect(mockSearch).toHaveBeenNthCalledWith(2, "LIFEPATH INDEX 2055");
+    expect(mockQuoteSummary).toHaveBeenCalledWith("LIVKX", {
       modules: ["topHoldings"],
     });
     expect(result["09261F572"]).toEqual([
