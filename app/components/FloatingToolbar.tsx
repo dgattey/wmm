@@ -77,6 +77,7 @@ export function FloatingToolbar({
     filters.investmentTypes.length +
     filters.accounts.length +
     selectedFunds.length;
+  const filterSummaryItems = getFilterSummaryItems(filters, selectedFunds);
 
   useEffect(() => {
     const interval = window.setInterval(() => setNow(Date.now()), 10000);
@@ -104,8 +105,8 @@ export function FloatingToolbar({
           "w-[92vw] max-w-[44rem] lg:w-[72vw] lg:max-w-[1080px] hover-lift"
         )}
       >
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
             <ToolbarSection label="View">
               <SegmentButton
                 active={viewMode === "holdings"}
@@ -139,18 +140,59 @@ export function FloatingToolbar({
             <button
               type="button"
               onClick={() => setShowFilters((open) => !open)}
+              aria-label={
+                activeFilterCount > 0 ? `Filters (${activeFilterCount})` : "Filters"
+              }
               className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border cursor-pointer whitespace-nowrap hover-lift press-down",
+                "inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap hover-lift press-down transition-all",
                 showFilters || hasFilters
-                  ? "bg-white/12 text-white border-white/0 shadow-sm"
-                  : "bg-white/5 text-white/65 border-white/10 hover:text-white hover:bg-white/10"
+                  ? "bg-white/14 text-white border-white/0 shadow-sm ring-1 ring-white/10"
+                  : "bg-white/8 text-white/85 border-white/12 hover:bg-white/12"
               )}
             >
-              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M3 5h18" />
+                <path d="M6 12h12" />
+                <path d="M10 19h4" />
+              </svg>
+              <span>Filters</span>
+              {activeFilterCount > 0 && (
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  {activeFilterCount}
+                </span>
+              )}
             </button>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="min-w-0 flex-1">
+            {filterSummaryItems.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {filterSummaryItems.map((item) => (
+                  <FilterSummaryPill
+                    key={item.label}
+                    label={item.label}
+                    value={item.value}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="truncate text-xs text-white/38">
+                All accounts, all funds, all types
+              </p>
+            )}
+          </div>
+
+          <div className="ml-auto flex items-center gap-3 shrink-0">
             {hasFilters && (
               <button
                 type="button"
@@ -385,4 +427,55 @@ function SegmentButton({
       {children}
     </button>
   );
+}
+
+function FilterSummaryPill({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-xs text-white/80">
+      <span className="shrink-0 text-white/42">{label}</span>
+      <span className="truncate font-medium text-white">{value}</span>
+    </div>
+  );
+}
+
+function getFilterSummaryItems(filters: FilterState, selectedFunds: string[]) {
+  const items: Array<{ label: string; value: string }> = [];
+
+  if (filters.accounts.length > 0) {
+    items.push({
+      label: "Account",
+      value:
+        filters.accounts.length === 1
+          ? filters.accounts[0]
+          : `${filters.accounts.length} selected`,
+    });
+  }
+
+  if (selectedFunds.length > 0) {
+    items.push({
+      label: selectedFunds.length === 1 ? "Fund" : "Funds",
+      value:
+        selectedFunds.length === 1
+          ? selectedFunds[0]
+          : `${selectedFunds.length} selected`,
+    });
+  }
+
+  if (filters.investmentTypes.length > 0) {
+    items.push({
+      label: filters.investmentTypes.length === 1 ? "Type" : "Types",
+      value:
+        filters.investmentTypes.length === 1
+          ? filters.investmentTypes[0]
+          : `${filters.investmentTypes.length} selected`,
+    });
+  }
+
+  return items;
 }

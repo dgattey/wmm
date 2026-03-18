@@ -114,6 +114,33 @@ describe("FloatingToolbar", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows top-level filter summaries when filters are active", () => {
+    const props = makeProps();
+    props.filters = {
+      investmentTypes: ["Stocks"],
+      accounts: ["Brokerage"],
+    };
+    props.selectedFunds = ["VTI"];
+
+    render(<FloatingToolbar {...props} />);
+
+    expect(screen.getByText("Account")).toBeInTheDocument();
+    expect(screen.getByText("Brokerage")).toBeInTheDocument();
+    expect(screen.getByText("Fund")).toBeInTheDocument();
+    expect(screen.getByText("VTI")).toBeInTheDocument();
+    expect(screen.getByText("Type")).toBeInTheDocument();
+    expect(screen.getByText("Stocks")).toBeInTheDocument();
+  });
+
+  it("shows all-filters hint when nothing is active", () => {
+    const props = makeProps();
+    render(<FloatingToolbar {...props} />);
+
+    expect(
+      screen.getByText("All accounts, all funds, all types")
+    ).toBeInTheDocument();
+  });
+
   it("uses a stable desktop width for the toolbar shell", () => {
     const props = makeProps();
     const { container } = render(<FloatingToolbar {...props} />);
