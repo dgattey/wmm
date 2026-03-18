@@ -80,58 +80,55 @@ export function buildFlatHoldingTreeMapNodes({
   width: number;
   height: number;
 }): TreeMapNode[] {
-  const visibleRows = rows
-    .map((row) => {
-      let visibleValue = 0;
-      const accounts = new Set<string>();
-      const investmentTypes = new Set<string>();
+  const visibleRows: Omit<FlatNodeData, "color">[] = [];
 
-      for (const source of row.sources) {
-        if (!matchesSourceFilters(source.account, source.investmentType, filters)) {
-          continue;
-        }
+  for (const row of rows) {
+    let visibleValue = 0;
+    const accounts = new Set<string>();
+    const investmentTypes = new Set<string>();
 
-        if (!matchesFundSelection(row.symbol, source.type, source.sourceSymbol, selectedFunds)) {
-          continue;
-        }
-
-        visibleValue += source.value;
-        accounts.add(source.account);
-        investmentTypes.add(source.investmentType);
+    for (const source of row.sources) {
+      if (!matchesSourceFilters(source.account, source.investmentType, filters)) {
+        continue;
       }
 
-      if (visibleValue <= 0) {
-        return null;
+      if (!matchesFundSelection(row.symbol, source.type, source.sourceSymbol, selectedFunds)) {
+        continue;
       }
 
-      const visibleInvestmentTypes = [...investmentTypes];
-      const visibleAccounts = [...accounts];
-      const hasOnlyDirectSources = row.sources.every((source) => source.type === "direct");
+      visibleValue += source.value;
+      accounts.add(source.account);
+      investmentTypes.add(source.investmentType);
+    }
 
-      return {
-        symbol: row.symbol,
-        name: row.name,
-        value: visibleValue,
-        currentPrice: row.currentPrice,
-        totalGainLossDollar: hasOnlyDirectSources ? row.totalGainLossDollar : undefined,
-        totalGainLossPercent: hasOnlyDirectSources ? row.totalGainLossPercent : undefined,
-        fiftyTwoWeekHigh: row.fiftyTwoWeekHigh,
-        fiftyTwoWeekLow: row.fiftyTwoWeekLow,
-        percentOfPortfolio:
-          totalPortfolioValue > 0 ? (visibleValue / totalPortfolioValue) * 100 : 0,
-        investmentType:
-          visibleInvestmentTypes.length === 1
-            ? visibleInvestmentTypes[0]
-            : visibleInvestmentTypes.length > 1
-              ? "Mixed"
-              : undefined,
-        account:
-          visibleAccounts.length === 1 ? visibleAccounts[0] : undefined,
-      };
-    })
-    .filter(
-      (row): row is Omit<FlatNodeData, "color"> => Boolean(row)
-    );
+    if (visibleValue <= 0) {
+      continue;
+    }
+
+    const visibleInvestmentTypes = [...investmentTypes];
+    const visibleAccounts = [...accounts];
+    const hasOnlyDirectSources = row.sources.every((source) => source.type === "direct");
+
+    visibleRows.push({
+      symbol: row.symbol,
+      name: row.name,
+      value: visibleValue,
+      currentPrice: row.currentPrice,
+      totalGainLossDollar: hasOnlyDirectSources ? row.totalGainLossDollar : undefined,
+      totalGainLossPercent: hasOnlyDirectSources ? row.totalGainLossPercent : undefined,
+      fiftyTwoWeekHigh: row.fiftyTwoWeekHigh,
+      fiftyTwoWeekLow: row.fiftyTwoWeekLow,
+      percentOfPortfolio:
+        totalPortfolioValue > 0 ? (visibleValue / totalPortfolioValue) * 100 : 0,
+      investmentType:
+        visibleInvestmentTypes.length === 1
+          ? visibleInvestmentTypes[0]
+          : visibleInvestmentTypes.length > 1
+            ? "Mixed"
+            : undefined,
+      account: visibleAccounts.length === 1 ? visibleAccounts[0] : undefined,
+    });
+  }
 
   if (visibleRows.length === 0) {
     return [];
