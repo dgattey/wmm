@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { MOBILE_BREAKPOINT_QUERY } from "@/lib/portfolioLayout";
 
-function getInitialIsMobile(): boolean {
+function getSnapshot(): boolean {
   if (typeof window === "undefined") {
     return false;
   }
@@ -12,23 +12,21 @@ function getInitialIsMobile(): boolean {
 }
 
 export function useIsMobile(): boolean {
-  const [isMobile, setIsMobile] = useState(getInitialIsMobile);
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      if (typeof window === "undefined") {
+        return () => {};
+      }
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
+      const mediaQuery = window.matchMedia(MOBILE_BREAKPOINT_QUERY);
+      const handleChange = () => {
+        onStoreChange();
+      };
 
-    const mediaQuery = window.matchMedia(MOBILE_BREAKPOINT_QUERY);
-    const handleChange = (event: MediaQueryListEvent) => {
-      setIsMobile(event.matches);
-    };
-
-    setIsMobile(mediaQuery.matches);
-    mediaQuery.addEventListener("change", handleChange);
-
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
-
-  return isMobile;
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    },
+    getSnapshot,
+    () => false
+  );
 }

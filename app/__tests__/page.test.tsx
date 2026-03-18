@@ -59,7 +59,16 @@ describe("Home page", () => {
 
   it("renders the upload route UI on root", () => {
     mockUsePortfolioLibrary.mockReturnValue({
-      portfolios: [{ id: "alpha", name: "alpha", sourceFileName: "alpha.csv" }],
+      portfolios: [
+        {
+          id: "alpha",
+          name: "alpha",
+          sourceFileName: "alpha.csv",
+          uploadedAt: "2026-03-18T00:00:00.000Z",
+          lastViewedAt: "2026-03-18T00:00:00.000Z",
+          positionCount: 1,
+        },
+      ],
       isUploading: false,
       error: null,
       setError: vi.fn(),
@@ -85,8 +94,22 @@ describe("Home page", () => {
       refreshLibrary: vi.fn(),
       uploadFiles: vi.fn().mockResolvedValue({
         uploadedPortfolios: [
-          { id: "alpha", name: "alpha", sourceFileName: "alpha.csv" },
-          { id: "beta", name: "beta", sourceFileName: "beta.csv" },
+          {
+            id: "alpha",
+            name: "alpha",
+            sourceFileName: "alpha.csv",
+            uploadedAt: "2026-03-18T00:00:00.000Z",
+            lastViewedAt: "2026-03-18T00:00:00.000Z",
+            positionCount: 1,
+          },
+          {
+            id: "beta",
+            name: "beta",
+            sourceFileName: "beta.csv",
+            uploadedAt: "2026-03-18T00:00:00.000Z",
+            lastViewedAt: "2026-03-18T00:00:00.000Z",
+            positionCount: 1,
+          },
         ],
         failedUploads: [],
       }),

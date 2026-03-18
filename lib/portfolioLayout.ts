@@ -1,3 +1,4 @@
+export const POLL_INTERVAL_MS = 5_000;
 export const MOBILE_BREAKPOINT_QUERY = "(max-width: 767px)";
 
 export const DESKTOP_TREE_MAP_LAYOUT = {

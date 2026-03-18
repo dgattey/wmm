@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import type {
   ActivePortfolioSummary,
   FidelityPosition,
@@ -82,7 +82,7 @@ export function usePortfolioViewState({
   positions,
   portfolioData,
   isMobile,
-  resetKey,
+  resetKey: _resetKey,
 }: UsePortfolioViewStateInput): PortfolioViewState {
   const [filters, setFiltersState] = useState<FilterState>(createDefaultFilters);
   const [sortConfig, setSortConfig] = useState<SortConfig>(createDefaultSortConfig);
@@ -96,37 +96,15 @@ export function usePortfolioViewState({
     ? MOBILE_TREE_MAP_LAYOUT
     : DESKTOP_TREE_MAP_LAYOUT;
 
-  useEffect(() => {
-    setExpandedRows(new Set());
-    setFiltersState(createDefaultFilters());
-    setSelectedFundsState([]);
-    setTreeMapGrouping("fund");
-    setSortConfig(createDefaultSortConfig());
-    setViewMode("holdings");
-  }, [resetKey]);
-
-  useEffect(() => {
-    if (!positions) {
-      return;
-    }
-
-    const sanitized = sanitizeCurrentSelection(positions, filters, selectedFunds);
-
-    if (!areStringArraysEqual(selectedFunds, sanitized.selectedFunds)) {
-      setSelectedFundsState(sanitized.selectedFunds);
-    }
-
-    if (
-      !areStringArraysEqual(filters.accounts, sanitized.filters.accounts) ||
-      !areStringArraysEqual(
-        filters.investmentTypes,
-        sanitized.filters.investmentTypes
-      ) ||
-      (filters.searchQuery ?? "") !== (sanitized.filters.searchQuery ?? "")
-    ) {
-      setFiltersState(sanitized.filters);
-    }
-  }, [filters, positions, selectedFunds]);
+  const currentSelection = useMemo(
+    () =>
+      positions
+        ? sanitizeCurrentSelection(positions, filters, selectedFunds)
+        : { filters, selectedFunds },
+    [filters, positions, selectedFunds]
+  );
+  const effectiveFilters = currentSelection.filters;
+  const effectiveSelectedFunds = currentSelection.selectedFunds;
 
   const sourceRows =
     viewMode === "holdings"
@@ -137,11 +115,11 @@ export function usePortfolioViewState({
     () =>
       getFilteredTreeMapNodes(
         portfolioData,
-        filters,
+        effectiveFilters,
         treeMapLayout.width,
         treeMapLayout.height
       ),
-    [filters, portfolioData, treeMapLayout.height, treeMapLayout.width]
+    [effectiveFilters, portfolioData, treeMapLayout.height, treeMapLayout.width]
   );
 
   const fundOptions = useMemo(
@@ -150,13 +128,19 @@ export function usePortfolioViewState({
   );
 
   const filteredRows = useMemo(
-    () => getFilteredRows(sourceRows ?? null, filters, sortConfig, selectedFunds),
-    [filters, selectedFunds, sortConfig, sourceRows]
+    () =>
+      getFilteredRows(
+        sourceRows ?? null,
+        effectiveFilters,
+        sortConfig,
+        effectiveSelectedFunds
+      ),
+    [effectiveFilters, effectiveSelectedFunds, sortConfig, sourceRows]
   );
 
   const activeSummary = useMemo(
-    () => getActivePortfolioSummary(positions, filters, selectedFunds),
-    [filters, positions, selectedFunds]
+    () => getActivePortfolioSummary(positions, effectiveFilters, effectiveSelectedFunds),
+    [effectiveFilters, positions, effectiveSelectedFunds]
   );
 
   const filteredTreeMapNodes = useMemo(
@@ -170,8 +154,8 @@ export function usePortfolioViewState({
           )
         : buildFlatHoldingTreeMapNodes({
             rows: portfolioData?.tableRows ?? [],
-            filters,
-            selectedFunds,
+            filters: effectiveFilters,
+            selectedFunds: effectiveSelectedFunds,
             totalPortfolioValue:
               activeSummary?.value ?? portfolioData?.summary.totalValue ?? 0,
             width: treeMapLayout.width,
@@ -180,10 +164,10 @@ export function usePortfolioViewState({
     [
       activeSummary?.value,
       filteredFundTreeMapNodes,
-      filters,
+      effectiveFilters,
       portfolioData?.summary.totalValue,
       portfolioData?.tableRows,
-      selectedFunds,
+      effectiveSelectedFunds,
       treeMapGrouping,
       treeMapLayout.height,
       treeMapLayout.width,
@@ -213,21 +197,21 @@ export function usePortfolioViewState({
   function setFilters(nextFilters: FilterState) {
     const sanitized = sanitizeSelectionForFilterChange(
       positions,
-      filters,
+      effectiveFilters,
       nextFilters,
-      selectedFunds
+      effectiveSelectedFunds
     );
     setFiltersState(sanitized.filters);
     setSelectedFundsState(sanitized.selectedFunds);
   }
 
   function toggleFundSelection(symbol: string) {
-    const nextSelectedFunds = selectedFunds.includes(symbol)
-      ? selectedFunds.filter((selected) => selected !== symbol)
-      : [...selectedFunds, symbol];
+    const nextSelectedFunds = effectiveSelectedFunds.includes(symbol)
+      ? effectiveSelectedFunds.filter((selected) => selected !== symbol)
+      : [...effectiveSelectedFunds, symbol];
     const sanitized = sanitizeSelectionForFundChange(
       positions,
-      filters,
+      effectiveFilters,
       nextSelectedFunds
     );
     setFiltersState(sanitized.filters);
@@ -246,7 +230,7 @@ export function usePortfolioViewState({
   return {
     filteredRows,
     filteredTreeMapNodes,
-    filters,
+    filters: effectiveFilters,
     setFilters,
     sortConfig,
     handleSort,
@@ -256,7 +240,7 @@ export function usePortfolioViewState({
     setViewMode,
     treeMapGrouping,
     setTreeMapGrouping,
-    selectedFunds,
+    selectedFunds: effectiveSelectedFunds,
     toggleFundSelection,
     clearSelectedFunds,
     resetFilters,
