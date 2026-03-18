@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Treemap allocator: asymmetric squarified layout, no bg, floats centered -->
-  <rect x="4" y="4" width="11" height="24" rx="2" fill="#C49A5C"/>
-  <rect x="15" y="4" width="13" height="10" rx="2" fill="#5E9E74"/>
-  <rect x="15" y="14" width="6" height="14" rx="2" fill="#4E9999"/>
-  <rect x="21" y="14" width="7" height="14" rx="2" fill="#B86B6B"/>
+  <!-- Treemap allocator: asymmetric squarified layout, no bg, 1px gaps between blocks -->
+  <rect x="4" y="4" width="10" height="24" rx="2" fill="#C49A5C"/>
+  <rect x="15" y="4" width="12" height="9" rx="2" fill="#5E9E74"/>
+  <rect x="15" y="14" width="5" height="13" rx="2" fill="#4E9999"/>
+  <rect x="21" y="14" width="6" height="13" rx="2" fill="#B86B6B"/>
 </svg>
