@@ -29,8 +29,11 @@ const node: TreeMapNode = {
 
 describe("TreeMapTooltip", () => {
   it("shows derived-from fund name and symbol for child holdings", () => {
-    render(<TreeMapTooltip node={node} mouseX={100} mouseY={100} />);
+    const { container } = render(
+      <TreeMapTooltip node={node} mouseX={100} mouseY={100} />
+    );
 
+    expect(container).toBeEmptyDOMElement();
     expect(screen.getByText("IXUS")).toBeInTheDocument();
     expect(screen.getByText(/derived from/i)).toBeInTheDocument();
     expect(
@@ -57,11 +60,17 @@ describe("TreeMapTooltip", () => {
       value: 480,
     });
 
-    const { container } = render(
-      <TreeMapTooltip node={node} mouseX={310} mouseY={470} />
-    );
+    render(<TreeMapTooltip node={node} mouseX={310} mouseY={470} />);
 
-    const tooltip = container.firstElementChild as HTMLElement;
+    const tooltip = screen.getByText("IXUS").closest(".fixed") as HTMLElement;
     expect(tooltip).toHaveStyle({ left: "16px", top: "258px" });
+  });
+
+  it("renders at the document level so it can layer above later sections", () => {
+    render(<TreeMapTooltip node={node} mouseX={140} mouseY={140} />);
+
+    const tooltip = screen.getByText("IXUS").closest(".fixed") as HTMLElement;
+    expect(tooltip.parentElement).toBe(document.body);
+    expect(tooltip).toHaveClass("z-30");
   });
 });

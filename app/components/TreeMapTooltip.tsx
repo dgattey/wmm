@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import type { TreeMapNode } from "@/lib/types";
 import { formatDollar, formatPercent, formatPrice } from "@/lib/utils";
 import { GainLoss } from "./primitives/GainLoss";
@@ -49,9 +50,9 @@ export function TreeMapTooltip({ node, mouseX, mouseY }: TreeMapTooltipProps) {
     );
   }
 
-  return (
+  const tooltip = (
     <div
-      className="fixed z-50 pointer-events-none animate-fade-in"
+      className="fixed z-30 pointer-events-none animate-fade-in"
       style={{ left, top }}
     >
       <div
@@ -134,6 +135,13 @@ export function TreeMapTooltip({ node, mouseX, mouseY }: TreeMapTooltipProps) {
       </div>
     </div>
   );
+
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  // Render above content even when ancestors use transforms for entry animations.
+  return createPortal(tooltip, document.body);
 }
 
 function TooltipRow({ label, value }: { label: string; value: string }) {

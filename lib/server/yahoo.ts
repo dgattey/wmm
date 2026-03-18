@@ -2,7 +2,6 @@ import type { QuoteData, FundHolding } from "../types";
 
 import { cacheLife } from "next/cache";
 import YahooFinance from "yahoo-finance2";
-import { fetchDirectFundHoldings } from "./holdings";
 
 // Singleton instance
 let yahooFinanceInstance: InstanceType<typeof YahooFinance> | null = null;
@@ -250,7 +249,7 @@ async function fetchYahooDirectHoldingsForSymbol(
 
 /**
  * Fetch the direct holdings reported for a single fund/ETF symbol.
- * SEC N-PORT is preferred when supported; Yahoo topHoldings is the fallback.
+ * Yahoo topHoldings is the direct holdings source for funds and ETFs.
  */
 async function fetchDirectHoldingsForSymbolUncached(
   symbol: string,
@@ -279,11 +278,7 @@ async function fetchDirectHoldingsForSymbolUncached(
     }
 
     try {
-      const holdings = await fetchDirectFundHoldings({
-        symbol: candidateSymbol,
-        description,
-        fetchYahooHoldings: fetchYahooDirectHoldingsForSymbol,
-      });
+      const holdings = await fetchYahooDirectHoldingsForSymbol(candidateSymbol);
 
       if (holdings.length > 0) {
         return holdings;
