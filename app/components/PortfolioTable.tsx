@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { FIFTY_TWO_WEEK_POSITION_SORT_KEY } from "@/lib/tableSort";
 import type { TableRow, SortConfig } from "@/lib/types";
 import { cn, formatDollar, formatPercent, formatPrice } from "@/lib/utils";
@@ -52,7 +53,10 @@ export function PortfolioTable({
   }
 
   return (
-    <div className="w-full overflow-x-auto rounded-2xl border border-border/60 bg-surface shadow-[var(--shadow-md)]">
+    <div
+      className="w-full overflow-x-auto rounded-2xl border border-border/60 bg-surface shadow-[var(--shadow-md)] animate-soft-rise"
+      style={{ "--enter-delay": "80ms" } as CSSProperties}
+    >
       <table className="w-full border-collapse min-w-[1040px]">
         <thead>
           <tr className="border-b border-border">
@@ -140,11 +144,16 @@ function TableRowGroup({
       {/* Main row */}
       <tr
         className={cn(
-          "border-b border-border-subtle transition-colors duration-150",
+          "group border-b border-border-subtle transition-all duration-150 animate-soft-rise",
           isEven ? "bg-transparent" : "bg-surface-hover/30",
           "hover:bg-surface-hover/60",
           row.isExpandable && "cursor-pointer"
         )}
+        style={
+          {
+            "--enter-delay": `${index * 28}ms`,
+          } as CSSProperties
+        }
         onClick={row.isExpandable ? onToggle : undefined}
       >
         {/* Sticky: Identity */}
@@ -154,7 +163,8 @@ function TableRowGroup({
             isEven ? "bg-bg" : "bg-surface",
             "after:absolute after:right-0 after:top-0 after:bottom-0 after:w-4",
             "after:bg-gradient-to-r after:from-transparent",
-            isEven ? "after:to-bg" : "after:to-surface"
+            isEven ? "after:to-bg" : "after:to-surface",
+            row.isExpandable && "transition-transform duration-200 group-hover:translate-x-0.5"
           )}
         >
           <div className="flex items-center gap-2">

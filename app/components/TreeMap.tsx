@@ -1,6 +1,12 @@
 "use client";
 
-import { useRef, useState, useEffect, type MouseEvent } from "react";
+import {
+  useRef,
+  useState,
+  useEffect,
+  type CSSProperties,
+  type MouseEvent,
+} from "react";
 import type { TreeMapGrouping, TreeMapNode } from "@/lib/types";
 import { isFundInvestmentType } from "@/lib/treemap";
 import { cn, formatCompact } from "@/lib/utils";
@@ -156,13 +162,18 @@ export function TreeMap({
     <div className="relative">
       <div
         ref={containerRef}
-        className="relative w-full overflow-hidden rounded-2xl bg-surface border border-border/60 shadow-[var(--shadow-md)] cursor-default"
-        style={{ height: scaledHeight }}
+        className="relative w-full overflow-hidden rounded-2xl bg-surface border border-border/60 shadow-[var(--shadow-md)] cursor-default animate-soft-rise"
+        style={
+          {
+            height: scaledHeight,
+            "--enter-delay": "40ms",
+          } as CSSProperties
+        }
         onMouseMove={handleMouseMove}
         onClick={handleContainerClick}
       >
         {/* Parent group backgrounds */}
-        {parentNodes.map((node) => {
+        {parentNodes.map((node, index) => {
           const visible = isNodeVisible(node);
           const rawPos = {
             x: node.x0 * scaleX,
@@ -176,11 +187,12 @@ export function TreeMap({
             <div
               key={`group-${node.id}`}
               className={cn(
-                "absolute rounded-lg",
+                "absolute rounded-lg animate-soft-pop",
                 "transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
                 grouping === "fund" && "cursor-pointer"
               )}
               style={{
+                "--enter-delay": `${120 + index * 20}ms`,
                 left: pos.left,
                 top: pos.top,
                 width: pos.width,
@@ -189,7 +201,7 @@ export function TreeMap({
                 border: `1px solid ${node.color}30`,
                 opacity: visible ? 1 : 0,
                 pointerEvents: visible ? "auto" : "none",
-              }}
+              } as CSSProperties}
               onClick={(e) => {
                 e.stopPropagation();
                 handleNodeClick(node);
@@ -209,7 +221,7 @@ export function TreeMap({
         })}
 
         {/* Leaf nodes (interactive) */}
-        {leafNodes.map((node) => {
+        {leafNodes.map((node, index) => {
           const visible = isNodeVisible(node);
           const rawPos = {
             x: node.x0 * scaleX,
@@ -227,14 +239,15 @@ export function TreeMap({
             <div
               key={node.id}
               className={cn(
-                "absolute rounded-lg flex flex-col items-center justify-center",
+                "absolute rounded-lg flex flex-col items-center justify-center animate-tile-in",
                 "select-none overflow-hidden",
                 "transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
                 grouping === "fund" ? "cursor-pointer" : "cursor-default",
                 visible &&
-                  "hover:z-20 hover:brightness-110 hover:shadow-[var(--shadow-lg)]"
+                  "hover:z-20 hover:brightness-110 hover:shadow-[var(--shadow-lg)] hover-lift"
               )}
               style={{
+                "--enter-delay": `${160 + Math.min(index, 10) * 18}ms`,
                 left: pos.left,
                 top: pos.top,
                 width: w,
@@ -247,7 +260,7 @@ export function TreeMap({
                   ? "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.06)"
                   : "none",
                 border: visible ? "1px solid rgba(255,255,255,0.08)" : "none",
-              }}
+              } as CSSProperties}
               onMouseEnter={() => visible && setHoveredNode(node)}
               onMouseLeave={() => setHoveredNode(null)}
               onClick={(e) => {

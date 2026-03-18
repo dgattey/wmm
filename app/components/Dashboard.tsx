@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import type {
   ActivePortfolioSummary,
   FundOption,
@@ -78,7 +79,10 @@ export function Dashboard({
       <header className="sticky-header sticky top-0 z-30">
         <div className="max-w-[1400px] mx-auto px-6 py-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            <div className="min-w-0">
+            <div
+              className="min-w-0 animate-soft-rise"
+              style={{ "--enter-delay": "40ms" } as CSSProperties}
+            >
               <div className="mb-1">
                 <h1
                   className={cn(
@@ -104,13 +108,16 @@ export function Dashboard({
               </div>
             </div>
 
-            <div className="flex shrink-0 flex-col items-start gap-2 md:items-end">
+            <div
+              className="flex shrink-0 flex-col items-start gap-2 md:items-end animate-soft-rise"
+              style={{ "--enter-delay": "120ms" } as CSSProperties}
+            >
               <button
                 type="button"
                 onClick={onClearData}
                 className={cn(
                   "inline-flex min-h-11 items-center gap-2 rounded-full px-4 py-2.5",
-                  "text-sm font-medium shadow-sm transition-all duration-200 cursor-pointer",
+                  "text-sm font-medium shadow-sm transition-all duration-200 cursor-pointer hover-lift press-down",
                   "border border-red-200/70 bg-red-50 text-red-700 hover:bg-red-100",
                   "dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/15"
                 )}
@@ -147,7 +154,10 @@ export function Dashboard({
       </header>
 
       {/* TreeMap */}
-      <section className="px-6 mb-6 max-w-[1400px] mx-auto">
+      <section
+        className="px-6 mb-6 max-w-[1400px] mx-auto animate-soft-rise"
+        style={{ "--enter-delay": "160ms" } as CSSProperties}
+      >
         <TreeMap
           nodes={filteredTreeMapNodes}
           originalWidth={1200}
@@ -160,7 +170,10 @@ export function Dashboard({
       </section>
 
       {/* Table */}
-      <section className="px-6 max-w-[1400px] mx-auto">
+      <section
+        className="px-6 max-w-[1400px] mx-auto animate-soft-rise"
+        style={{ "--enter-delay": "220ms" } as CSSProperties}
+      >
         <PortfolioTable
           rows={filteredRows}
           sortConfig={sortConfig}
