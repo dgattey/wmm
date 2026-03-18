@@ -161,12 +161,12 @@ export function buildFlatHoldingTreeMapNodes({
     .paddingInner(2)(root);
 
   return (laidOut.children ?? []).map((node, index) => ({
-    id: `${node.data.symbol}-1-${index + 1}`,
-    symbol: node.data.symbol,
-    name: node.data.name,
+    id: `${node.data.symbol!}-1-${index + 1}`,
+    symbol: node.data.symbol!,
+    name: node.data.name!,
     value: node.value || 0,
-    color: node.data.color,
-    percentOfPortfolio: node.data.percentOfPortfolio,
+    color: node.data.color!,
+    percentOfPortfolio: node.data.percentOfPortfolio ?? 0,
     x0: node.x0,
     y0: node.y0,
     x1: node.x1,
