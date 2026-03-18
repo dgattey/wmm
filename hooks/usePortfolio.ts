@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useCallback,
+} from "react";
 import type {
   FidelityPosition,
   PortfolioData,
@@ -87,7 +93,7 @@ export function usePortfolio() {
     []
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (mountedRef.current) return;
     mountedRef.current = true;
 
