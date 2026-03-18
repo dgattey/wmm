@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Portfolio Allocation",
+  title: "Your portfolio",
   description: "Visualize your portfolio allocation from Fidelity exports",
   icons: {
     icon: [

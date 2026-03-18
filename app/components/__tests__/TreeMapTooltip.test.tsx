@@ -4,27 +4,27 @@ import { TreeMapTooltip } from "../TreeMapTooltip";
 import type { TreeMapNode } from "@/lib/types";
 
 const node: TreeMapNode = {
-  id: "ixus-1",
-  symbol: "IXUS",
-  name: "iShares Core MSCI Total Intl Stk ETF",
-  value: 125895.79,
+  id: "asset-a-1",
+  symbol: "ASSET-A",
+  name: "Synthetic Equity Sleeve",
+  value: 1200,
   color: "#7dd3fc",
-  parentSymbol: "09261F572",
-  parentName: "BTC LPATH IDX 2055 M",
+  parentSymbol: "FUND-A",
+  parentName: "Synthetic Allocation Fund",
   percentOfParent: 37.5,
-  percentOfPortfolio: 5.6,
+  percentOfPortfolio: 12,
   x0: 0,
   y0: 0,
   x1: 100,
   y1: 100,
   depth: 2,
-  currentPrice: 88.13,
-  totalGainLossDollar: 0.33,
-  totalGainLossPercent: 0.38,
-  fiftyTwoWeekHigh: 94.62,
-  fiftyTwoWeekLow: 61.75,
-  investmentType: "Others",
-  account: "DG 401K",
+  currentPrice: 24,
+  totalGainLossDollar: 1.2,
+  totalGainLossPercent: 5,
+  fiftyTwoWeekHigh: 30,
+  fiftyTwoWeekLow: 18,
+  investmentType: "ETFs",
+  account: "Account A",
 };
 
 describe("TreeMapTooltip", () => {
@@ -34,11 +34,9 @@ describe("TreeMapTooltip", () => {
     );
 
     expect(container).toBeEmptyDOMElement();
-    expect(screen.getByText("IXUS")).toBeInTheDocument();
+    expect(screen.getByText("ASSET-A")).toBeInTheDocument();
     expect(screen.getByText(/derived from/i)).toBeInTheDocument();
-    expect(
-      screen.getByText("BTC LPATH IDX 2055 M (09261F572)")
-    ).toBeInTheDocument();
+    expect(screen.getByText("Synthetic Allocation Fund (FUND-A)")).toBeInTheDocument();
     expect(screen.getByText("37.5% of this fund")).toBeInTheDocument();
   });
 
@@ -62,14 +60,14 @@ describe("TreeMapTooltip", () => {
 
     render(<TreeMapTooltip node={node} mouseX={310} mouseY={470} />);
 
-    const tooltip = screen.getByText("IXUS").closest(".fixed") as HTMLElement;
+    const tooltip = screen.getByText("ASSET-A").closest(".fixed") as HTMLElement;
     expect(tooltip).toHaveStyle({ left: "16px", top: "258px" });
   });
 
   it("renders at the document level so it can layer above later sections", () => {
     render(<TreeMapTooltip node={node} mouseX={140} mouseY={140} />);
 
-    const tooltip = screen.getByText("IXUS").closest(".fixed") as HTMLElement;
+    const tooltip = screen.getByText("ASSET-A").closest(".fixed") as HTMLElement;
     expect(tooltip.parentElement).toBe(document.body);
     expect(tooltip).toHaveClass("z-30");
   });

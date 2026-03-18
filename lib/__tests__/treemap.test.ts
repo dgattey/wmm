@@ -13,17 +13,17 @@ const NO_FILTERS: FilterState = {
 
 function makeRow(overrides: Partial<TableRow>): TableRow {
   return {
-    symbol: "MSFT",
-    name: "Microsoft",
-    accounts: ["Brokerage"],
+    symbol: "EQTY-A",
+    name: "Synthetic Equity A",
+    accounts: ["Account A"],
     investmentTypes: ["Stocks"],
     totalValue: 0,
     percentOfPortfolio: 0,
-    currentPrice: 400,
-    totalGainLossDollar: 200,
+    currentPrice: 40,
+    totalGainLossDollar: 8,
     totalGainLossPercent: 20,
-    fiftyTwoWeekHigh: 500,
-    fiftyTwoWeekLow: 300,
+    fiftyTwoWeekHigh: 48,
+    fiftyTwoWeekLow: 28,
     isExpandable: true,
     sources: [],
     ...overrides,
@@ -34,63 +34,63 @@ describe("treemap helpers", () => {
   it("merges identical holdings across direct and fund sources", () => {
     const rows: TableRow[] = [
       makeRow({
-        symbol: "MSFT",
-        accounts: ["Brokerage", "Roth IRA"],
+        symbol: "EQTY-A",
+        accounts: ["Account A", "Account B"],
         investmentTypes: ["Stocks", "ETFs"],
         sources: [
           {
             type: "direct",
             sourceSymbol: "DIRECT",
-            sourceName: "Brokerage",
+            sourceName: "Account A",
             value: 50,
             percentOfSource: 100,
-            account: "Brokerage",
+            account: "Account A",
             investmentType: "Stocks",
           },
           {
             type: "fund",
-            sourceSymbol: "VTI",
-            sourceName: "Vanguard Total Stock Market",
+            sourceSymbol: "FUND-A",
+            sourceName: "Synthetic Market Fund",
             value: 200,
             percentOfSource: 3,
-            account: "Brokerage",
+            account: "Account A",
             investmentType: "ETFs",
           },
           {
             type: "fund",
-            sourceSymbol: "SPY",
-            sourceName: "SPDR S&P 500",
+            sourceSymbol: "FUND-B",
+            sourceName: "Synthetic Blend Fund",
             value: 150,
             percentOfSource: 2,
-            account: "Brokerage",
+            account: "Account A",
             investmentType: "ETFs",
           },
           {
             type: "fund",
-            sourceSymbol: "VTI",
-            sourceName: "Vanguard Total Stock Market",
+            sourceSymbol: "FUND-A",
+            sourceName: "Synthetic Market Fund",
             value: 50,
             percentOfSource: 3,
-            account: "Roth IRA",
+            account: "Account B",
             investmentType: "ETFs",
           },
         ],
       }),
       makeRow({
-        symbol: "AAPL",
-        name: "Apple",
-        accounts: ["Brokerage"],
+        symbol: "EQTY-B",
+        name: "Synthetic Equity B",
+        accounts: ["Account A"],
         investmentTypes: ["ETFs"],
         totalGainLossDollar: 0,
         totalGainLossPercent: 0,
         sources: [
           {
             type: "fund",
-            sourceSymbol: "VTI",
-            sourceName: "Vanguard Total Stock Market",
+            sourceSymbol: "FUND-A",
+            sourceName: "Synthetic Market Fund",
             value: 120,
             percentOfSource: 2,
-            account: "Brokerage",
+            account: "Account A",
             investmentType: "ETFs",
           },
         ],
@@ -108,59 +108,59 @@ describe("treemap helpers", () => {
 
     expect(nodes).toHaveLength(2);
     expect(nodes.every((node) => node.depth === 1)).toBe(true);
-    expect(nodes.find((node) => node.symbol === "MSFT")?.value).toBe(450);
-    expect(nodes.find((node) => node.symbol === "AAPL")?.value).toBe(120);
+    expect(nodes.find((node) => node.symbol === "EQTY-A")?.value).toBe(450);
+    expect(nodes.find((node) => node.symbol === "EQTY-B")?.value).toBe(120);
   });
 
   it("recalculates flat node values for selected funds and account filters", () => {
     const rows: TableRow[] = [
       makeRow({
-        symbol: "MSFT",
-        accounts: ["Brokerage", "Roth IRA"],
+        symbol: "EQTY-A",
+        accounts: ["Account A", "Account B"],
         investmentTypes: ["Stocks", "ETFs"],
         sources: [
           {
             type: "direct",
             sourceSymbol: "DIRECT",
-            sourceName: "Brokerage",
+            sourceName: "Account A",
             value: 50,
             percentOfSource: 100,
-            account: "Brokerage",
+            account: "Account A",
             investmentType: "Stocks",
           },
           {
             type: "fund",
-            sourceSymbol: "VTI",
-            sourceName: "Vanguard Total Stock Market",
+            sourceSymbol: "FUND-A",
+            sourceName: "Synthetic Market Fund",
             value: 200,
             percentOfSource: 3,
-            account: "Brokerage",
+            account: "Account A",
             investmentType: "ETFs",
           },
           {
             type: "fund",
-            sourceSymbol: "VTI",
-            sourceName: "Vanguard Total Stock Market",
+            sourceSymbol: "FUND-A",
+            sourceName: "Synthetic Market Fund",
             value: 50,
             percentOfSource: 3,
-            account: "Roth IRA",
+            account: "Account B",
             investmentType: "ETFs",
           },
         ],
       }),
       makeRow({
-        symbol: "FZFXX",
-        name: "Fidelity Treasury Fund",
-        accounts: ["Brokerage"],
+        symbol: "FUND-C",
+        name: "Synthetic Income Fund",
+        accounts: ["Account A"],
         investmentTypes: ["Mutual Funds"],
         sources: [
           {
             type: "direct",
             sourceSymbol: "DIRECT",
-            sourceName: "Brokerage",
+            sourceName: "Account A",
             value: 120,
             percentOfSource: 100,
-            account: "Brokerage",
+            account: "Account A",
             investmentType: "Mutual Funds",
           },
         ],
@@ -169,24 +169,24 @@ describe("treemap helpers", () => {
 
     const selectedFundNodes = buildFlatHoldingTreeMapNodes({
       rows,
-      filters: { investmentTypes: [], accounts: ["Brokerage"] },
-      selectedFunds: ["VTI", "FZFXX"],
+      filters: { investmentTypes: [], accounts: ["Account A"] },
+      selectedFunds: ["FUND-A", "FUND-C"],
       totalPortfolioValue: 1_000,
       width: 1200,
       height: 400,
     });
 
-    expect(selectedFundNodes.find((node) => node.symbol === "MSFT")?.value).toBe(200);
-    expect(selectedFundNodes.find((node) => node.symbol === "FZFXX")?.value).toBe(120);
+    expect(selectedFundNodes.find((node) => node.symbol === "EQTY-A")?.value).toBe(200);
+    expect(selectedFundNodes.find((node) => node.symbol === "FUND-C")?.value).toBe(120);
     expect(selectedFundNodes).toHaveLength(2);
   });
 
   it("returns only selectable fund chips and filters grouped nodes by selection", () => {
     const groupedNodes: TreeMapNode[] = [
       {
-        id: "vti-1-1",
-        symbol: "VTI",
-        name: "Vanguard Total Stock Market",
+        id: "fund-a-1-1",
+        symbol: "FUND-A",
+        name: "Synthetic Market Fund",
         value: 1000,
         color: "#4E9999",
         percentOfPortfolio: 25,
@@ -198,12 +198,12 @@ describe("treemap helpers", () => {
         investmentType: "ETFs",
       },
       {
-        id: "msft-2-2",
-        symbol: "MSFT",
-        name: "Microsoft",
+        id: "eqty-a-2-2",
+        symbol: "EQTY-A",
+        name: "Synthetic Equity A",
         value: 200,
         color: "#80BABA",
-        parentSymbol: "VTI",
+        parentSymbol: "FUND-A",
         percentOfPortfolio: 5,
         x0: 0,
         y0: 20,
@@ -212,9 +212,9 @@ describe("treemap helpers", () => {
         depth: 2,
       },
       {
-        id: "vti-1-dup",
-        symbol: "VTI",
-        name: "Vanguard Total Stock Market",
+        id: "fund-a-1-dup",
+        symbol: "FUND-A",
+        name: "Synthetic Market Fund",
         value: 400,
         color: "#4E9999",
         percentOfPortfolio: 10,
@@ -226,9 +226,9 @@ describe("treemap helpers", () => {
         investmentType: "ETFs",
       },
       {
-        id: "msft-1-3",
-        symbol: "MSFT",
-        name: "Microsoft",
+        id: "eqty-a-1-3",
+        symbol: "EQTY-A",
+        name: "Synthetic Equity A",
         value: 500,
         color: "#8B74AB",
         percentOfPortfolio: 12.5,
@@ -240,9 +240,9 @@ describe("treemap helpers", () => {
         investmentType: "Stocks",
       },
       {
-        id: "fzfxx-1-4",
-        symbol: "FZFXX",
-        name: "Fidelity Treasury Fund",
+        id: "fund-c-1-4",
+        symbol: "FUND-C",
+        name: "Synthetic Income Fund",
         value: 300,
         color: "#C49A5C",
         percentOfPortfolio: 7.5,
@@ -257,22 +257,22 @@ describe("treemap helpers", () => {
 
     expect(getFundOptions(groupedNodes)).toEqual([
       {
-        symbol: "VTI",
-        name: "Vanguard Total Stock Market",
+        symbol: "FUND-A",
+        name: "Synthetic Market Fund",
         color: "#4E9999",
         value: 1400,
         hasChildren: true,
       },
       {
-        symbol: "FZFXX",
-        name: "Fidelity Treasury Fund",
+        symbol: "FUND-C",
+        name: "Synthetic Income Fund",
         color: "#C49A5C",
         value: 300,
         hasChildren: false,
       },
     ]);
 
-    expect(filterFundTreeMapNodes(groupedNodes, ["VTI"])).toEqual([
+    expect(filterFundTreeMapNodes(groupedNodes, ["FUND-A"])).toEqual([
       groupedNodes[0],
       groupedNodes[1],
       groupedNodes[2],

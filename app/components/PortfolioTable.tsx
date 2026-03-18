@@ -36,7 +36,7 @@ const SORTABLE_COLUMNS: {
   {
     key: FIFTY_TWO_WEEK_POSITION_SORT_KEY,
     label: "52W Range",
-    minWidthClass: "min-w-[12rem]",
+    minWidthClass: "min-w-[10.5rem] xl:min-w-[12rem]",
   },
 ];
 
@@ -120,7 +120,7 @@ export function PortfolioTable({
       )}
       style={{ "--enter-delay": "80ms" } as CSSProperties}
     >
-      <table className="w-full border-collapse min-w-[1040px]">
+      <table className="w-full border-collapse min-w-[980px] xl:min-w-[1040px]">
         <thead>
           <tr className="border-b border-border">
             {/* Sticky: Identity column */}
@@ -131,14 +131,14 @@ export function PortfolioTable({
                 "after:absolute after:right-0 after:top-0 after:bottom-0 after:w-4",
                 "after:bg-gradient-to-r after:from-transparent after:to-surface after:pointer-events-none"
               )}
-              style={{ minWidth: 240 }}
+              style={{ minWidth: 220 }}
             >
               <span className="text-xs font-medium uppercase tracking-wider text-text-muted">
                 Holding
               </span>
             </th>
             {/* Account */}
-            <th className="text-left px-3 py-3">
+            <th className="w-[10rem] text-left px-3 py-3">
               <span className="text-xs font-medium uppercase tracking-wider text-text-muted">
                 Account
               </span>
@@ -402,7 +402,10 @@ function TableRowGroup({
           </div>
         </td>
         {/* Account */}
-        <td className="px-3 py-3 text-sm text-text-muted whitespace-nowrap">
+        <td
+          className="w-[10rem] max-w-[10rem] px-3 py-3 text-sm text-text-muted whitespace-normal leading-5"
+          title={row.accounts.join(", ")}
+        >
           {row.accounts.join(", ")}
         </td>
         {/* Type */}
@@ -444,7 +447,7 @@ function TableRowGroup({
           <GainLoss percent={row.totalGainLossPercent} size="sm" />
         </td>
         {/* 52-Week Range */}
-        <td className="min-w-[12rem] px-3 py-3">
+        <td className="min-w-[10.5rem] px-3 py-3 xl:min-w-[12rem]">
           <FiftyTwoWeekRange
             low={row.fiftyTwoWeekLow}
             high={row.fiftyTwoWeekHigh}
@@ -482,7 +485,10 @@ function TableRowGroup({
                 size="sm"
               />
             </td>
-            <td className="px-3 py-2 text-xs text-text-muted">
+            <td
+              className="w-[10rem] max-w-[10rem] px-3 py-2 text-xs text-text-muted whitespace-normal leading-5"
+              title={source.account}
+            >
               {source.account}
             </td>
             <td className="px-3 py-2">

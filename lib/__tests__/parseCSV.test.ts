@@ -9,37 +9,37 @@ function makeCSV(rows: string[]): string {
 }
 
 const STOCK_ROW =
-  'X86835552,DG stocks,Stocks,AAPL,APPLE INC,125,$260.81,-$0.02,$32601.25,-$2.50,-0.01%,+$15558.60,+91.29%,1.95%,$17042.65,$136.34,Cash,';
+  'TEST-0001,Account A,Stocks,TSTA,SYNTHETIC ALPHA CORP,24,$50.00,+$0.50,$1200.00,+$12.00,+1.01%,+$240.00,+25.00%,12.00%,$960.00,$40.00,Cash,';
 const ETF_ROW =
-  'X86835552,DG stocks,ETFs,VTI,VANGUARD INDEX FDS VANGUARD TOTAL STK MKT ETF,902.218,$333.24,-$0.27,$300655.12,-$243.60,-0.09%,+$37112.81,+14.08%,17.96%,$263542.31,$292.10,Cash,';
+  'TEST-0001,Account A,ETFs,FUNDX,SYNTHETIC MARKET FUND,40,$75.00,-$0.25,$3000.00,-$10.00,-0.33%,+$300.00,+11.11%,30.00%,$2700.00,$67.50,Cash,';
 const MONEY_MARKET_ROW =
-  "X86835552,DG stocks,Cash,FZFXX**,HELD IN MONEY MARKET,,,,$43904.72,,,,,2.62%,,,Cash,";
+  "TEST-0001,Account A,Cash,FZFXX**,HELD IN MONEY MARKET,,,,$450.00,,,,,4.50%,,,Cash,";
 const PENDING_ROW =
-  "X86835552,DG stocks,,Pending activity,,,,,-$661.77,,,,,,";
+  "TEST-0001,Account A,,Pending activity,,,,,-$25.00,,,,,,";
 const BRKB_ROW =
-  'X86835552,DG stocks,Stocks,BRKB,BERKSHIRE HATHAWAY INC COM,73,$493.57,-$0.57,$36030.61,-$41.61,-0.12%,+$31700.32,+732.05%,2.15%,$4330.29,$59.32,Cash,';
+  'TEST-0001,Account A,Stocks,BRKB,SYNTHETIC VALUE HOLDING,5,$80.00,-$0.50,$400.00,-$2.50,-0.63%,+$40.00,+11.11%,4.00%,$360.00,$72.00,Cash,';
 
 describe("parseCSV", () => {
   it("parses a valid row with correct fields", () => {
     const result = parseCSV(makeCSV([STOCK_ROW]));
     expect(result).toHaveLength(1);
     const pos = result[0];
-    expect(pos.symbol).toBe("AAPL");
-    expect(pos.accountName).toBe("DG stocks");
+    expect(pos.symbol).toBe("TSTA");
+    expect(pos.accountName).toBe("Account A");
     expect(pos.investmentType).toBe("Stocks");
-    expect(pos.quantity).toBe(125);
-    expect(pos.lastPrice).toBe(260.81);
-    expect(pos.currentValue).toBe(32601.25);
-    expect(pos.totalGainLossDollar).toBe(15558.6);
-    expect(pos.totalGainLossPercent).toBe(91.29);
-    expect(pos.costBasisTotal).toBe(17042.65);
+    expect(pos.quantity).toBe(24);
+    expect(pos.lastPrice).toBe(50);
+    expect(pos.currentValue).toBe(1200);
+    expect(pos.totalGainLossDollar).toBe(240);
+    expect(pos.totalGainLossPercent).toBe(25);
+    expect(pos.costBasisTotal).toBe(960);
   });
 
   it("parses multiple rows", () => {
     const result = parseCSV(makeCSV([STOCK_ROW, ETF_ROW]));
     expect(result).toHaveLength(2);
-    expect(result[0].symbol).toBe("AAPL");
-    expect(result[1].symbol).toBe("VTI");
+    expect(result[0].symbol).toBe("TSTA");
+    expect(result[1].symbol).toBe("FUNDX");
     expect(result[1].investmentType).toBe("ETFs");
   });
 
@@ -59,7 +59,7 @@ describe("parseCSV", () => {
   it("skips pending activity rows", () => {
     const result = parseCSV(makeCSV([STOCK_ROW, PENDING_ROW]));
     expect(result).toHaveLength(1);
-    expect(result[0].symbol).toBe("AAPL");
+    expect(result[0].symbol).toBe("TSTA");
   });
 
   it("stops at disclaimer text", () => {
@@ -88,7 +88,7 @@ describe("parseCSV", () => {
     const csv = "\uFEFF" + makeCSV([STOCK_ROW]);
     const result = parseCSV(csv);
     expect(result).toHaveLength(1);
-    expect(result[0].symbol).toBe("AAPL");
+    expect(result[0].symbol).toBe("TSTA");
   });
 
   it("handles Windows line endings", () => {
@@ -99,17 +99,17 @@ describe("parseCSV", () => {
 
   it("cleans dollar signs, plus, percent from numeric values", () => {
     const result = parseCSV(makeCSV([STOCK_ROW]));
-    expect(result[0].lastPriceChange).toBe(-0.02);
-    expect(result[0].todayGainLossDollar).toBe(-2.5);
-    expect(result[0].todayGainLossPercent).toBe(-0.01);
+    expect(result[0].lastPriceChange).toBe(0.5);
+    expect(result[0].todayGainLossDollar).toBe(12);
+    expect(result[0].todayGainLossPercent).toBe(1.01);
   });
 
   it("handles quoted fields with commas (ETF descriptions)", () => {
     const row =
-      'X86835552,DG stocks,ETFs,SPYX,"SPDR SERIES TRUST STATE STREET S&P 500 FOSSIL FUEL RESERVES FREE ETF",1696.651,$55.38,-$0.073,$93960.53,-$123.86,-0.14%,+$38135.60,+68.31%,37.49%,$55824.93,$32.90,Cash,';
+      'TEST-0001,Account A,ETFs,QTESX,"SYNTHETIC SERIES TRUST, SAMPLE EQUITY ETF",250,$20.00,-$0.10,$5000.00,-$25.00,-0.50%,+$500.00,+11.11%,50.00%,$4500.00,$18.00,Cash,';
     const result = parseCSV(makeCSV([row]));
     expect(result).toHaveLength(1);
-    expect(result[0].symbol).toBe("SPYX");
-    expect(result[0].description).toContain("SPDR SERIES TRUST");
+    expect(result[0].symbol).toBe("QTESX");
+    expect(result[0].description).toContain("SYNTHETIC SERIES TRUST");
   });
 });
