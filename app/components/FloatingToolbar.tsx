@@ -101,7 +101,7 @@ export function FloatingToolbar({
           "bg-[#1a1d28]/92 backdrop-blur-2xl saturate-150",
           "border border-white/[0.06] shadow-[0_8px_40px_rgba(0,0,0,0.35),0_2px_8px_rgba(0,0,0,0.2)]",
           "ring-1 ring-inset ring-white/[0.04]",
-          "w-fit max-w-[92vw] hover-lift"
+          "w-[92vw] max-w-[44rem] lg:w-[72vw] lg:max-w-[1080px] hover-lift"
         )}
       >
         <div className="flex flex-wrap items-center justify-between gap-4">
