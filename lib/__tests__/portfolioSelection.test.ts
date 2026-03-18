@@ -71,7 +71,7 @@ describe("portfolio selection sanitizing", () => {
     expect(sanitized.filters.investmentTypes).toEqual(["Stocks"]);
   });
 
-  it("keeps the chosen filters when a new account clears selected funds", () => {
+  it("clears incompatible type filters when a new account clears selected funds", () => {
     const previousFilters: FilterState = {
       accounts: [],
       investmentTypes: ["Stocks"],
@@ -89,10 +89,10 @@ describe("portfolio selection sanitizing", () => {
 
     expect(sanitized.selectedFunds).toEqual([]);
     expect(sanitized.filters.accounts).toEqual(["Account B"]);
-    expect(sanitized.filters.investmentTypes).toEqual(["Stocks"]);
+    expect(sanitized.filters.investmentTypes).toEqual([]);
   });
 
-  it("keeps compatible type filters when selecting a fund", () => {
+  it("narrows type filters to the selected fund's compatible investment types", () => {
     const sanitized = sanitizeSelectionForFundChange(
       positions,
       {
@@ -104,10 +104,7 @@ describe("portfolio selection sanitizing", () => {
 
     expect(sanitized.selectedFunds).toEqual(["FUND-A"]);
     expect(sanitized.filters.accounts).toEqual([]);
-    expect(sanitized.filters.investmentTypes).toEqual([
-      "ETFs",
-      "Mutual Funds",
-    ]);
+    expect(sanitized.filters.investmentTypes).toEqual(["ETFs"]);
   });
 
   it("keeps a selected fund when broadening the type filter", () => {
