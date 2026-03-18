@@ -128,6 +128,7 @@ export function sanitizeCurrentSelection(
 
   return {
     filters: {
+      ...normalizedFilters,
       accounts: nextAccounts,
       investmentTypes: nextInvestmentTypes,
     },
@@ -191,9 +192,12 @@ function getValidInvestmentTypes(
 }
 
 function normalizeFilterState(filters: FilterState): FilterState {
+  const searchQuery = filters.searchQuery?.trim();
+
   return {
     accounts: [...filters.accounts],
     investmentTypes: [...filters.investmentTypes],
+    ...(searchQuery ? { searchQuery } : {}),
   };
 }
 

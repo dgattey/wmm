@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { FidelityPosition, FilterState } from "@/lib/types";
 import {
+  sanitizeCurrentSelection,
   sanitizeSelectionForFilterChange,
   sanitizeSelectionForFundChange,
 } from "@/lib/portfolioSelection";
@@ -128,5 +129,17 @@ describe("portfolio selection sanitizing", () => {
       "ETFs",
       "Mutual Funds",
     ]);
+  });
+
+  it("preserves searchQuery when sanitizing current selection", () => {
+    const filters: FilterState = {
+      accounts: [],
+      investmentTypes: [],
+      searchQuery: "fund",
+    };
+
+    const sanitized = sanitizeCurrentSelection(positions, filters, []);
+
+    expect(sanitized.filters.searchQuery).toBe("fund");
   });
 });
