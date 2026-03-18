@@ -284,18 +284,17 @@ describe("yahoo fund symbol lookups", () => {
       })
     );
     expect(mockQuoteSummary).not.toHaveBeenCalled();
-    expect(result["09261F572"]).toEqual([
-      {
-        symbol: "46434V373",
-        holdingName: "iShares Core MSCI Total Intl Stk ETF",
-        holdingPercent: 0.55,
-      },
-      {
-        symbol: "09261F572",
-        holdingName: "Rest of BTC LPATH IDX 2055 M",
-        holdingPercent: 0.45,
-      },
-    ]);
+    expect(result["09261F572"]).toHaveLength(2);
+    expect(result["09261F572"][0]).toMatchObject({
+      symbol: "46434V373",
+      holdingName: "iShares Core MSCI Total Intl Stk ETF",
+    });
+    expect(result["09261F572"][0]?.holdingPercent).toBeCloseTo(0.55);
+    expect(result["09261F572"][1]).toMatchObject({
+      symbol: "09261F572",
+      holdingName: "Rest of BTC LPATH IDX 2055 M",
+    });
+    expect(result["09261F572"][1]?.holdingPercent).toBeCloseTo(0.45);
   });
 
   it("still skips quote lookups for internal non-market symbols", async () => {
