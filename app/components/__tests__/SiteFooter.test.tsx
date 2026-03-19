@@ -6,10 +6,12 @@ describe("SiteFooterInner", () => {
   it("shows copyright with given year and creator link", () => {
     render(<SiteFooterInner year={2026} />);
 
-    expect(screen.getByRole("contentinfo")).toBeInTheDocument();
-    expect(screen.getByText(/© 2026 Dylan Gattey/)).toBeInTheDocument();
+    const footer = screen.getByRole("contentinfo");
+    expect(footer).toBeInTheDocument();
+    expect(footer.textContent).toMatch(/©\s*2026/);
+    expect(screen.getByText("Crafted by")).toBeInTheDocument();
 
-    const link = screen.getByRole("link", { name: "gattey.com" });
+    const link = screen.getByRole("link", { name: "Dylan Gattey" });
     expect(link).toHaveAttribute("href", "https://gattey.com");
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", "noopener noreferrer");

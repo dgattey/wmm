@@ -12,23 +12,28 @@ export interface SiteFooterInnerProps {
 export function SiteFooterInner({ year }: SiteFooterInnerProps) {
   return (
     <footer
-      className="shrink-0 border-t border-border bg-surface/80 px-4 py-4 text-center text-sm text-text-muted backdrop-blur-sm md:px-6"
+      className="site-footer fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-[var(--glass-bg-strong)] pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pt-2.5 shadow-[var(--shadow-md),0_-1px_0_var(--glass-highlight)] backdrop-blur-2xl backdrop-saturate-150 md:pt-3"
       role="contentinfo"
     >
-      <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
-        <span>© {year} Dylan Gattey.</span>
-        <span className="text-border" aria-hidden="true">
-          ·
-        </span>
-        <Link
-          href="https://gattey.com"
-          className="text-accent underline decoration-border underline-offset-2 transition-colors hover:text-text-primary"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          gattey.com
-        </Link>
-      </p>
+      <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 md:gap-x-4 md:px-6">
+        <p className="text-center text-[11px] font-medium uppercase tracking-[0.14em] text-text-muted/80">
+          Crafted by
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-text-muted">
+          <span className="tabular-nums">© {year}</span>
+          <span className="text-border/90" aria-hidden="true">
+            ·
+          </span>
+          <Link
+            href="https://gattey.com"
+            className="inline-flex items-center rounded-full border border-border/60 bg-surface/90 px-3 py-1 text-xs font-semibold text-accent shadow-[var(--shadow)] transition-[color,background-color,box-shadow,border-color] hover:border-accent/35 hover:bg-accent-bg hover:text-text-primary"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Dylan Gattey
+          </Link>
+        </div>
+      </div>
     </footer>
   );
 }

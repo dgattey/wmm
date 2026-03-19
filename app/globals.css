@@ -27,6 +27,11 @@
   --glass-bg-strong: rgba(255, 255, 255, 0.9);
   --glass-border: rgba(0, 0, 0, 0.06);
   --glass-highlight: rgba(255, 255, 255, 0.5);
+
+  /* Fixed site footer: reserve scroll space (bar + bottom safe inset) */
+  --site-footer-safe: calc(
+    2.75rem + max(0.5rem, env(safe-area-inset-bottom, 0px))
+  );
 }
 
 @media (prefers-color-scheme: dark) {

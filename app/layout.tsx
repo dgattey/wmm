@@ -24,10 +24,12 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <PendingUploadProvider>
-          <div className="flex min-h-dvh flex-col">
-            <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+          <>
+            <div className="flex min-h-dvh flex-col pb-[var(--site-footer-safe)]">
+              <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+            </div>
             <SiteFooter />
-          </div>
+          </>
         </PendingUploadProvider>
       </body>
     </html>
