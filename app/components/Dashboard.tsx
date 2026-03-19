@@ -99,6 +99,7 @@ export function Dashboard({
   const [searchInput, setSearchInput] = useState(searchQueryFromFilters);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timeAgo = useTimeAgo(lastUpdated);
+  const [hoveredTooltip, setHoveredTooltip] = useState<"value" | "gain" | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState(portfolioName);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
@@ -214,7 +215,7 @@ export function Dashboard({
             className={cn(enableIntroAnimation && "animate-soft-rise")}
             style={{ "--enter-delay": "40ms" } as CSSProperties}
           >
-            <div className="mb-4 flex min-w-0 items-center justify-between gap-4">
+            <div className="mb-6 flex min-w-0 items-center justify-between gap-4">
               <div className="flex min-w-0 items-center gap-3">
                 <button
                   type="button"
@@ -375,8 +376,9 @@ export function Dashboard({
               )}
             >
               <div
-                className="min-w-fit shrink-0"
-                title={`Market value: ${formatDollar(displayValue)}`}
+                className="relative min-w-fit shrink-0"
+                onMouseEnter={() => setHoveredTooltip("value")}
+                onMouseLeave={() => setHoveredTooltip(null)}
               >
                 <AnimatedNumber
                   value={displayValue}
@@ -390,10 +392,19 @@ export function Dashboard({
                 <p className="mt-1 text-xs text-text-muted">
                   Current market value
                 </p>
+                {hoveredTooltip === "value" && (
+                  <div
+                    role="tooltip"
+                    className="pointer-events-none absolute left-0 top-full z-50 mt-1.5 w-max rounded-lg border border-border/80 bg-surface px-3 py-1.5 text-left text-xs leading-5 text-text-primary shadow-[var(--shadow-lg)]"
+                  >
+                    {formatDollar(displayValue)}
+                  </div>
+                )}
               </div>
               <div
-                className={cn("min-w-0", !isMobile && "self-end")}
-                title={`Unrealized gain: ${formatDollar(displayGainLoss)} / Return on cost basis: ${displayGainLossPercent.toFixed(2)}%`}
+                className={cn("relative min-w-0", !isMobile && "self-end")}
+                onMouseEnter={() => setHoveredTooltip("gain")}
+                onMouseLeave={() => setHoveredTooltip(null)}
               >
                 <GainLoss
                   dollar={displayGainLoss}
@@ -405,6 +416,14 @@ export function Dashboard({
                 <p className="mt-1 text-xs text-text-muted">
                   Unrealized gain / return on cost basis
                 </p>
+                {hoveredTooltip === "gain" && (
+                  <div
+                    role="tooltip"
+                    className="pointer-events-none absolute left-0 top-full z-50 mt-1.5 w-max rounded-lg border border-border/80 bg-surface px-3 py-1.5 text-left text-xs leading-5 text-text-primary shadow-[var(--shadow-lg)]"
+                  >
+                    {formatDollar(displayGainLoss)} / {displayGainLossPercent.toFixed(2)}%
+                  </div>
+                )}
               </div>
             </div>
           </div>
