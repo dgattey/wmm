@@ -53,8 +53,14 @@ export function useStoredPortfolioRecord({
   const positionsRef = useRef<FidelityPosition[] | null>(null);
   const requestTokenRef = useRef(0);
   const lastLayoutModeRef = useRef<"mobile" | "desktop">(layoutMode);
+  const portfolioIdRef = useRef(portfolioId);
+  const widthRef = useRef(width);
+  const heightRef = useRef(height);
 
   positionsRef.current = positions;
+  portfolioIdRef.current = portfolioId;
+  widthRef.current = width;
+  heightRef.current = height;
 
   const refreshPortfolioData = useCallback(
     async (
@@ -72,8 +78,8 @@ export function useStoredPortfolioRecord({
         const nextPortfolioData = await fetchPortfolioData({
           positions: nextPositions,
           endpoint,
-          width,
-          height,
+          width: widthRef.current,
+          height: heightRef.current,
         });
 
         if (requestTokenRef.current !== requestToken) {
@@ -81,7 +87,7 @@ export function useStoredPortfolioRecord({
         }
 
         setPortfolioData(nextPortfolioData);
-        saveStoredPortfolioData(portfolioId, nextPortfolioData);
+        saveStoredPortfolioData(portfolioIdRef.current, nextPortfolioData);
         const now = new Date().toISOString();
         setSummary((currentSummary) =>
           currentSummary
@@ -110,10 +116,22 @@ export function useStoredPortfolioRecord({
         }
       }
     },
-    [height, portfolioId, width]
+    []
   );
 
   useEffect(() => {
+    if (!portfolioId) {
+      requestTokenRef.current += 1;
+      setIsLoading(true);
+      setError(null);
+      setIsMissing(false);
+      setRestoredFromStorage(false);
+      setSummary(null);
+      setPositions(null);
+      setPortfolioData(null);
+      return;
+    }
+
     requestTokenRef.current += 1;
     setIsLoading(true);
     setError(null);

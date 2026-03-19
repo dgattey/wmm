@@ -227,11 +227,13 @@ export function usePortfolioViewState({
   const syncWithUrlState = useCallback(
     (urlState: PortfolioUrlState) => {
       const nextUrlState = normalizePortfolioUrlState(urlState);
+      // Compare URL to what the UI actually shows (effective selection), not raw
+      // useState, so we do not spuriously sync when sanitize* trimmed accounts/types.
       if (
         arePortfolioUrlStatesEqual(
           {
-            filters,
-            selectedFunds,
+            filters: effectiveFilters,
+            selectedFunds: effectiveSelectedFunds,
             sortConfig,
             viewMode,
             treeMapGrouping,
@@ -249,7 +251,13 @@ export function usePortfolioViewState({
       setTreeMapGrouping(nextUrlState.treeMapGrouping);
       setExpandedRows(new Set());
     },
-    [filters, selectedFunds, sortConfig, treeMapGrouping, viewMode]
+    [
+      effectiveFilters,
+      effectiveSelectedFunds,
+      sortConfig,
+      treeMapGrouping,
+      viewMode,
+    ]
   );
 
   return {

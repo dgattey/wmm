@@ -123,4 +123,64 @@ describe("useStoredPortfolioRecord", () => {
       expect(result.current.error).toBeNull();
     });
   });
+
+  it("keeps positions loaded when treemap dimensions change (no storage reload)", async () => {
+    const summary = saveUploadedPortfolio({
+      sourceFileName: "account-a.csv",
+      positions,
+    });
+    saveStoredPortfolioData(summary.id, cachedData);
+
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response(JSON.stringify(refreshedData), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        })
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+
+    const { result, rerender } = renderHook(
+      ({ width, height, layoutMode }: { width: number; height: number; layoutMode: "mobile" | "desktop" }) =>
+        useStoredPortfolioRecord({
+          portfolioId: summary.id,
+          width,
+          height,
+          layoutMode,
+        }),
+      {
+        initialProps: {
+          width: 1200,
+          height: 400,
+          layoutMode: "desktop",
+        },
+      }
+    );
+
+    await waitFor(() => {
+      expect(result.current.positions).toEqual(positions);
+    });
+
+    const scrollCallsBeforeResize = vi.mocked(window.scrollTo).mock.calls.length;
+
+    rerender({ width: 720, height: 640, layoutMode: "mobile" });
+
+    expect(result.current.isMissing).toBe(false);
+    expect(result.current.positions).toEqual(positions);
+    expect(vi.mocked(window.scrollTo).mock.calls.length).toBe(scrollCallsBeforeResize);
+
+    await waitFor(() => {
+      const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+      const refreshCall = calls.find((call) => call[0] === "/api/portfolio/refresh");
+      expect(refreshCall).toBeDefined();
+      const [, init] = refreshCall!;
+      expect(typeof init.body).toBe("string");
+      expect(JSON.parse(init.body as string)).toMatchObject({
+        width: 720,
+        height: 640,
+      });
+    });
+  });
 });
