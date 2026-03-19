@@ -1,6 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-const PORTFOLIO_STORE_KEY = "portfolio_store";
 import {
   getMostRecentPortfolioId,
   loadStoredPortfolio,
@@ -109,46 +107,5 @@ describe("portfolio storage", () => {
     expect(getMostRecentPortfolioId()).toBe(first.id);
     expect(removeStoredPortfolio(first.id)).toBe(second.id);
     expect(listStoredPortfolios().map(({ id }) => id)).toEqual([second.id]);
-  });
-
-  it("rewrites legacy portfolio-* timestamp ids when reading the store", () => {
-    const legacyId = "portfolio-1773946370314-jrc71e";
-    localStorage.setItem(
-      PORTFOLIO_STORE_KEY,
-      JSON.stringify({
-        version: 1,
-        portfolios: [
-          {
-            id: legacyId,
-            name: "Migrated",
-            sourceFileName: "test.csv",
-            uploadedAt: "2026-03-18T00:00:00.000Z",
-            lastViewedAt: "2026-03-18T00:00:00.000Z",
-            positionCount: 1,
-            positions: makePositions("AAPL", 100),
-            portfolioData: null,
-          },
-        ],
-      })
-    );
-
-    vi.spyOn(crypto, "getRandomValues").mockImplementation((buffer) => {
-      const arr = buffer as Uint8Array;
-      for (let i = 0; i < arr.length; i++) {
-        arr[i] = i % 256;
-      }
-      return arr;
-    });
-
-    const [summary] = listStoredPortfolios();
-    expect(summary.id).not.toBe(legacyId);
-    expect(summary.id).toMatch(/^[0-9a-z]{12}$/);
-    expect(loadStoredPortfolio(summary.id)?.positions).toHaveLength(1);
-
-    const roundTrip = JSON.parse(localStorage.getItem(PORTFOLIO_STORE_KEY)!);
-    expect(roundTrip.portfolios[0].id).toBe(summary.id);
-    expect(roundTrip.version).toBe(2);
-
-    vi.restoreAllMocks();
   });
 });

@@ -7,7 +7,7 @@ import type {
 const PORTFOLIO_STORE_KEY = "portfolio_store";
 const MAX_STORED_PORTFOLIOS = 8;
 const MAX_CACHED_DATA_PORTFOLIOS = 3;
-const STORE_VERSION = 2;
+const STORE_VERSION = 1;
 
 interface StoredPortfolioRecord extends StoredPortfolioSummary {
   positions: FidelityPosition[];
@@ -154,10 +154,6 @@ function readStore(): PortfolioStore {
 
     const normalized = normalizeStore(JSON.parse(raw));
     if (normalized) {
-      const { portfolios, changed } = migrateLegacyPortfolioIds(normalized.portfolios);
-      if (changed) {
-        return persistStore({ ...normalized, portfolios });
-      }
       return normalized;
     }
   } catch {
@@ -325,26 +321,6 @@ function createPortfolioName(sourceFileName: string): string {
   }
 
   return trimmed.replace(/\.csv$/i, "");
-}
-
-/** Previous id shape: `portfolio-{timestamp}-{random}` — rewritten on read. */
-function isLegacyPortfolioId(id: string): boolean {
-  return /^portfolio-\d+-/.test(id);
-}
-
-function migrateLegacyPortfolioIds(
-  portfolios: StoredPortfolioRecord[]
-): { portfolios: StoredPortfolioRecord[]; changed: boolean } {
-  let changed = false;
-  const next = portfolios.map((portfolio) => {
-    if (!isLegacyPortfolioId(portfolio.id)) {
-      return portfolio;
-    }
-    changed = true;
-    return { ...portfolio, id: createPortfolioId() };
-  });
-
-  return { portfolios: next, changed };
 }
 
 function createPortfolioId(): string {
