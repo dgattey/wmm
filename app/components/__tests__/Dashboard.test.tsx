@@ -1,7 +1,15 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { Dashboard } from "../Dashboard";
 import type { PortfolioData } from "@/lib/types";
+
+const { mockUseIsStickyDocked } = vi.hoisted(() => ({
+  mockUseIsStickyDocked: vi.fn(),
+}));
+
+vi.mock("@/hooks/useIsStickyDocked", () => ({
+  useIsStickyDocked: mockUseIsStickyDocked,
+}));
 
 vi.mock("../TreeMap", () => ({
   TreeMap: (props: { isMobile?: boolean; enableIntroAnimation?: boolean }) => (
@@ -51,6 +59,10 @@ const portfolioData: PortfolioData = {
   },
   lastUpdated: new Date().toISOString(),
 };
+
+beforeEach(() => {
+  mockUseIsStickyDocked.mockReturnValue([{ current: null }, false, 112]);
+});
 
 function renderDashboard({
   onBackToPicker = vi.fn(),
@@ -227,6 +239,20 @@ describe("Dashboard portfolio actions", () => {
       searchQuery: "aapl",
     });
     vi.useRealTimers();
+  });
+
+  it("renders an opaque docked shell background on the top sticky row", () => {
+    mockUseIsStickyDocked.mockReturnValue([{ current: null }, true, 112]);
+
+    renderDashboard();
+
+    expect(screen.getByTestId("portfolio-search-shell-background")).toHaveClass("bg-surface");
+    expect(screen.getByRole("searchbox", { name: "Search portfolio" })).toHaveClass(
+      "bg-surface"
+    );
+    expect(screen.getByRole("searchbox", { name: "Search portfolio" })).not.toHaveClass(
+      "backdrop-blur-xl"
+    );
   });
 
   it("shows and uses Clear button when search has text", () => {

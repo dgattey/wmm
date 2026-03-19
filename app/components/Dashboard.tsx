@@ -527,8 +527,18 @@ export function Dashboard({
           }}
         >
           <div
+            aria-hidden="true"
+            data-testid="portfolio-search-shell-background"
             className={cn(
-              "flex items-center gap-3",
+              "pointer-events-none absolute inset-0 transition-[background-color,box-shadow] duration-220",
+              isSearchDocked
+                ? "bg-surface shadow-[var(--shadow)]"
+                : "bg-transparent shadow-none"
+            )}
+          />
+          <div
+            className={cn(
+              "relative z-10 flex items-center gap-3",
               isMobile ? "px-4" : "px-6",
               "max-w-[1400px] mx-auto"
             )}
@@ -555,7 +565,8 @@ export function Dashboard({
                 placeholder="Search by name or symbol"
                 aria-label="Search portfolio"
                 className={cn(
-                  "w-full rounded-xl border border-border bg-surface/95 py-2.5 pl-10 text-sm text-text-primary shadow-[var(--shadow-sm)] backdrop-blur-xl",
+                  "w-full rounded-xl border border-border py-2.5 pl-10 text-sm text-text-primary shadow-[var(--shadow-sm)]",
+                  isSearchDocked ? "bg-surface" : "bg-surface/95 backdrop-blur-xl",
                   "outline-none transition-colors placeholder:text-text-muted hover:border-border/80 focus:border-border",
                   searchInput.length > 0 ? "pr-10" : "pr-3"
                 )}
