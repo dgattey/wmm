@@ -356,15 +356,14 @@ export function Dashboard({
             "transition-[background-color,backdrop-filter,box-shadow] duration-200",
             "w-screen relative",
             isSearchDocked
-              ? "search-bar-docked top-0 z-50"
+              ? "search-bar-docked z-50"
               : "bg-transparent z-40"
           )}
           style={{
             marginLeft: "calc(-50vw + 50%)",
             marginRight: "calc(-50vw + 50%)",
-            top: isSearchDocked
-              ? 0
-              : headerHeightPx > 0
+            top:
+              headerHeightPx > 0
                 ? headerHeightPx
                 : isMobile
                   ? 92
