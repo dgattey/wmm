@@ -241,14 +241,15 @@ describe("Dashboard portfolio actions", () => {
     vi.useRealTimers();
   });
 
-  it("renders an opaque docked shell background on the top sticky row", () => {
+  it("treats the docked header and search row as one shared surface", () => {
     mockUseIsStickyDocked.mockReturnValue([{ current: null }, true, 112]);
 
     renderDashboard();
 
-    expect(screen.getByTestId("portfolio-search-shell-background")).toHaveClass("bg-surface");
+    expect(screen.getByRole("banner")).toHaveClass("is-search-docked");
+    expect(screen.queryByTestId("portfolio-search-shell-background")).not.toBeInTheDocument();
     expect(screen.getByRole("searchbox", { name: "Search portfolio" })).toHaveClass(
-      "bg-surface"
+      "bg-surface/92"
     );
     expect(screen.getByRole("searchbox", { name: "Search portfolio" })).not.toHaveClass(
       "backdrop-blur-xl"

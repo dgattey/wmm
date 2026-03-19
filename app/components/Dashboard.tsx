@@ -218,7 +218,7 @@ export function Dashboard({
         ref={headerRef}
         className={cn(
           "sticky-header sticky top-0 z-40",
-          isSearchDocked && "border-b-0"
+          isSearchDocked && "is-search-docked border-b-0"
         )}
         style={
           {
@@ -527,16 +527,6 @@ export function Dashboard({
           }}
         >
           <div
-            aria-hidden="true"
-            data-testid="portfolio-search-shell-background"
-            className={cn(
-              "pointer-events-none absolute inset-0 transition-[background-color,box-shadow] duration-220",
-              isSearchDocked
-                ? "bg-surface shadow-[var(--shadow)]"
-                : "bg-transparent shadow-none"
-            )}
-          />
-          <div
             className={cn(
               "relative z-10 flex items-center gap-3",
               isMobile ? "px-4" : "px-6",
@@ -566,7 +556,7 @@ export function Dashboard({
                 aria-label="Search portfolio"
                 className={cn(
                   "w-full rounded-xl border border-border py-2.5 pl-10 text-sm text-text-primary shadow-[var(--shadow-sm)]",
-                  isSearchDocked ? "bg-surface" : "bg-surface/95 backdrop-blur-xl",
+                  isSearchDocked ? "bg-surface/92" : "bg-surface/95 backdrop-blur-xl",
                   "outline-none transition-colors placeholder:text-text-muted hover:border-border/80 focus:border-border",
                   searchInput.length > 0 ? "pr-10" : "pr-3"
                 )}
