@@ -2,11 +2,13 @@
 
 import type { CSSProperties, ReactNode } from "react";
 import type { FilterState } from "@/lib/types";
+import { getColorForSymbol } from "@/lib/colors";
 import { cn } from "@/lib/utils";
 
 export interface FilterSummaryItem {
   label: string;
   value: string;
+  color?: string;
 }
 
 export function buildFilterSummaryItems(
@@ -32,6 +34,10 @@ export function buildFilterSummaryItems(
         selectedFunds.length === 1
           ? selectedFunds[0]
           : `${selectedFunds.length} selected`,
+      color:
+        selectedFunds.length === 1
+          ? getColorForSymbol(selectedFunds[0])
+          : undefined,
     });
   }
 
@@ -182,6 +188,7 @@ export function FilterSummaryStrip({
           key={item.label}
           label={item.label}
           value={item.value}
+          color={item.color}
         />
       ))}
     </div>
@@ -199,12 +206,27 @@ function ToolbarLabel({ children }: { children: ReactNode }) {
 function FilterSummaryPill({
   label,
   value,
+  color,
 }: {
   label: string;
   value: string;
+  color?: string;
 }) {
   return (
-    <div className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-xs text-white/80">
+    <div
+      className="inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs text-white/80"
+      style={
+        color
+          ? { backgroundColor: `${color}22`, borderColor: `${color}55` }
+          : { borderColor: "rgba(255,255,255,0.1)", backgroundColor: "rgba(255,255,255,0.06)" }
+      }
+    >
+      {color && (
+        <span
+          className="inline-block h-2 w-2 shrink-0 rounded-full"
+          style={{ backgroundColor: color }}
+        />
+      )}
       <span className="shrink-0 text-white/42">{label}</span>
       <span className="truncate font-medium text-white">{value}</span>
     </div>
