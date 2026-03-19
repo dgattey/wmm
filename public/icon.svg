@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Treemap allocator: grid-aligned, 1px gaps -->
-  <rect x="4" y="4" width="10" height="24" rx="2" fill="#C49A5C" stroke="#D3D7DD" stroke-opacity="0.95" stroke-width="0.75"/>
-  <rect x="15" y="4" width="13" height="9" rx="2" fill="#5E9E74" stroke="#D3D7DD" stroke-opacity="0.95" stroke-width="0.75"/>
-  <rect x="15" y="14" width="6" height="14" rx="2" fill="#4E9999" stroke="#D3D7DD" stroke-opacity="0.95" stroke-width="0.75"/>
-  <rect x="22" y="14" width="6" height="14" rx="2" fill="#B86B6B" stroke="#D3D7DD" stroke-opacity="0.95" stroke-width="0.75"/>
+  <!-- Treemap mark: fills = getColorForSymbol(TILE-A..D); stroke = TREEMAP_MARK_STROKE in lib/colors.ts -->
+  <rect x="4" y="4" width="10" height="24" rx="2" fill="#968954" stroke="#e5e7eb" stroke-opacity="0.95" stroke-width="0.75"/>
+  <rect x="15" y="4" width="13" height="9" rx="2" fill="#48ada6" stroke="#e5e7eb" stroke-opacity="0.95" stroke-width="0.75"/>
+  <rect x="15" y="14" width="6" height="14" rx="2" fill="#aa559c" stroke="#e5e7eb" stroke-opacity="0.95" stroke-width="0.75"/>
+  <rect x="22" y="14" width="6" height="14" rx="2" fill="#70a25d" stroke="#e5e7eb" stroke-opacity="0.95" stroke-width="0.75"/>
 </svg>
