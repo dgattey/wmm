@@ -260,6 +260,68 @@ body {
   .press-down:active {
     transform: none !important;
   }
+
+  html[data-view-transition-dir]::view-transition-old(root),
+  html[data-view-transition-dir]::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+
+/* === View Transitions — home ↔ portfolio (same-document / App Router) === */
+@keyframes vt-forward-old {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-26%);
+    opacity: 0.88;
+  }
+}
+@keyframes vt-forward-new {
+  from {
+    transform: translateX(100%);
+    opacity: 0.98;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes vt-back-old {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(26%);
+    opacity: 0.88;
+  }
+}
+@keyframes vt-back-new {
+  from {
+    transform: translateX(-100%);
+    opacity: 0.98;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@supports (view-transition-name: none) {
+  html[data-view-transition-dir="forward"]::view-transition-old(root) {
+    animation: vt-forward-old 0.38s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  html[data-view-transition-dir="forward"]::view-transition-new(root) {
+    animation: vt-forward-new 0.38s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  html[data-view-transition-dir="back"]::view-transition-old(root) {
+    animation: vt-back-old 0.38s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  html[data-view-transition-dir="back"]::view-transition-new(root) {
+    animation: vt-back-new 0.38s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
 }
 
 /* === Scrollbar — Minimal === */

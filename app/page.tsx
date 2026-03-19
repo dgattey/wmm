@@ -26,20 +26,21 @@ export default function Home() {
   return (
     <main className="min-h-screen px-4 py-8 md:px-6 md:py-10">
       <div className="mx-auto flex max-w-[1100px] flex-col gap-6 md:gap-8">
-        <section className="flex items-start gap-3 md:gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-surface shadow-[var(--shadow)] md:h-14 md:w-14">
+        <section className="flex items-start gap-3 md:gap-5">
+          <div className="shrink-0 pt-0.5 md:pt-1">
             <Image
               src="/icon.svg"
               alt=""
-              width={28}
-              height={28}
+              width={72}
+              height={72}
+              className="h-14 w-14 md:h-[4.5rem] md:w-[4.5rem]"
               aria-hidden="true"
               priority
             />
           </div>
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold text-text-primary md:text-4xl">
-              Portfolio allocation
+              Where&apos;s my money?
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted md:text-base">
               Visualize your Fidelity portfolio allocations, live and in detail.

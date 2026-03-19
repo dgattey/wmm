@@ -2,9 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { formatDollar, formatDate } from "@/lib/utils";
 import type { StoredPortfolioSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { navigateWithViewTransition } from "@/lib/viewTransitionNav";
 
 interface PortfolioLibraryNavProps {
   portfolios: StoredPortfolioSummary[];
@@ -67,6 +69,7 @@ function PortfolioTile({
   onRemove,
   onRename,
 }: PortfolioTileProps) {
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(portfolio.name);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -106,6 +109,23 @@ function PortfolioTile({
     e.preventDefault();
     e.stopPropagation();
     onRemove?.(portfolio.id);
+  }
+
+  function handleOpenClick(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (
+      e.button !== 0 ||
+      e.metaKey ||
+      e.ctrlKey ||
+      e.shiftKey ||
+      e.altKey
+    ) {
+      return;
+    }
+    e.preventDefault();
+    const href = `/portfolio/${portfolio.id}`;
+    navigateWithViewTransition("forward", () => {
+      router.push(href);
+    });
   }
 
   const cardContent = (
@@ -190,6 +210,7 @@ function PortfolioTile({
       ) : (
         <Link
           href={`/portfolio/${portfolio.id}`}
+          onClick={handleOpenClick}
           className="block min-h-full cursor-pointer after:absolute after:inset-0 after:content-['']"
           aria-label={`Open ${portfolio.name}`}
         >

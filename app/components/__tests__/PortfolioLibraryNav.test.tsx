@@ -1,8 +1,20 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { PortfolioLibraryNav } from "../PortfolioLibraryNav";
 
+const pushMock = vi.fn();
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: pushMock,
+  }),
+}));
+
 describe("PortfolioLibraryNav", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("renders nothing when there are no saved files", () => {
     render(<PortfolioLibraryNav portfolios={[]} onRemovePortfolio={vi.fn()} />);
 
