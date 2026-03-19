@@ -18,6 +18,20 @@
 
 export const DEFAULT_TREEMAP_COLOR = "#64748b";
 
+/**
+ * Pseudo-tickers for the treemap-mark icon (`public/icon.svg`). Each fill is
+ * `getColorForSymbol(...)`, same algorithm as portfolio treemap tiles.
+ */
+export const TREEMAP_MARK_TILE_SYMBOLS = [
+  "TILE-A",
+  "TILE-B",
+  "TILE-C",
+  "TILE-D",
+] as const;
+
+/** Stroke for icon rects; matches light-theme `--border` (favicons are not theme-aware). */
+export const TREEMAP_MARK_STROKE = "#e5e7eb";
+
 const GOLDEN_ANGLE = 137.508;
 const HUE_SLOTS = 720;
 
@@ -33,6 +47,18 @@ export function getColorForSymbol(symbol: string): string {
 
   return hslToHex(hue, saturation, lightness);
 }
+
+export const TREEMAP_MARK_TILE_FILLS: readonly [
+  string,
+  string,
+  string,
+  string,
+] = [
+  getColorForSymbol(TREEMAP_MARK_TILE_SYMBOLS[0]),
+  getColorForSymbol(TREEMAP_MARK_TILE_SYMBOLS[1]),
+  getColorForSymbol(TREEMAP_MARK_TILE_SYMBOLS[2]),
+  getColorForSymbol(TREEMAP_MARK_TILE_SYMBOLS[3]),
+];
 
 /** FNV-1a 32-bit — strong avalanche for short strings like tickers. */
 function fnv1a(str: string): number {

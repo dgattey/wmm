@@ -64,7 +64,7 @@ export function ToolbarSection({
   return (
     <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
       <ToolbarLabel>{label}</ToolbarLabel>
-      <div className="flex flex-wrap items-center rounded-lg bg-white/5 p-0.5">
+      <div className="flex flex-wrap items-center gap-1 rounded-lg bg-white/5 p-0.5">
         {children}
       </div>
     </div>

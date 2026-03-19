@@ -3,7 +3,7 @@
  * https://evilmartians.com/chronicles/how-to-favicon-in-2021-six-files-that-fit-most-needs
  *
  * Outputs: favicon.ico, apple-touch-icon.png
- * (icon.svg is maintained separately in public/)
+ * (public/icon.svg — treemap tile fills from lib/colors.ts TREEMAP_MARK_*)
  *
  * Run: node scripts/generate-favicon.mjs
  */
