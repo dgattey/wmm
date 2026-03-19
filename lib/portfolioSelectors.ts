@@ -169,7 +169,9 @@ function getActiveSummaryLabel(
       : `${filters.investmentTypes.length} types selected`;
   }
 
-  return `${activeFilterCount} ${activeFilterCount === 1 ? "filter" : "filters"}`;
+  return `${activeFilterCount} ${
+    activeFilterCount === 1 ? "filter" : "filters"
+  } applied`;
 }
 
 function buildVisibleRow(

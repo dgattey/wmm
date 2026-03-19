@@ -403,7 +403,7 @@ describe("portfolio selectors", () => {
     expect(summary).toMatchObject({
       value: 100,
       gainLoss: 10,
-      label: "4 filters",
+      label: "4 filters applied",
     });
   });
 
@@ -421,7 +421,7 @@ describe("portfolio selectors", () => {
     expect(summary).toMatchObject({
       value: 100,
       gainLoss: 10,
-      label: "2 filters",
+      label: "2 filters applied",
     });
   });
 });
