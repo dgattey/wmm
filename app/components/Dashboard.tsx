@@ -226,9 +226,9 @@ export function Dashboard({
                     )}
                   </div>
                   {isEditingName && portfolioId && onRenamePortfolio ? (
-                    <div className="inline-grid min-w-0 max-w-full">
+                    <div className="-ml-1.5 inline-grid min-w-0 max-w-full">
                       <span
-                        className="invisible col-start-1 row-start-1 whitespace-pre border border-transparent px-2 py-0.5 text-sm font-semibold md:text-base"
+                        className="invisible col-start-1 row-start-1 whitespace-pre border border-transparent px-1.5 py-0.5 text-sm font-semibold md:text-base"
                         aria-hidden="true"
                       >
                         {editNameValue || "\u00A0"}
@@ -240,7 +240,7 @@ export function Dashboard({
                         onChange={(e) => setEditNameValue(e.target.value)}
                         onBlur={handleCommitNameEdit}
                         onKeyDown={handleNameKeyDown}
-                        className="col-start-1 row-start-1 block min-w-[4ch] rounded-lg border border-border bg-surface px-2 py-0.5 text-sm font-semibold text-text-primary outline-none focus:border-accent md:text-base"
+                        className="col-start-1 row-start-1 block min-w-[4ch] rounded-lg border border-border bg-surface px-1.5 py-0.5 text-sm font-semibold text-text-primary outline-none focus:border-accent md:text-base"
                         aria-label="Rename portfolio"
                       />
                     </div>
@@ -249,7 +249,7 @@ export function Dashboard({
                       type="button"
                       onClick={portfolioId && onRenamePortfolio ? handleStartEditName : undefined}
                       className={cn(
-                        "flex min-w-0 items-center gap-2 rounded-lg border border-transparent px-2 py-0.5 text-left",
+                        "-ml-1.5 flex min-w-0 items-center gap-2 rounded-lg border border-transparent px-1.5 py-0.5 text-left",
                         portfolioId && onRenamePortfolio && "cursor-pointer hover:opacity-80"
                       )}
                       disabled={!portfolioId || !onRenamePortfolio}
@@ -331,10 +331,10 @@ export function Dashboard({
               )}
               style={{ "--enter-delay": "120ms" } as CSSProperties}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col items-end gap-1.5">
                 <div className="flex items-center gap-1.5 whitespace-nowrap text-xs text-text-muted">
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  {timeAgo}
+                  Data fetched {timeAgo}
                 </div>
                 {onRefresh && (
                   <button
