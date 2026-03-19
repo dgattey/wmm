@@ -260,6 +260,76 @@ body {
   .press-down:active {
     transform: none !important;
   }
+
+  html[data-view-transition-dir]::view-transition-old(root),
+  html[data-view-transition-dir]::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+
+/* === View Transitions — home ↔ portfolio (same-document / App Router) === */
+@keyframes vt-forward-old {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-26%);
+  }
+}
+@keyframes vt-forward-new {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes vt-back-old {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(26%);
+  }
+}
+@keyframes vt-back-new {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@supports (view-transition-name: none) {
+  html[data-view-transition-dir="forward"]::view-transition-old(root) {
+    animation: vt-forward-old 0.38s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  html[data-view-transition-dir="forward"]::view-transition-new(root) {
+    animation: vt-forward-new 0.38s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  html[data-view-transition-dir="back"]::view-transition-old(root) {
+    animation: vt-back-old 0.38s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  html[data-view-transition-dir="back"]::view-transition-new(root) {
+    animation: vt-back-new 0.38s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+}
+
+/*
+ * During View Transitions, skip route-level entrance animations so the slide
+ * is not stacked with fade/scale on the portfolio screen (avoids “push then swap”).
+ */
+html[data-view-transition-dir] .animate-fade-in,
+html[data-view-transition-dir] .animate-soft-rise,
+html[data-view-transition-dir] .animate-scale-in,
+html[data-view-transition-dir] .animate-soft-pop,
+html[data-view-transition-dir] .animate-tile-in,
+html[data-view-transition-dir] .animate-slide-up,
+html[data-view-transition-dir] .animate-slide-down {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
 }
 
 /* === Scrollbar — Minimal === */

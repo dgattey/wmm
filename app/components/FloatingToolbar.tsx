@@ -149,7 +149,7 @@ export function FloatingToolbar({
             />
 
             <div className="grid gap-3">
-              <ToolbarSection label="Graph">
+              <ToolbarSection label="Chart">
                 <SegmentButton
                   active={treeMapGrouping === "fund"}
                   onClick={() => onTreeMapGroupingChange("fund")}
@@ -196,7 +196,7 @@ export function FloatingToolbar({
         ) : (
           <div className="flex items-center justify-between gap-3">
             <div className="flex shrink-0 flex-wrap items-center gap-3">
-              <ToolbarSection label="Graph">
+              <ToolbarSection label="Chart">
                 <SegmentButton
                   active={treeMapGrouping === "fund"}
                   onClick={() => onTreeMapGroupingChange("fund")}

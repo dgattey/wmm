@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Dashboard } from "@/app/components/Dashboard";
 import { PortfolioEmptyState } from "@/app/components/PortfolioEmptyState";
 import { PortfolioLoadingState } from "@/app/components/PortfolioLoadingState";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { usePortfolioUrlSync } from "@/hooks/usePortfolioUrlSync";
 import { usePortfolioViewState } from "@/hooks/usePortfolioViewState";
 import { useStoredPortfolioRecord } from "@/hooks/useStoredPortfolioRecord";
 import {
@@ -13,10 +14,8 @@ import {
   MOBILE_TREE_MAP_LAYOUT,
 } from "@/lib/portfolioLayout";
 import { updateStoredPortfolioName } from "@/lib/storage";
-import {
-  buildPortfolioSearchParams,
-  parsePortfolioUrlState,
-} from "@/lib/urlFilters";
+import { parsePortfolioUrlState } from "@/lib/urlFilters";
+import { navigateWithViewTransition } from "@/lib/viewTransitionNav";
 
 interface PortfolioDetailClientProps {
   portfolioId: string;
@@ -50,58 +49,25 @@ export function PortfolioDetailClient({
     isMobile,
     initialUrlState,
   });
-  const lastAppliedSearchParamsRef = useRef(searchParamsString);
-  const skipNextUrlWriteRef = useRef(false);
 
-  useEffect(() => {
-    if (lastAppliedSearchParamsRef.current === searchParamsString) {
-      return;
-    }
-
-    lastAppliedSearchParamsRef.current = searchParamsString;
-    skipNextUrlWriteRef.current = true;
-    viewState.syncWithUrlState(initialUrlState);
-  }, [initialUrlState, searchParamsString, viewState]);
-
-  useEffect(() => {
-    if (skipNextUrlWriteRef.current) {
-      skipNextUrlWriteRef.current = false;
-      return;
-    }
-
-    const nextSearchParams = buildPortfolioSearchParams(
-      {
-        filters: viewState.filters,
-        selectedFunds: viewState.selectedFunds,
-        sortConfig: viewState.sortConfig,
-        viewMode: viewState.viewMode,
-        treeMapGrouping: viewState.treeMapGrouping,
-      },
-      new URLSearchParams(searchParamsString)
-    );
-
-    if (nextSearchParams === searchParamsString) {
-      return;
-    }
-
-    router.replace(nextSearchParams ? `${pathname}?${nextSearchParams}` : pathname, {
-      scroll: false,
-    });
-  }, [
+  usePortfolioUrlSync({
+    searchParamsString,
     pathname,
     router,
-    searchParamsString,
-    viewState.filters,
-    viewState.selectedFunds,
-    viewState.sortConfig,
-    viewState.treeMapGrouping,
-    viewState.viewMode,
-  ]);
+    portfolioSlice: {
+      filters: viewState.filters,
+      selectedFunds: viewState.selectedFunds,
+      sortConfig: viewState.sortConfig,
+      viewMode: viewState.viewMode,
+      treeMapGrouping: viewState.treeMapGrouping,
+    },
+    syncWithUrlState: viewState.syncWithUrlState,
+  });
 
   useEffect(() => {
     document.title = record.summary
-      ? `${record.summary.name} - Your portfolio`
-      : "Your portfolio";
+      ? `${record.summary.name} – Where's my money?`
+      : "Where's my money?";
   }, [record.summary]);
 
   const handleRenamePortfolio = useCallback(
@@ -151,7 +117,11 @@ export function PortfolioDetailClient({
         onSort={viewState.handleSort}
         expandedRows={viewState.expandedRows}
         onToggleExpand={viewState.toggleExpand}
-        onBackToPicker={() => router.push("/")}
+        onBackToPicker={() =>
+          navigateWithViewTransition("back", () => {
+            router.push("/");
+          })
+        }
         isLoading={record.isLoading}
         viewMode={viewState.viewMode}
         onViewModeChange={viewState.setViewMode}

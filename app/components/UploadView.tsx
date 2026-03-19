@@ -53,18 +53,11 @@ export function UploadView({ onFilesSelect, error, isLoading }: UploadViewProps)
         <div className="space-y-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-muted">
-              Add files
+              Add a portfolio
             </p>
             <h2 className="mt-1 text-2xl font-semibold text-text-primary">
-              Import portfolio CSVs
+              Import a new portfolio
             </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">
-              Add Fidelity exports to the picker.
-            </p>
-            <p className="mt-3 max-w-2xl text-xs leading-5 text-text-muted">
-              Uploads stay on your device only. The only data fetched from the
-              internet is publicly available fund data, identified by symbol.
-            </p>
           </div>
 
           <div className="space-y-3">
@@ -84,7 +77,9 @@ export function UploadView({ onFilesSelect, error, isLoading }: UploadViewProps)
               Open the <OverflowMenuIcon /> menu on the right, then click{" "}
               <strong>Download</strong>.
             </Step>
-            <Step number={3}>Drop one or more files here or click to browse.</Step>
+            <Step number={3}>
+              Import your portfolio and visualize it.
+            </Step>
           </div>
 
           {error && (
@@ -125,16 +120,11 @@ export function UploadView({ onFilesSelect, error, isLoading }: UploadViewProps)
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-bg text-accent">
                   <UploadIcon />
                 </div>
-                <div className="space-y-2 text-center">
-                  <p className="text-base font-medium text-text-primary">
-                    {isDragOver
-                      ? "Drop your files here"
-                      : "Drag and drop CSVs or click to browse"}
-                  </p>
-                  <p className="text-sm text-text-muted">
-                    Multiple Fidelity exports supported.
-                  </p>
-                </div>
+                <p className="text-center text-base font-medium text-text-primary">
+                  {isDragOver
+                    ? "Drop your files here"
+                    : "Drop your CSV here or click to browse."}
+                </p>
               </>
             )}
           </button>
@@ -161,11 +151,16 @@ function Step({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3">
-      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-bg text-xs font-bold text-accent">
+    <div className="flex items-baseline gap-3">
+      <span
+        aria-hidden="true"
+        className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-accent-bg text-xs font-bold tabular-nums leading-none text-accent"
+      >
         {number}
       </span>
-      <span className="text-sm text-text-primary">{children}</span>
+      <span className="min-w-0 flex-1 text-sm leading-6 text-text-primary">
+        {children}
+      </span>
     </div>
   );
 }

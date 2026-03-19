@@ -2,9 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { formatDollar, formatDate } from "@/lib/utils";
 import type { StoredPortfolioSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { navigateWithViewTransition } from "@/lib/viewTransitionNav";
 
 interface PortfolioLibraryNavProps {
   portfolios: StoredPortfolioSummary[];
@@ -29,14 +31,11 @@ export function PortfolioLibraryNav({
     <section className={cn("space-y-4", className)}>
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-muted">
-          Saved files
+          Your portfolios
         </p>
         <h2 className="mt-1 text-xl font-semibold text-text-primary md:text-2xl">
-          Choose a portfolio to open
+          Pick up where you left off
         </h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">
-          Open a saved file, rename it, or delete it.
-        </p>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
@@ -67,6 +66,7 @@ function PortfolioTile({
   onRemove,
   onRename,
 }: PortfolioTileProps) {
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(portfolio.name);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -106,6 +106,23 @@ function PortfolioTile({
     e.preventDefault();
     e.stopPropagation();
     onRemove?.(portfolio.id);
+  }
+
+  function handleOpenClick(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (
+      e.button !== 0 ||
+      e.metaKey ||
+      e.ctrlKey ||
+      e.shiftKey ||
+      e.altKey
+    ) {
+      return;
+    }
+    e.preventDefault();
+    const href = `/portfolio/${portfolio.id}`;
+    navigateWithViewTransition("forward", () => {
+      router.push(href);
+    });
   }
 
   const cardContent = (
@@ -190,6 +207,7 @@ function PortfolioTile({
       ) : (
         <Link
           href={`/portfolio/${portfolio.id}`}
+          onClick={handleOpenClick}
           className="block min-h-full cursor-pointer after:absolute after:inset-0 after:content-['']"
           aria-label={`Open ${portfolio.name}`}
         >

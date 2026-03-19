@@ -4,7 +4,7 @@ import { PendingUploadProvider } from "./contexts/PendingUploadContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Your portfolio",
+  title: "Where's my money?",
   description: "Visualize your portfolio allocation from Fidelity exports",
   icons: {
     icon: [

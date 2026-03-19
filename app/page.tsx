@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { HomeHowItWorksSection } from "./components/HomeHowItWorksSection";
 import { PortfolioLibraryNav } from "./components/PortfolioLibraryNav";
 import { UploadView } from "./components/UploadView";
 import { usePendingUpload } from "@/app/contexts/PendingUploadContext";
@@ -26,25 +27,24 @@ export default function Home() {
   return (
     <main className="flex min-h-0 flex-1 flex-col px-4 py-8 md:px-6 md:py-10">
       <div className="mx-auto flex max-w-[1100px] flex-col gap-6 md:gap-8">
-        <section className="flex items-start gap-3 md:gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-surface shadow-[var(--shadow)] md:h-14 md:w-14">
+        <section className="grid grid-cols-[auto_minmax(0,1fr)] grid-rows-[auto_auto] items-start gap-x-3 gap-y-2 md:gap-x-5 md:gap-y-2">
+          <div className="row-span-2 flex h-full min-h-0 items-start justify-start self-stretch">
             <Image
               src="/icon.svg"
               alt=""
-              width={28}
-              height={28}
+              width={72}
+              height={72}
+              className="h-full w-auto max-w-[4.75rem] object-contain object-left md:max-w-[6.25rem]"
               aria-hidden="true"
               priority
             />
           </div>
-          <div className="min-w-0">
-            <h1 className="text-2xl font-semibold text-text-primary md:text-4xl">
-              Portfolio allocation
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted md:text-base">
-              Visualize your Fidelity portfolio allocations, live and in detail.
-            </p>
-          </div>
+          <h1 className="col-start-2 row-start-1 min-w-0 text-2xl font-semibold text-text-primary md:text-4xl">
+            Where&apos;s my money?
+          </h1>
+          <p className="col-start-2 row-start-2 min-w-0 max-w-2xl text-sm leading-6 text-text-muted md:text-base">
+            Visualize your Fidelity portfolio allocations, live and in detail.
+          </p>
         </section>
 
         {portfolios.length > 0 && (
@@ -64,6 +64,8 @@ export default function Home() {
             isLoading={isUploading}
           />
         </section>
+
+        <HomeHowItWorksSection />
       </div>
     </main>
   );

@@ -324,7 +324,18 @@ function createPortfolioName(sourceFileName: string): string {
 }
 
 function createPortfolioId(): string {
-  return `portfolio-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+    const alphabet = "0123456789abcdefghijklmnopqrstuvwxyz";
+    const bytes = new Uint8Array(12);
+    crypto.getRandomValues(bytes);
+    let id = "";
+    for (let i = 0; i < bytes.length; i++) {
+      id += alphabet[bytes[i]! % alphabet.length]!;
+    }
+    return id;
+  }
+
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function createEmptyStore(): PortfolioStore {

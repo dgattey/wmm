@@ -89,7 +89,7 @@ describe("Home page", () => {
 
     renderWithProvider(<Home />);
 
-    expect(screen.getByText("Portfolio allocation")).toBeInTheDocument();
+    expect(screen.getByText("Where's my money?")).toBeInTheDocument();
     expect(screen.queryByText("Portfolio picker")).not.toBeInTheDocument();
     expect(screen.getByTestId("upload-view")).toBeInTheDocument();
     expect(screen.getByTestId("portfolio-library-nav")).toHaveTextContent("alpha");
