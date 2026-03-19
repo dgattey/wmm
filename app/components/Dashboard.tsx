@@ -167,7 +167,21 @@ export function Dashboard({
   }, [filters]);
 
   const headerRef = useRef<HTMLElement>(null);
+  const searchShellRef = useRef<HTMLDivElement>(null);
   const [dockSentinelRef, isSearchDocked, headerHeightPx] = useIsStickyDocked(headerRef);
+  const [searchShellHeightPx, setSearchShellHeightPx] = useState(0);
+
+  useEffect(() => {
+    const searchShell = searchShellRef.current;
+    if (!searchShell) return;
+
+    const updateHeight = () => setSearchShellHeightPx(searchShell.getBoundingClientRect().height);
+    updateHeight();
+
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(searchShell);
+    return () => observer.disconnect();
+  }, []);
 
   const handleSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -202,12 +216,22 @@ export function Dashboard({
         ref={headerRef}
         className={cn(
           "sticky-header sticky top-0 z-40",
-          isSearchDocked && "border-b-0"
+          isSearchDocked && "is-search-docked border-b-0"
         )}
+        style={
+          {
+            "--header-search-absorb-height": `${searchShellHeightPx}px`,
+          } as CSSProperties
+        }
       >
         <div
+          aria-hidden="true"
+          data-testid="header-search-absorber"
+          className={cn("sticky-header-search-absorber", isSearchDocked && "is-docked")}
+        />
+        <div
           className={cn(
-            "max-w-[1400px] mx-auto py-5",
+            "relative z-10 max-w-[1400px] mx-auto py-5",
             isMobile ? "px-4" : "px-6"
           )}
         >
@@ -486,13 +510,13 @@ export function Dashboard({
       >
         <div ref={dockSentinelRef} className="h-px" aria-hidden />
         <div
+          ref={searchShellRef}
           data-testid="portfolio-search-shell"
           className={cn(
             "sticky mb-4 py-3",
-            "transition-[background-color,backdrop-filter,box-shadow,top] duration-200 ease-out",
             "w-screen relative",
             isSearchDocked
-              ? "search-bar-docked-unified z-50"
+              ? "bg-transparent z-50"
               : "bg-transparent z-40"
           )}
           style={{
@@ -508,7 +532,7 @@ export function Dashboard({
         >
           <div
             className={cn(
-              "flex items-center gap-3",
+              "relative z-10 flex items-center gap-3",
               isMobile ? "px-4" : "px-6",
               "max-w-[1400px] mx-auto"
             )}
@@ -535,7 +559,8 @@ export function Dashboard({
                 placeholder="Search by name or symbol"
                 aria-label="Search portfolio"
                 className={cn(
-                  "w-full rounded-xl border border-border bg-surface/95 py-2.5 pl-10 text-sm text-text-primary shadow-[var(--shadow-sm)] backdrop-blur-xl",
+                  "w-full rounded-xl border border-border py-2.5 pl-10 text-sm text-text-primary shadow-[var(--shadow-sm)]",
+                  isSearchDocked ? "bg-surface/92" : "bg-surface/95 backdrop-blur-xl",
                   "outline-none transition-colors placeholder:text-text-muted hover:border-border/80 focus:border-border",
                   searchInput.length > 0 ? "pr-10" : "pr-3"
                 )}
