@@ -14,20 +14,20 @@ export function HomeHowItWorksSection() {
         <div className="mt-3 space-y-2 text-sm leading-6 text-text-muted">
           <p>
             <span className="font-medium text-text-primary">
-              Fund holdings, totaled across your book.
+              Holdings aggregated across your portfolio.
             </span>{" "}
-            Read-only work on the Fidelity export you already have: we map each
-            fund line to its published holdings, then combine matching tickers so
-            overlap isn&apos;t scattered across separate rows the way a flat
-            download usually leaves it.
+            Read-only work on the Fidelity positions export you already have: we
+            map each fund position to its published holdings, then roll up rows
+            that share the same symbol—like the aggregated holdings view in the
+            app, instead of scattered fund-by-fund lines in a flat download.
           </p>
           <p>
             <span className="font-medium text-text-primary">
               Your data stays in the browser.
             </span>{" "}
             For live prices and fund breakdowns we call third-party public
-            market-data APIs—regular API requests keyed only to the tickers in
-            your file, not your Fidelity login.
+            market-data APIs—regular API requests that only use symbols from your
+            positions, not your Fidelity login.
           </p>
         </div>
       </div>

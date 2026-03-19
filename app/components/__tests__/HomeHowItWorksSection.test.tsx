@@ -7,10 +7,10 @@ describe("HomeHowItWorksSection", () => {
     render(<HomeHowItWorksSection />);
     expect(screen.getByText("How it works")).toBeInTheDocument();
     expect(
-      screen.getByText("Fund holdings, totaled across your book.")
+      screen.getByText("Holdings aggregated across your portfolio.")
     ).toBeVisible();
     expect(screen.getByText(/published holdings/i)).toBeVisible();
-    expect(screen.getByText(/matching tickers/i)).toBeVisible();
+    expect(screen.getByText(/same symbol/i)).toBeVisible();
     expect(screen.getByText(/Your data stays in the browser/i)).toBeVisible();
     expect(screen.getByText(/third-party public/i)).toBeVisible();
     expect(screen.getByText(/market-data APIs/i)).toBeVisible();
