@@ -166,6 +166,7 @@ body {
   backdrop-filter: blur(20px) saturate(1.2);
   border-bottom: 1px solid transparent;
   isolation: isolate;
+  overflow: visible;
 }
 
 .sticky-header-search-absorber {
@@ -183,12 +184,16 @@ body {
     opacity 220ms ease,
     box-shadow 220ms ease;
   will-change: transform, opacity;
+  z-index: 0;
 }
 
 .sticky-header-search-absorber.is-docked {
   transform: scaleY(1);
   opacity: 1;
   box-shadow: var(--shadow);
+  /* Solid background when docked so scrolling content cannot show through */
+  background-color: var(--surface);
+  backdrop-filter: none;
 }
 
 /* === Utility Classes === */
