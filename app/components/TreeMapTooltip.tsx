@@ -163,6 +163,7 @@ export function TreeMapTooltip({ node, mouseX, mouseY }: TreeMapTooltipProps) {
                 high={node.fiftyTwoWeekHigh}
                 current={node.currentPrice}
                 size="sm"
+                className="!w-full"
               />
             </div>
           )}
