@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { TreemapBrandMark } from "./components/TreemapBrandMark";
 import { HomeHowItWorksSection } from "./components/HomeHowItWorksSection";
 import { PortfolioLibraryNav } from "./components/PortfolioLibraryNav";
 import { UploadView } from "./components/UploadView";
@@ -29,7 +28,13 @@ export default function Home() {
       <div className="mx-auto flex max-w-[1100px] flex-col gap-6 md:gap-8">
         <section className="grid grid-cols-[auto_minmax(0,1fr)] grid-rows-[auto_auto] items-start gap-x-3 gap-y-2 md:gap-x-5 md:gap-y-2">
           <div className="row-span-2 flex h-full min-h-0 items-start justify-start self-stretch">
-            <TreemapBrandMark className="h-full w-auto max-w-[4.75rem] shrink-0 md:max-w-[6.25rem]" />
+            {/* eslint-disable-next-line @next/next/no-img-element -- public SVG; avoid duplicating markup */}
+            <img
+              src="/icon.svg"
+              alt=""
+              className="h-full w-auto max-w-[4.75rem] shrink-0 object-contain object-left md:max-w-[6.25rem]"
+              aria-hidden
+            />
           </div>
           <h1 className="col-start-2 row-start-1 min-w-0 text-2xl font-semibold text-text-primary md:text-4xl">
             Where&apos;s my money?
