@@ -151,11 +151,16 @@ function Step({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3">
-      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-bg text-xs font-bold text-accent">
+    <div className="flex items-baseline gap-3">
+      <span
+        aria-hidden="true"
+        className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-accent-bg text-xs font-bold tabular-nums leading-none text-accent"
+      >
         {number}
       </span>
-      <span className="text-sm text-text-primary">{children}</span>
+      <span className="min-w-0 flex-1 text-sm leading-6 text-text-primary">
+        {children}
+      </span>
     </div>
   );
 }
