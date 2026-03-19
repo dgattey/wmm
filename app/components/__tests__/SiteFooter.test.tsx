@@ -8,8 +8,9 @@ describe("SiteFooterInner", () => {
 
     const footer = screen.getByRole("contentinfo");
     expect(footer).toBeInTheDocument();
+    expect(footer.textContent).toMatch(/Crafted by/);
+    expect(footer.textContent).toMatch(/Dylan Gattey/);
     expect(footer.textContent).toMatch(/©\s*2026/);
-    expect(screen.getByText("Crafted by")).toBeInTheDocument();
 
     const link = screen.getByRole("link", { name: "Dylan Gattey" });
     expect(link).toHaveAttribute("href", "https://gattey.com");
