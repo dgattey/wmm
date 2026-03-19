@@ -117,7 +117,7 @@ export function FloatingToolbar({
         enableIntroAnimation && "animate-soft-rise",
         isMobile
           ? "w-full"
-          : "fixed bottom-4 left-1/2 z-40 -translate-x-1/2"
+          : "sticky bottom-4 z-40 mt-6 flex w-full justify-center px-4 md:px-6"
       )}
     >
       <div

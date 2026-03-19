@@ -206,9 +206,9 @@ export function Dashboard({
   return (
     <div
       className={cn(
-        "min-h-0 flex-1 overflow-x-clip",
+        "min-h-0 flex-1",
         enableIntroAnimation && "animate-fade-in",
-        isMobile ? "pb-8" : "pb-20"
+        isMobile ? "pb-8" : "pb-8"
       )}
     >
       {/* Sticky Header — consistent background, never changes when search bar docks */}
@@ -458,7 +458,7 @@ export function Dashboard({
       <section
         className={cn(
           isMobile ? "pt-2" : "pt-6",
-          "mb-6 max-w-[1400px] mx-auto",
+          "mb-6 max-w-[1400px] mx-auto overflow-x-clip",
           enableIntroAnimation && "animate-soft-rise",
           isMobile ? "px-4" : "px-6"
         )}
@@ -502,7 +502,7 @@ export function Dashboard({
       {/* Table */}
       <section
         className={cn(
-          "max-w-[1400px] mx-auto",
+          "max-w-[1400px] mx-auto overflow-x-clip",
           enableIntroAnimation && "animate-soft-rise",
           isMobile ? "px-4" : "px-6"
         )}

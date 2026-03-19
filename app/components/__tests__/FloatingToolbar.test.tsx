@@ -203,4 +203,13 @@ describe("FloatingToolbar", () => {
     expect(panel).toHaveClass("lg:w-[72vw]");
     expect(panel).toHaveClass("lg:max-w-[1080px]");
   });
+
+  it("uses sticky bottom positioning on desktop so the bar scrolls with the page", () => {
+    const props = makeProps();
+    const { container } = render(<FloatingToolbar {...props} />);
+
+    expect(container.firstElementChild).toHaveClass("sticky");
+    expect(container.firstElementChild).toHaveClass("bottom-4");
+    expect(container.querySelector(".fixed")).not.toBeInTheDocument();
+  });
 });
