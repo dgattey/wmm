@@ -14,13 +14,12 @@ export function HomeHowItWorksSection() {
         <div className="mt-3 space-y-2 text-sm leading-6 text-text-muted">
           <p>
             <span className="font-medium text-text-primary">
-              We split fund and ETF lines into published top holdings, then total
-              how much you hold of each ticker across every wrapper.
+              Fund holdings, totaled across your book.
             </span>{" "}
-            Read-only: a deeper analytical layer on the same Fidelity
-            export—fund sleeves unpacked and overlapping tickers summed so
-            concentration is obvious, not something you reconstruct from
-            positions alone.
+            Read-only work on the Fidelity export you already have: we map each
+            fund line to its published holdings, then combine matching tickers so
+            overlap isn&apos;t scattered across separate rows the way a flat
+            download usually leaves it.
           </p>
           <p>
             <span className="font-medium text-text-primary">
