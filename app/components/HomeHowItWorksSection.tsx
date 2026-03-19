@@ -14,20 +14,19 @@ export function HomeHowItWorksSection() {
         <div className="mt-3 space-y-2 text-sm leading-6 text-text-muted">
           <p>
             <span className="font-medium text-text-primary">
-              Holdings aggregated across your portfolio.
+              Your holdings, unified.
             </span>{" "}
-            Read-only work on the Fidelity positions export you already have: we
-            map each fund position to its published holdings, then roll up rows
-            that share the same symbol—like the aggregated holdings view in the
-            app, instead of scattered fund-by-fund lines in a flat download.
+            We map each Fidelity position to its underlying holdings and roll up
+            duplicate symbols across funds — one consolidated view of what you
+            actually own, instead of opaque fund-level positions.
           </p>
           <p>
             <span className="font-medium text-text-primary">
-              Your data stays in the browser.
+              Your data never leaves your browser.
             </span>{" "}
-            For live prices and fund breakdowns we call third-party public
-            market-data APIs—regular API requests that only use symbols from your
-            positions, not your Fidelity login.
+            We fetch live prices and fund breakdowns from Yahoo Finance using
+            only your ticker symbols — no Fidelity credentials, no server uploads,
+            nothing stored.
           </p>
         </div>
       </div>
