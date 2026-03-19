@@ -114,8 +114,8 @@ export function parsePortfolioUrlState(params: URLSearchParams): PortfolioUrlSta
       key: params.get(PARAM_SORT) ?? DEFAULT_SORT_CONFIG.key,
       direction: params.get(PARAM_DIRECTION) === "asc" ? "asc" : "desc",
     },
-    viewMode: params.get(PARAM_VIEW),
-    treeMapGrouping: params.get(PARAM_GROUP),
+    viewMode: normalizeViewMode(params.get(PARAM_VIEW)),
+    treeMapGrouping: normalizeTreeMapGrouping(params.get(PARAM_GROUP)),
   });
 }
 
