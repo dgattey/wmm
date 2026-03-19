@@ -6,8 +6,8 @@
  *
  *   Hue — golden-angle spacing over a 720-slot virtual ring so that
  *         adjacent hash values land ~137.5° apart in hue.
- *   Sat — bits 11-15 → 35–60 %  (wide enough to differentiate close hues)
- *   Lit — bits 17-21 → 43–60 %
+ *   Sat — bits 11-15 → 22–41 %  (muted / earthy tones, not candy)
+ *   Lit — bits 17-21 → 44–57 %
  *
  * The effective colour space is ~720 × 26 × 18 ≈ 337 k distinct colours,
  * making collisions virtually impossible for real portfolios.
@@ -28,8 +28,8 @@ export function getColorForSymbol(symbol: string): string {
   const hash = fnv1a(normalized);
 
   const hue = ((hash % HUE_SLOTS) * GOLDEN_ANGLE) % 360;
-  const saturation = 35 + ((hash >>> 11) % 26); // 35 – 60 %
-  const lightness = 43 + ((hash >>> 17) % 18); // 43 – 60 %
+  const saturation = 22 + ((hash >>> 11) % 20); // 22 – 41 %
+  const lightness = 44 + ((hash >>> 17) % 14); // 44 – 57 %
 
   return hslToHex(hue, saturation, lightness);
 }
