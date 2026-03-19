@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Dashboard } from "@/app/components/Dashboard";
 import { PortfolioEmptyState } from "@/app/components/PortfolioEmptyState";
@@ -38,10 +32,6 @@ export function PortfolioDetailClient({
   const [searchParamsString, setSearchParamsString] = useState(
     initialSearchParamsString
   );
-
-  useEffect(() => {
-    setSearchParamsString(initialSearchParamsString);
-  }, [initialSearchParamsString]);
 
   const initialUrlState = useMemo(
     () => parsePortfolioUrlState(new URLSearchParams(searchParamsString)),
@@ -92,53 +82,20 @@ export function PortfolioDetailClient({
     [record]
   );
 
-  const searchParamsSync = useMemo(
-    () => (
-      <Suspense fallback={null}>
-        <PortfolioSearchParamsBridge
-          onSearchParamsString={setSearchParamsString}
-        />
-      </Suspense>
-    ),
-    [setSearchParamsString]
-  );
-
-  if (record.isMissing) {
-    return (
-      <>
-        {searchParamsSync}
-        <PortfolioEmptyState
-          title="Portfolio not found"
-          description="That saved portfolio is no longer available on this device."
-        />
-      </>
-    );
-  }
-
-  if (!record.positions) {
-    return (
-      <>
-        {searchParamsSync}
-        <PortfolioLoadingState error={record.error} />
-      </>
-    );
-  }
-
-  if (!record.portfolioData) {
-    return (
-      <>
-        {searchParamsSync}
-        <PortfolioLoadingState
-          enableIntroAnimation={!record.restoredFromStorage}
-          error={record.error}
-        />
-      </>
-    );
-  }
-
-  return (
+  const mainContent = record.isMissing ? (
+    <PortfolioEmptyState
+      title="Portfolio not found"
+      description="That saved portfolio is no longer available on this device."
+    />
+  ) : !record.positions ? (
+    <PortfolioLoadingState error={record.error} />
+  ) : !record.portfolioData ? (
+    <PortfolioLoadingState
+      enableIntroAnimation={!record.restoredFromStorage}
+      error={record.error}
+    />
+  ) : (
     <main className="flex min-h-0 flex-1 flex-col">
-      {searchParamsSync}
       <Dashboard
         portfolioData={record.portfolioData}
         portfolioName={record.summary?.name ?? "Portfolio"}
@@ -155,13 +112,7 @@ export function PortfolioDetailClient({
         onSort={viewState.handleSort}
         expandedRows={viewState.expandedRows}
         onToggleExpand={viewState.toggleExpand}
-        onBackToPicker={() => {
-          if (typeof window !== "undefined" && window.history.length > 1) {
-            router.back();
-          } else {
-            router.push("/");
-          }
-        }}
+        onBackToPicker={() => router.back()}
         isLoading={record.isLoading}
         viewMode={viewState.viewMode}
         onViewModeChange={viewState.setViewMode}
@@ -181,5 +132,16 @@ export function PortfolioDetailClient({
         isRefreshing={record.isRefreshing}
       />
     </main>
+  );
+
+  return (
+    <>
+      <Suspense fallback={null}>
+        <PortfolioSearchParamsBridge
+          onSearchParamsString={setSearchParamsString}
+        />
+      </Suspense>
+      {mainContent}
+    </>
   );
 }
