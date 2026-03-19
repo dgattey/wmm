@@ -9,9 +9,7 @@ describe("HomeHowItWorksSection", () => {
     expect(screen.getByText("Your holdings, unified.")).toBeVisible();
     expect(screen.getByText(/underlying holdings/i)).toBeVisible();
     expect(screen.getByText(/opaque fund-level positions/i)).toBeVisible();
-    expect(
-      screen.getByText("Your data never leaves your browser.")
-    ).toBeVisible();
+    expect(screen.getByText("Always live, always local.")).toBeVisible();
     expect(screen.getByText(/Yahoo Finance/i)).toBeVisible();
     expect(screen.getByText(/ticker symbols/i)).toBeVisible();
   });

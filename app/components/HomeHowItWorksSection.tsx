@@ -22,7 +22,7 @@ export function HomeHowItWorksSection() {
           </p>
           <p>
             <span className="font-medium text-text-primary">
-              Your data never leaves your browser.
+              Always live, always local.
             </span>{" "}
             We fetch live prices and fund breakdowns from Yahoo Finance using
             only your ticker symbols — no Fidelity credentials, no server uploads,
