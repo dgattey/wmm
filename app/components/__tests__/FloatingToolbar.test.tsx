@@ -66,6 +66,7 @@ describe("FloatingToolbar", () => {
 
     const resetButton = screen.getByRole("button", { name: "Reset filters" });
     expect(resetButton).toHaveAttribute("title", "Reset all filters");
+    expect(resetButton).toHaveClass("bg-red-50");
     expect(screen.getByText("Reset filters")).toBeInTheDocument();
 
     fireEvent.click(resetButton);
@@ -105,6 +106,7 @@ describe("FloatingToolbar", () => {
     render(<FloatingToolbar {...props} />);
 
     fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
+    expect(screen.queryByRole("link", { name: "FUND-A" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "FUND-A" }));
 
     expect(props.onToggleFund).toHaveBeenCalledWith("FUND-A");

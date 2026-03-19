@@ -108,7 +108,7 @@ describe("portfolio selection sanitizing", () => {
     expect(sanitized.filters.investmentTypes).toEqual(["ETFs"]);
   });
 
-  it("keeps a selected fund when broadening the type filter", () => {
+  it("clears selected funds whenever the type filter changes", () => {
     const previousFilters: FilterState = {
       accounts: [],
       investmentTypes: ["ETFs"],
@@ -124,7 +124,7 @@ describe("portfolio selection sanitizing", () => {
       ["FUND-A"]
     );
 
-    expect(sanitized.selectedFunds).toEqual(["FUND-A"]);
+    expect(sanitized.selectedFunds).toEqual([]);
     expect(sanitized.filters.investmentTypes).toEqual([
       "ETFs",
       "Mutual Funds",

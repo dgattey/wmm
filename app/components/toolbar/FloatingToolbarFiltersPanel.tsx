@@ -2,10 +2,6 @@
 
 import type { ChangeEvent, CSSProperties } from "react";
 import type { FilterState, FundOption, PortfolioSummary } from "@/lib/types";
-import {
-  getFidelityQuoteUrl,
-  isFidelityLinkable,
-} from "@/lib/fidelitySymbolLink";
 import { cn } from "@/lib/utils";
 import { FilterCard } from "./FloatingToolbarPrimitives";
 
@@ -138,7 +134,6 @@ export function FloatingToolbarFiltersPanel({
             </button>
             {fundOptions.map((fund, index) => {
               const isSelected = selectedFunds.includes(fund.symbol);
-            const canLink = isFidelityLinkable(fund.symbol);
 
               return (
                 <button
@@ -163,19 +158,7 @@ export function FloatingToolbarFiltersPanel({
                     } as CSSProperties
                   }
                 >
-                  {canLink ? (
-                    <a
-                      href={getFidelityQuoteUrl(fund.symbol)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline"
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      {fund.symbol}
-                    </a>
-                  ) : (
-                    fund.symbol
-                  )}
+                  {fund.symbol}
                 </button>
               );
             })}

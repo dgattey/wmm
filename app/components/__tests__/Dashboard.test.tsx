@@ -123,8 +123,7 @@ describe("Dashboard portfolio actions", () => {
     expect(onBackToPicker).toHaveBeenCalledTimes(1);
   });
 
-  it("shows the active summary label in the header", () => {
-    const onResetFilters = vi.fn();
+  it("shows the active summary label in the header without a reset button", () => {
     render(
       <Dashboard
         portfolioData={portfolioData}
@@ -134,7 +133,7 @@ describe("Dashboard portfolio actions", () => {
         isMobile={false}
         filters={{ investmentTypes: [], accounts: [], searchQuery: "" }}
         onFiltersChange={vi.fn()}
-        onResetFilters={onResetFilters}
+        onResetFilters={vi.fn()}
         sortConfig={{ key: "totalValue", direction: "desc" }}
         onSort={vi.fn()}
         expandedRows={new Set()}
@@ -163,11 +162,7 @@ describe("Dashboard portfolio actions", () => {
     expect(screen.getByText("Sample beta portfolio")).toBeInTheDocument();
     expect(screen.getByText(/2 funds selected/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /back to portfolios/i })).toBeInTheDocument();
-    const resetButton = screen.getByRole("button", { name: "Reset filters" });
-    expect(resetButton).toHaveAttribute("title", "Reset all filters");
-    expect(screen.getByText("Reset filters")).toBeInTheDocument();
-    fireEvent.click(resetButton);
-    expect(onResetFilters).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("button", { name: "Reset filters" })).not.toBeInTheDocument();
   });
 
   it("renders a sticky search bar above the table and updates searchQuery", () => {

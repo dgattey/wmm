@@ -33,7 +33,9 @@ export function sanitizeSelectionForFilterChange(
     selectedFunds: [...selectedFunds],
   };
 
-  if (accountChanged || typeChanged) {
+  if (typeChanged) {
+    nextState.selectedFunds = [];
+  } else if (accountChanged) {
     nextState.selectedFunds = getValidSelectedFunds(
       positions,
       nextState.filters,

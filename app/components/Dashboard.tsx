@@ -13,13 +13,11 @@ import type {
   TreeMapGrouping,
   ViewMode,
 } from "@/lib/types";
-import { hasActivePortfolioFilters } from "@/lib/portfolioFilters";
 import { getFilteredRows } from "@/lib/portfolioSelectors";
 import { formatDollar, formatHeaderCurrency } from "@/lib/utils";
 import { useTimeAgo } from "@/hooks/useTimeAgo";
 import { AnimatedNumber } from "./primitives/AnimatedNumber";
 import { GainLoss } from "./primitives/GainLoss";
-import { ResetFiltersButton } from "./primitives/ResetFiltersButton";
 import { TreeMap } from "./TreeMap";
 import { PortfolioTable } from "./PortfolioTable";
 import { FloatingToolbar } from "./FloatingToolbar";
@@ -161,7 +159,6 @@ export function Dashboard({
   const displayGainLoss = activeSummary?.gainLoss ?? summary.totalGainLoss;
   const displayGainLossPercent =
     activeSummary?.gainLossPercent ?? summary.totalGainLossPercent;
-  const isFiltered = hasActivePortfolioFilters(filters, selectedFunds);
 
   const filtersRef = useRef(filters);
   useEffect(() => {
@@ -251,18 +248,6 @@ export function Dashboard({
                       <span className="truncate text-sm text-text-muted">
                         — {activeSummary.label}
                       </span>
-                    )}
-                    {isFiltered && (
-                      <ResetFiltersButton
-                        onClick={onResetFilters}
-                        label="Reset filters"
-                        className={cn(
-                          "ml-1 h-7 shrink-0 px-2 shadow-sm",
-                          enableIntroAnimation && "animate-scale-in",
-                          "border border-red-200/70 bg-red-50 text-red-700 hover:bg-red-100",
-                          "dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/15"
-                        )}
-                      />
                     )}
                   </div>
                   {isEditingName && portfolioId && onRenamePortfolio ? (

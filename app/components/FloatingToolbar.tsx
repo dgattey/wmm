@@ -105,6 +105,11 @@ export function FloatingToolbar({
 
   const filterButtonAriaLabel =
     activeFilterCount > 0 ? `Filters (${activeFilterCount})` : "Filters";
+  const resetButtonClassName = cn(
+    "ml-1 h-7 shrink-0 px-2 shadow-sm",
+    "border border-red-200/70 bg-red-50 text-red-700 hover:bg-red-100",
+    "dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/15"
+  );
 
   return (
     <div
@@ -133,7 +138,7 @@ export function FloatingToolbar({
                 <ResetFiltersButton
                   onClick={onResetFilters}
                   label="Reset filters"
-                  className="h-7 shrink-0 px-2 text-red-400/80 hover:text-red-300"
+                  className={resetButtonClassName}
                 />
               </div>
             )}
@@ -245,7 +250,7 @@ export function FloatingToolbar({
                 <ResetFiltersButton
                   onClick={onResetFilters}
                   label="Reset filters"
-                  className="h-7 shrink-0 px-2 text-red-400/80 hover:text-red-300"
+                  className={resetButtonClassName}
                 />
               )}
             </div>
