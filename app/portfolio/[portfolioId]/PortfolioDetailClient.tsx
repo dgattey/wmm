@@ -69,9 +69,10 @@ export function PortfolioDetailClient({
   });
 
   useEffect(() => {
+    const suffix = " · Where's my money?";
     document.title = record.summary
-      ? `${record.summary.name} – Where's my money?`
-      : "Where's my money?";
+      ? `${record.summary.name}${suffix}`
+      : `Where's my money?`;
   }, [record.summary]);
 
   const handleRenamePortfolio = useCallback(

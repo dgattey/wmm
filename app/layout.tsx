@@ -4,7 +4,10 @@ import { PendingUploadProvider } from "./contexts/PendingUploadContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Where's my money?",
+  title: {
+    default: "Where's my money?",
+    template: "%s · Where's my money?",
+  },
   description: "Visualize your portfolio allocation from Fidelity exports",
   icons: {
     icon: [

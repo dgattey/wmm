@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PortfolioLoadingState } from "@/app/components/PortfolioLoadingState";
 import { PortfolioDetailClient } from "./PortfolioDetailClient";
@@ -5,6 +6,20 @@ import { PortfolioDetailClient } from "./PortfolioDetailClient";
 interface PageProps {
   params: Promise<{ portfolioId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+/**
+ * Server-side tab title (see root `metadata.title.template`). The saved display
+ * name only exists in localStorage, so the client still refines `document.title`
+ * once `useStoredPortfolioRecord` has loaded.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ portfolioId: string }>;
+}): Promise<Metadata> {
+  await params;
+  return { title: "Portfolio" };
 }
 
 function flattenSearchParams(
