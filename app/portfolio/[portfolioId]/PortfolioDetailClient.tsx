@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Dashboard } from "@/app/components/Dashboard";
 import { PortfolioEmptyState } from "@/app/components/PortfolioEmptyState";
 import { PortfolioLoadingState } from "@/app/components/PortfolioLoadingState";
@@ -13,6 +13,10 @@ import {
   MOBILE_TREE_MAP_LAYOUT,
 } from "@/lib/portfolioLayout";
 import { updateStoredPortfolioName } from "@/lib/storage";
+import {
+  buildPortfolioSearchParams,
+  parsePortfolioUrlState,
+} from "@/lib/urlFilters";
 
 interface PortfolioDetailClientProps {
   portfolioId: string;
@@ -22,7 +26,14 @@ export function PortfolioDetailClient({
   portfolioId,
 }: PortfolioDetailClientProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isMobile = useIsMobile();
+  const searchParamsString = searchParams.toString();
+  const initialUrlState = useMemo(
+    () => parsePortfolioUrlState(new URLSearchParams(searchParamsString)),
+    [searchParamsString]
+  );
   const treeMapLayout = isMobile
     ? MOBILE_TREE_MAP_LAYOUT
     : DESKTOP_TREE_MAP_LAYOUT;
@@ -37,7 +48,55 @@ export function PortfolioDetailClient({
     positions: record.positions,
     portfolioData: record.portfolioData,
     isMobile,
+    initialUrlState,
   });
+  const lastAppliedSearchParamsRef = useRef(searchParamsString);
+  const skipNextUrlWriteRef = useRef(false);
+
+  useEffect(() => {
+    if (lastAppliedSearchParamsRef.current === searchParamsString) {
+      return;
+    }
+
+    lastAppliedSearchParamsRef.current = searchParamsString;
+    skipNextUrlWriteRef.current = true;
+    viewState.syncWithUrlState(initialUrlState);
+  }, [initialUrlState, searchParamsString, viewState]);
+
+  useEffect(() => {
+    if (skipNextUrlWriteRef.current) {
+      skipNextUrlWriteRef.current = false;
+      return;
+    }
+
+    const nextSearchParams = buildPortfolioSearchParams(
+      {
+        filters: viewState.filters,
+        selectedFunds: viewState.selectedFunds,
+        sortConfig: viewState.sortConfig,
+        viewMode: viewState.viewMode,
+        treeMapGrouping: viewState.treeMapGrouping,
+      },
+      new URLSearchParams(searchParamsString)
+    );
+
+    if (nextSearchParams === searchParamsString) {
+      return;
+    }
+
+    router.replace(nextSearchParams ? `${pathname}?${nextSearchParams}` : pathname, {
+      scroll: false,
+    });
+  }, [
+    pathname,
+    router,
+    searchParamsString,
+    viewState.filters,
+    viewState.selectedFunds,
+    viewState.sortConfig,
+    viewState.treeMapGrouping,
+    viewState.viewMode,
+  ]);
 
   useEffect(() => {
     document.title = record.summary

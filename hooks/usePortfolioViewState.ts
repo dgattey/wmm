@@ -1,6 +1,12 @@
 "use client";
 
-import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  useCallback,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import type {
   ActivePortfolioSummary,
   FidelityPosition,
@@ -32,21 +38,12 @@ import {
   filterAndRelayoutFundTreeMapNodes,
   getFundOptions,
 } from "@/lib/treemap";
-
-function createDefaultFilters(): FilterState {
-  return {
-    investmentTypes: [],
-    accounts: [],
-    searchQuery: "",
-  };
-}
-
-function createDefaultSortConfig(): SortConfig {
-  return {
-    key: "totalValue",
-    direction: "desc",
-  };
-}
+import {
+  arePortfolioUrlStatesEqual,
+  DEFAULT_FILTER_STATE,
+  normalizePortfolioUrlState,
+  type PortfolioUrlState,
+} from "@/lib/urlFilters";
 
 export interface PortfolioViewState {
   filteredRows: TableRow[];
@@ -69,26 +66,41 @@ export interface PortfolioViewState {
   treeMapWidth: number;
   treeMapHeight: number;
   activeSummary: ActivePortfolioSummary | null;
+  syncWithUrlState: (urlState: PortfolioUrlState) => void;
 }
 
 interface UsePortfolioViewStateInput {
   positions: FidelityPosition[] | null;
   portfolioData: PortfolioData | null;
   isMobile: boolean;
+  initialUrlState?: PortfolioUrlState;
 }
 
 export function usePortfolioViewState({
   positions,
   portfolioData,
   isMobile,
+  initialUrlState,
 }: UsePortfolioViewStateInput): PortfolioViewState {
-  const [filters, setFiltersState] = useState<FilterState>(createDefaultFilters);
-  const [sortConfig, setSortConfig] = useState<SortConfig>(createDefaultSortConfig);
+  const normalizedInitialUrlState = useMemo(
+    () => normalizePortfolioUrlState(initialUrlState),
+    [initialUrlState]
+  );
+  const [filters, setFiltersState] = useState<FilterState>(
+    normalizedInitialUrlState.filters
+  );
+  const [sortConfig, setSortConfig] = useState<SortConfig>(
+    normalizedInitialUrlState.sortConfig
+  );
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<ViewMode>("holdings");
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    normalizedInitialUrlState.viewMode
+  );
   const [treeMapGrouping, setTreeMapGrouping] =
-    useState<TreeMapGrouping>("fund");
-  const [selectedFunds, setSelectedFundsState] = useState<string[]>([]);
+    useState<TreeMapGrouping>(normalizedInitialUrlState.treeMapGrouping);
+  const [selectedFunds, setSelectedFundsState] = useState<string[]>(
+    normalizedInitialUrlState.selectedFunds
+  );
 
   const treeMapLayout = isMobile
     ? MOBILE_TREE_MAP_LAYOUT
@@ -208,9 +220,37 @@ export function usePortfolioViewState({
   }
 
   function resetFilters() {
-    setFiltersState(createDefaultFilters());
+    setFiltersState({ ...DEFAULT_FILTER_STATE });
     setSelectedFundsState([]);
   }
+
+  const syncWithUrlState = useCallback(
+    (urlState: PortfolioUrlState) => {
+      const nextUrlState = normalizePortfolioUrlState(urlState);
+      if (
+        arePortfolioUrlStatesEqual(
+          {
+            filters,
+            selectedFunds,
+            sortConfig,
+            viewMode,
+            treeMapGrouping,
+          },
+          nextUrlState
+        )
+      ) {
+        return;
+      }
+
+      setFiltersState(nextUrlState.filters);
+      setSelectedFundsState(nextUrlState.selectedFunds);
+      setSortConfig(nextUrlState.sortConfig);
+      setViewMode(nextUrlState.viewMode);
+      setTreeMapGrouping(nextUrlState.treeMapGrouping);
+      setExpandedRows(new Set());
+    },
+    [filters, selectedFunds, sortConfig, treeMapGrouping, viewMode]
+  );
 
   return {
     filteredRows,
@@ -233,5 +273,6 @@ export function usePortfolioViewState({
     treeMapWidth: treeMapLayout.width,
     treeMapHeight: treeMapLayout.height,
     activeSummary,
+    syncWithUrlState,
   };
 }

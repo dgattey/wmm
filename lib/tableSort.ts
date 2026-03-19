@@ -2,6 +2,22 @@ import { getFiftyTwoWeekPosition } from "./fiftyTwoWeek";
 import type { SortConfig, TableRow } from "./types";
 
 export const FIFTY_TWO_WEEK_POSITION_SORT_KEY = "fiftyTwoWeekPosition";
+export const SORTABLE_TABLE_KEYS = [
+  "totalValue",
+  "percentOfPortfolio",
+  "currentPrice",
+  "totalGainLossDollar",
+  "totalGainLossPercent",
+  FIFTY_TWO_WEEK_POSITION_SORT_KEY,
+] as const;
+export const DEFAULT_SORT_CONFIG: SortConfig = {
+  key: "totalValue",
+  direction: "desc",
+};
+
+export function isSortableTableKey(key: string): key is (typeof SORTABLE_TABLE_KEYS)[number] {
+  return SORTABLE_TABLE_KEYS.includes(key as (typeof SORTABLE_TABLE_KEYS)[number]);
+}
 
 function getSortValue(row: TableRow, key: string): number | string | null {
   if (key === FIFTY_TWO_WEEK_POSITION_SORT_KEY) {
