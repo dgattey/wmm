@@ -15,9 +15,9 @@ const {
 } = vi.hoisted(() => ({
   pushMock: vi.fn(),
   replaceMock: vi.fn(),
-  searchParamsState: {
+    searchParamsState: {
     value:
-      "tab=details&q=apple&accounts=Account%20B&types=Stocks&funds=FUND-B&sort=currentPrice&dir=asc&view=positions&group=holding",
+      "tab=details&q=apple&accounts=Account%20B&types=Stocks&funds=FUND-B&sort=currentPrice&dir=asc&table=positions&chart=aggregated",
   },
   storedRecordState: {
     summary: null as StoredPortfolioSummary | null,
@@ -196,7 +196,7 @@ describe("PortfolioDetailClient", () => {
     storedRecordState.positions = positions;
     storedRecordState.portfolioData = portfolioData;
     searchParamsState.value =
-      "tab=details&q=apple&accounts=Account%20B&types=Stocks&funds=FUND-B&sort=currentPrice&dir=asc&view=positions&group=holding";
+      "tab=details&q=apple&accounts=Account%20B&types=Stocks&funds=FUND-B&sort=currentPrice&dir=asc&table=positions&chart=aggregated";
   });
 
   it("hydrates the dashboard state from query params", () => {
