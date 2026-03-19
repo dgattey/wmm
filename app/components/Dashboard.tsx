@@ -173,12 +173,12 @@ export function Dashboard({
             isMobile ? "px-4" : "px-6"
           )}
         >
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            <div
-              className={cn("min-w-0", enableIntroAnimation && "animate-soft-rise")}
-              style={{ "--enter-delay": "40ms" } as CSSProperties}
-            >
-              <div className="mb-4 flex min-w-0 items-center gap-3">
+          <div
+            className={cn(enableIntroAnimation && "animate-soft-rise")}
+            style={{ "--enter-delay": "40ms" } as CSSProperties}
+          >
+            <div className="mb-4 flex min-w-0 items-center justify-between gap-4">
+              <div className="flex min-w-0 items-center gap-3">
                 <button
                   type="button"
                   onClick={onBackToPicker}
@@ -283,55 +283,11 @@ export function Dashboard({
 
               <div
                 className={cn(
-                  "gap-x-6 gap-y-3",
-                  isMobile
-                    ? "flex flex-col items-start"
-                    : "flex flex-wrap items-end"
+                  "flex shrink-0 flex-col items-end gap-1.5",
+                  enableIntroAnimation && "animate-soft-rise"
                 )}
+                style={{ "--enter-delay": "120ms" } as CSSProperties}
               >
-                <div
-                  className="min-w-fit shrink-0"
-                  title={`Market value: ${formatDollar(displayValue)}`}
-                >
-                  <AnimatedNumber
-                    value={displayValue}
-                    format={formatHeaderCurrency}
-                    animate={enableValueAnimations}
-                    className={cn(
-                      "font-bold text-text-primary whitespace-nowrap",
-                      isMobile ? "text-[clamp(2rem,10vw,2.6rem)]" : "text-3xl md:text-5xl"
-                    )}
-                  />
-                  <p className="mt-1 text-xs text-text-muted">
-                    Current market value
-                  </p>
-                </div>
-                <div
-                  className={cn("min-w-0", !isMobile && "self-end")}
-                  title={`Unrealized gain: ${formatDollar(displayGainLoss)} / Return on cost basis: ${displayGainLossPercent.toFixed(2)}%`}
-                >
-                  <GainLoss
-                    dollar={displayGainLoss}
-                    percent={displayGainLossPercent}
-                    size={isMobile ? "sm" : "md"}
-                    className={cn(isMobile ? "text-lg" : "text-xl md:text-2xl")}
-                    formatDollarValue={formatHeaderCurrency}
-                  />
-                  <p className="mt-1 text-xs text-text-muted">
-                    Unrealized gain / return on cost basis
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={cn(
-                "flex shrink-0 flex-col items-start gap-2 md:items-end",
-                enableIntroAnimation && "animate-soft-rise"
-              )}
-              style={{ "--enter-delay": "120ms" } as CSSProperties}
-            >
-              <div className="flex flex-col items-end gap-1.5">
                 <div className="flex items-center gap-1.5 whitespace-nowrap text-xs text-text-muted">
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Data fetched {timeAgo}
@@ -369,22 +325,62 @@ export function Dashboard({
                     Refresh
                   </button>
                 )}
+                {fetchError && (
+                  <FetchStatusBadge
+                    error={fetchError}
+                    hasData
+                    className="max-w-full"
+                  />
+                )}
+                {isLoading && (
+                  <div className="flex items-center gap-2 text-xs text-text-muted">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                    Loading...
+                  </div>
+                )}
               </div>
+            </div>
 
-              {fetchError && (
-                <FetchStatusBadge
-                  error={fetchError}
-                  hasData
-                  className="max-w-full self-stretch md:self-auto"
+            <div
+              className={cn(
+                "gap-x-6 gap-y-3",
+                isMobile
+                  ? "flex flex-col items-start"
+                  : "flex flex-wrap items-end"
+              )}
+            >
+              <div
+                className="min-w-fit shrink-0"
+                title={`Market value: ${formatDollar(displayValue)}`}
+              >
+                <AnimatedNumber
+                  value={displayValue}
+                  format={formatHeaderCurrency}
+                  animate={enableValueAnimations}
+                  className={cn(
+                    "font-bold text-text-primary whitespace-nowrap",
+                    isMobile ? "text-[clamp(2rem,10vw,2.6rem)]" : "text-3xl md:text-5xl"
+                  )}
                 />
-              )}
-
-              {isLoading && (
-                <div className="flex items-center gap-2 text-xs text-text-muted">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                  Loading...
-                </div>
-              )}
+                <p className="mt-1 text-xs text-text-muted">
+                  Current market value
+                </p>
+              </div>
+              <div
+                className={cn("min-w-0", !isMobile && "self-end")}
+                title={`Unrealized gain: ${formatDollar(displayGainLoss)} / Return on cost basis: ${displayGainLossPercent.toFixed(2)}%`}
+              >
+                <GainLoss
+                  dollar={displayGainLoss}
+                  percent={displayGainLossPercent}
+                  size={isMobile ? "sm" : "md"}
+                  className={cn(isMobile ? "text-lg" : "text-xl md:text-2xl")}
+                  formatDollarValue={formatHeaderCurrency}
+                />
+                <p className="mt-1 text-xs text-text-muted">
+                  Unrealized gain / return on cost basis
+                </p>
+              </div>
             </div>
           </div>
         </div>
