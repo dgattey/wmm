@@ -53,10 +53,10 @@ export function UploadView({ onFilesSelect, error, isLoading }: UploadViewProps)
         <div className="space-y-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-muted">
-              Add files
+              Add a portfolio
             </p>
             <h2 className="mt-1 text-2xl font-semibold text-text-primary">
-              Import portfolio CSVs
+              Import a new portfolio
             </h2>
           </div>
 
@@ -77,7 +77,9 @@ export function UploadView({ onFilesSelect, error, isLoading }: UploadViewProps)
               Open the <OverflowMenuIcon /> menu on the right, then click{" "}
               <strong>Download</strong>.
             </Step>
-            <Step number={3}>Drop one or more files here or click to browse.</Step>
+            <Step number={3}>
+              Import your portfolio and visualize it.
+            </Step>
           </div>
 
           {error && (
@@ -118,16 +120,11 @@ export function UploadView({ onFilesSelect, error, isLoading }: UploadViewProps)
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-bg text-accent">
                   <UploadIcon />
                 </div>
-                <div className="space-y-2 text-center">
-                  <p className="text-base font-medium text-text-primary">
-                    {isDragOver
-                      ? "Drop your files here"
-                      : "Drag and drop CSVs or click to browse"}
-                  </p>
-                  <p className="text-sm text-text-muted">
-                    Multiple Fidelity exports supported.
-                  </p>
-                </div>
+                <p className="text-center text-base font-medium text-text-primary">
+                  {isDragOver
+                    ? "Drop your files here"
+                    : "Drop your CSV here or click to browse."}
+                </p>
               </>
             )}
           </button>

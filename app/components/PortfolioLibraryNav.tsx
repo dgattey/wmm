@@ -31,10 +31,10 @@ export function PortfolioLibraryNav({
     <section className={cn("space-y-4", className)}>
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-muted">
-          Saved files
+          Your portfolios
         </p>
         <h2 className="mt-1 text-xl font-semibold text-text-primary md:text-2xl">
-          Choose a portfolio to open
+          Pick up where you left off
         </h2>
       </div>
 

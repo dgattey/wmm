@@ -13,13 +13,13 @@ import { UploadView } from "../UploadView";
 describe("UploadView", () => {
   it("renders the title and instructions", () => {
     render(<UploadView onFilesSelect={vi.fn()} />);
-    expect(screen.getByText("Import portfolio CSVs")).toBeInTheDocument();
-    expect(screen.getByText("Add files")).toBeInTheDocument();
+    expect(screen.getByText("Import a new portfolio")).toBeInTheDocument();
+    expect(screen.getByText("Add a portfolio")).toBeInTheDocument();
   });
 
   it("renders the streamlined upload section copy", () => {
     render(<UploadView onFilesSelect={vi.fn()} />);
-    expect(screen.getByText("Add files")).toBeInTheDocument();
+    expect(screen.getByText("Add a portfolio")).toBeInTheDocument();
     expect(screen.queryByText(/favicon/i)).not.toBeInTheDocument();
   });
 
@@ -28,6 +28,9 @@ describe("UploadView", () => {
     expect(screen.getByText("1")).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
+    expect(
+      screen.getByText("Import your portfolio and visualize it.")
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("More actions menu")).toBeInTheDocument();
     expect(screen.getByText(/menu on the right/i)).toHaveTextContent(
       "Open the menu on the right, then click Download."
@@ -47,7 +50,7 @@ describe("UploadView", () => {
   it("shows drop zone text in default state", () => {
     render(<UploadView onFilesSelect={vi.fn()} />);
     expect(
-      screen.getByText("Drag and drop CSVs or click to browse")
+      screen.getByText("Drop your CSV here or click to browse.")
     ).toBeInTheDocument();
   });
 
@@ -55,7 +58,7 @@ describe("UploadView", () => {
     render(<UploadView onFilesSelect={vi.fn()} isLoading />);
     expect(screen.getByText("Processing files")).toBeInTheDocument();
     expect(
-      screen.queryByText("Drag and drop CSVs or click to browse")
+      screen.queryByText("Drop your CSV here or click to browse.")
     ).not.toBeInTheDocument();
   });
 

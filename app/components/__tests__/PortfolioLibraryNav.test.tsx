@@ -18,8 +18,10 @@ describe("PortfolioLibraryNav", () => {
   it("renders nothing when there are no saved files", () => {
     render(<PortfolioLibraryNav portfolios={[]} onRemovePortfolio={vi.fn()} />);
 
-    expect(screen.queryByText("Saved files")).not.toBeInTheDocument();
-    expect(screen.queryByText("Choose a portfolio to open")).not.toBeInTheDocument();
+    expect(screen.queryByText("Your portfolios")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Pick up where you left off")
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("No portfolios uploaded yet.")).not.toBeInTheDocument();
   });
 
@@ -43,7 +45,7 @@ describe("PortfolioLibraryNav", () => {
       />
     );
 
-    expect(screen.getByText("Choose a portfolio to open")).toBeInTheDocument();
+    expect(screen.getByText("Pick up where you left off")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /remove sample_portfolio_beta/i }));
     expect(onRemovePortfolio).toHaveBeenCalledWith("beta");
   });
