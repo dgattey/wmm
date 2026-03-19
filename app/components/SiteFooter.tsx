@@ -12,7 +12,7 @@ export interface SiteFooterInnerProps {
 export function SiteFooterInner({ year }: SiteFooterInnerProps) {
   return (
     <footer
-      className="site-footer fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-[var(--glass-bg-strong)] pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pt-2.5 shadow-[var(--shadow-md),0_-1px_0_var(--glass-highlight)] backdrop-blur-2xl backdrop-saturate-150 md:pt-3"
+      className="shrink-0 border-t border-border/70 bg-[var(--glass-bg-strong)] pt-2.5 shadow-[var(--shadow-md),0_-1px_0_var(--glass-highlight)] backdrop-blur-2xl backdrop-saturate-150 md:pt-3 pb-[max(0.625rem,env(safe-area-inset-bottom,0px))]"
       role="contentinfo"
     >
       <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 md:gap-x-4 md:px-6">

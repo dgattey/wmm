@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SiteFooter } from "./components/SiteFooter";
+import { AppShell } from "./components/AppShell";
 import { PendingUploadProvider } from "./contexts/PendingUploadContext";
 import "./globals.css";
 
@@ -24,12 +24,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <PendingUploadProvider>
-          <>
-            <div className="flex min-h-dvh flex-col pb-[var(--site-footer-safe)]">
-              <div className="flex min-h-0 flex-1 flex-col">{children}</div>
-            </div>
-            <SiteFooter />
-          </>
+          <AppShell>{children}</AppShell>
         </PendingUploadProvider>
       </body>
     </html>
