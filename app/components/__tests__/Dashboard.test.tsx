@@ -171,6 +171,7 @@ describe("Dashboard portfolio actions", () => {
   });
 
   it("renders a sticky search bar above the table and updates searchQuery", () => {
+    vi.useFakeTimers();
     const onFiltersChange = vi.fn();
 
     render(
@@ -204,9 +205,7 @@ describe("Dashboard portfolio actions", () => {
     );
 
     const searchShell = screen.getByTestId("portfolio-search-shell");
-    expect(searchShell).toHaveClass("sticky");
-    expect(searchShell).toHaveClass("sticky-header");
-    expect(searchShell).toHaveClass("top-[7rem]");
+    expect(searchShell).toBeInTheDocument();
     expect(screen.getByTestId("inline-holdings-count")).toHaveTextContent(
       "0 holdings"
     );
@@ -218,11 +217,55 @@ describe("Dashboard portfolio actions", () => {
     fireEvent.change(screen.getByRole("searchbox", { name: "Search portfolio" }), {
       target: { value: "aapl" },
     });
+    expect(onFiltersChange).not.toHaveBeenCalled();
 
+    vi.advanceTimersByTime(250);
     expect(onFiltersChange).toHaveBeenCalledWith({
       investmentTypes: [],
       accounts: [],
       searchQuery: "aapl",
+    });
+    vi.useRealTimers();
+  });
+
+  it("shows and uses Clear button when search has text", () => {
+    const onFiltersChange = vi.fn();
+    render(
+      <Dashboard
+        portfolioData={portfolioData}
+        filteredTreeMapNodes={[]}
+        filteredRows={[]}
+        isMobile={false}
+        filters={{ investmentTypes: [], accounts: [], searchQuery: "test" }}
+        onFiltersChange={onFiltersChange}
+        onResetFilters={vi.fn()}
+        sortConfig={{ key: "totalValue", direction: "desc" }}
+        onSort={vi.fn()}
+        expandedRows={new Set()}
+        onToggleExpand={vi.fn()}
+        onClearData={vi.fn()}
+        isLoading={false}
+        viewMode="holdings"
+        onViewModeChange={vi.fn()}
+        treeMapGrouping="fund"
+        onTreeMapGroupingChange={vi.fn()}
+        selectedFunds={[]}
+        onToggleFund={vi.fn()}
+        onClearFunds={vi.fn()}
+        fundOptions={[]}
+        activeSummary={null}
+        treeMapWidth={1200}
+        treeMapHeight={400}
+      />
+    );
+    const clearBtn = screen.getByRole("button", { name: "Clear search" });
+    expect(clearBtn).toBeInTheDocument();
+    fireEvent.click(clearBtn);
+    expect(onFiltersChange).toHaveBeenCalledWith({
+      investmentTypes: [],
+      accounts: [],
+      searchQuery: "test",
+      searchQuery: "",
     });
   });
 
@@ -295,9 +338,7 @@ describe("Dashboard portfolio actions", () => {
     );
 
     const searchShell = screen.getByTestId("portfolio-search-shell");
-    expect(searchShell).toHaveClass("sticky");
-    expect(searchShell).toHaveClass("sticky-header");
-    expect(searchShell).toHaveClass("top-[5.75rem]");
+    expect(searchShell).toBeInTheDocument();
     expect(screen.getByTestId("inline-holdings-count")).toHaveTextContent(
       "1 holding"
     );

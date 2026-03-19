@@ -4,26 +4,23 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { PortfolioLibraryNav } from "./components/PortfolioLibraryNav";
 import { UploadView } from "./components/UploadView";
+import { usePendingUpload } from "@/app/contexts/PendingUploadContext";
 import { usePortfolioLibrary } from "@/hooks/usePortfolioLibrary";
 
 export default function Home() {
   const router = useRouter();
+  const { setPendingFiles } = usePendingUpload();
   const {
     portfolios,
     isUploading,
     error,
-    uploadFiles,
     removePortfolioById,
     renamePortfolio,
   } = usePortfolioLibrary();
 
-  async function handleFilesSelect(files: File[]) {
-    const { uploadedPortfolios } = await uploadFiles(files);
-    if (uploadedPortfolios.length > 0) {
-      router.push(
-        `/portfolio/${uploadedPortfolios[uploadedPortfolios.length - 1].id}`
-      );
-    }
+  function handleFilesSelect(files: File[]) {
+    setPendingFiles(files);
+    router.push("/portfolio/uploading");
   }
 
   return (

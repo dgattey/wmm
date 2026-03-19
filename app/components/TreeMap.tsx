@@ -135,7 +135,7 @@ export function TreeMap({
           isMobile ? "h-[280px]" : "h-[400px]"
         )}
       >
-        Loading treemap...
+        No matches
       </div>
     );
   }

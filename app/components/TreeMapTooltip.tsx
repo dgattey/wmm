@@ -56,7 +56,7 @@ export function TreeMapTooltip({ node, mouseX, mouseY }: TreeMapTooltipProps) {
 
   const tooltip = (
     <div
-      className="fixed z-30 pointer-events-none animate-fade-in"
+      className="fixed z-[100] pointer-events-none animate-fade-in"
       style={{ left, top }}
     >
       <div

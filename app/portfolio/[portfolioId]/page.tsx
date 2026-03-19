@@ -15,9 +15,7 @@ export default function PortfolioDetailPage() {
 
 function PortfolioDetailRoute() {
   const params = useParams<{ portfolioId: string }>();
-  const portfolioId = Array.isArray(params.portfolioId)
-    ? params.portfolioId[0]
-    : params.portfolioId;
+  const portfolioId = params.portfolioId;
 
   return <PortfolioDetailClient key={portfolioId} portfolioId={portfolioId} />;
 }

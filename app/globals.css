@@ -169,11 +169,12 @@ body {
   }
   to {
     background-color: var(--glass-bg);
-    box-shadow: 0 1px 0 var(--glass-border), var(--shadow);
+    box-shadow: var(--shadow); /* No top border - unified with header above */
     backdrop-filter: blur(20px) saturate(1.2);
   }
 }
 
+/* Header keeps consistent background — no scroll-driven change when search bar docks */
 .sticky-header {
   background-color: var(--glass-bg);
   backdrop-filter: blur(20px) saturate(1.2);
@@ -181,16 +182,44 @@ body {
   isolation: isolate;
 }
 
-@supports (animation-timeline: scroll()) {
-  .sticky-header {
-    background-color: transparent;
-    box-shadow: none;
-    backdrop-filter: blur(0px);
-    border-bottom-color: transparent;
-    animation: header-reveal linear both;
-    animation-timeline: scroll();
-    animation-range: 0px 100px;
-  }
+/* When search bar docks, header stays transparent so only search bar has glass */
+.header-transparent-when-docked {
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+  border-bottom-color: transparent !important;
+}
+
+.search-bar-docked {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(1.2);
+  /* No top border — unifies with header above for one continuous background */
+  box-shadow: var(--shadow);
+}
+
+/* When docked, header + search bar share one continuous background (no seam) */
+.search-bar-docked-unified {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(1.2);
+  box-shadow: var(--shadow); /* No top border — flows from header above */
+}
+
+/* When docked, header + search bar share one continuous background (no seam) */
+.header-unified-with-search {
+  border-bottom-width: 0;
+}
+
+.search-bar-docked-unified {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(1.2);
+  box-shadow: var(--shadow);
+}
+
+/* When docked, no top border so it seamlessly continues from header above */
+.search-bar-docked-unified {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(1.2);
+  box-shadow: var(--shadow);
 }
 
 /* === Utility Classes === */

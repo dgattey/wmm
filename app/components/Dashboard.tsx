@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChangeEvent, CSSProperties } from "react";
 import type {
   ActivePortfolioSummary,
@@ -25,6 +25,7 @@ import { PortfolioTable } from "./PortfolioTable";
 import { FloatingToolbar } from "./FloatingToolbar";
 import { FetchStatusBadge } from "./primitives/FetchStatusBadge";
 import { cn } from "@/lib/utils";
+import { useIsStickyDocked } from "@/hooks/useIsStickyDocked";
 
 interface DashboardProps {
   portfolioData: PortfolioData;
@@ -96,10 +97,23 @@ export function Dashboard({
   isRefreshing = false,
 }: DashboardProps) {
   const { summary, lastUpdated } = portfolioData;
+  const searchQueryFromFilters = filters.searchQuery ?? "";
+  const [searchInput, setSearchInput] = useState(searchQueryFromFilters);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timeAgo = useTimeAgo(lastUpdated);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState(portfolioName);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    setSearchInput(searchQueryFromFilters);
+  }, [searchQueryFromFilters]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     setEditNameValue(portfolioName);
@@ -133,7 +147,6 @@ export function Dashboard({
       setIsEditingName(false);
     }
   }
-  const searchQuery = filters.searchQuery ?? "";
   const visibleHoldingCount =
     viewMode === "holdings"
       ? filteredRows.length
@@ -150,23 +163,50 @@ export function Dashboard({
     activeSummary?.gainLossPercent ?? summary.totalGainLossPercent;
   const isFiltered = hasActivePortfolioFilters(filters, selectedFunds);
 
-  function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
-    onFiltersChange({
-      ...filters,
-      searchQuery: event.target.value,
-    });
-  }
+  const filtersRef = useRef(filters);
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  const headerRef = useRef<HTMLElement>(null);
+  const [dockSentinelRef, isSearchDocked, headerHeightPx] = useIsStickyDocked(headerRef);
+
+  const handleSearchChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value;
+      setSearchInput(value);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        debounceRef.current = null;
+        onFiltersChange({ ...filtersRef.current, searchQuery: value });
+      }, 250);
+    },
+    [onFiltersChange]
+  );
+
+  const handleClearSearch = useCallback(() => {
+    setSearchInput("");
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = null;
+    onFiltersChange({ ...filtersRef.current, searchQuery: "" });
+  }, [onFiltersChange]);
 
   return (
     <div
       className={cn(
-        "min-h-screen",
+        "min-h-screen overflow-x-clip",
         enableIntroAnimation && "animate-fade-in",
         isMobile ? "pb-8" : "pb-20"
       )}
     >
-      {/* Sticky Header */}
-      <header className="sticky-header sticky top-0 z-40">
+      {/* Sticky Header — consistent background, never changes when search bar docks */}
+      <header
+        ref={headerRef}
+        className={cn(
+          "sticky-header sticky top-0 z-40",
+          isSearchDocked && "border-b-0"
+        )}
+      >
         <div
           className={cn(
             "max-w-[1400px] mx-auto py-5",
@@ -397,6 +437,7 @@ export function Dashboard({
         style={{ "--enter-delay": "160ms" } as CSSProperties}
       >
         <TreeMap
+          key={filteredTreeMapNodes.length > 0 ? "treemap-populated" : "treemap-empty"}
           nodes={filteredTreeMapNodes}
           originalWidth={treeMapWidth}
           originalHeight={treeMapHeight}
@@ -439,23 +480,38 @@ export function Dashboard({
         )}
         style={{ "--enter-delay": "220ms" } as CSSProperties}
       >
+        <div ref={dockSentinelRef} className="h-px" aria-hidden />
         <div
           data-testid="portfolio-search-shell"
           className={cn(
-            "sticky sticky-header z-30 mb-4 py-3",
-            isMobile ? "-mx-4 px-4" : "-mx-6 px-6",
-            isMobile ? "top-[5.75rem]" : "top-[7rem]"
+            "sticky mb-4 py-3",
+            "transition-[background-color,backdrop-filter,box-shadow,top] duration-200 ease-out",
+            "w-screen relative",
+            isSearchDocked
+              ? "search-bar-docked-unified z-50"
+              : "bg-transparent z-40"
           )}
+          style={{
+            marginLeft: "calc(-50vw + 50%)",
+            marginRight: "calc(-50vw + 50%)",
+            top:
+              headerHeightPx > 0
+                ? headerHeightPx
+                : isMobile
+                  ? 92
+                  : 112,
+          }}
         >
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                "relative min-w-0 flex-1",
-                !isMobile && "max-w-xl lg:max-w-2xl"
-              )}
-            >
+          <div
+            className={cn(
+              "flex items-center gap-3",
+              isMobile ? "px-4" : "px-6",
+              "max-w-[1400px] mx-auto"
+            )}
+          >
+            <div className={cn("relative min-w-0 flex-1", !isMobile && "max-w-xl lg:max-w-2xl")}>
               <svg
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 z-10 text-text-muted"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -470,15 +526,34 @@ export function Dashboard({
               <input
                 type="text"
                 role="searchbox"
-                value={searchQuery}
+                value={searchInput}
                 onChange={handleSearchChange}
                 placeholder="Search by name or symbol"
                 aria-label="Search portfolio"
                 className={cn(
-                  "w-full rounded-xl border border-border bg-surface/95 py-2.5 pl-10 pr-3 text-sm text-text-primary shadow-[var(--shadow-sm)] backdrop-blur-xl",
-                  "outline-none transition-colors placeholder:text-text-muted hover:border-border/80 focus:border-border"
+                  "w-full rounded-xl border border-border bg-surface/95 py-2.5 pl-10 text-sm text-text-primary shadow-[var(--shadow-sm)] backdrop-blur-xl",
+                  "outline-none transition-colors placeholder:text-text-muted hover:border-border/80 focus:border-border",
+                  searchInput.length > 0 ? "pr-10" : "pr-3"
                 )}
               />
+              {searchInput.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  className={cn(
+                    "absolute right-3 top-1/2 -translate-y-1/2",
+                    "inline-flex h-6 w-6 items-center justify-center rounded-full",
+                    "text-text-muted hover:text-text-primary hover:bg-surface-hover",
+                    "transition-colors cursor-pointer"
+                  )}
+                  aria-label="Clear search"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
             <p
               data-testid="inline-holdings-count"

@@ -250,21 +250,20 @@ function buildTreeMap(
   const laid = treemapLayout(h);
 
   const nodes: TreeMapNode[] = [];
-  flattenNode(laid, nodes);
+  flattenNode(laid, nodes, { value: 0 });
   return nodes;
 }
 
-let nodeCounter = 0;
-
 function flattenNode(
   node: HierarchyRectangularNode<HierarchyData>,
-  result: TreeMapNode[]
+  result: TreeMapNode[],
+  counter: { value: number }
 ): void {
   if (node.depth === 0) {
-    nodeCounter = 0;
+    counter.value = 0;
     if (node.children) {
       for (const child of node.children) {
-        flattenNode(child, result);
+        flattenNode(child, result, counter);
       }
     }
     return;
@@ -272,10 +271,10 @@ function flattenNode(
 
   const d = node.data;
   const meta = d.meta || { percentOfPortfolio: 0 };
-  nodeCounter++;
+  counter.value++;
 
   result.push({
-    id: `${d.symbol}-${node.depth}-${nodeCounter}`,
+    id: `${d.symbol}-${node.depth}-${counter.value}`,
     symbol: d.symbol,
     name: d.name,
     value: node.value || 0,
@@ -300,7 +299,7 @@ function flattenNode(
 
   if (node.children) {
     for (const child of node.children) {
-      flattenNode(child, result);
+      flattenNode(child, result, counter);
     }
   }
 }

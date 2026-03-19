@@ -1,16 +1,9 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { TreeMap } from "../TreeMap";
-
-class ResizeObserverMock {
-  observe() {}
-  disconnect() {}
-}
 
 describe("TreeMap", () => {
   it("shows loading copy when there are no nodes", () => {
-    vi.stubGlobal("ResizeObserver", ResizeObserverMock);
-
     render(
       <TreeMap
         nodes={[]}
@@ -19,6 +12,6 @@ describe("TreeMap", () => {
       />
     );
 
-    expect(screen.getByText("Loading treemap...")).toBeInTheDocument();
+    expect(screen.getByText("No matches")).toBeInTheDocument();
   });
 });
