@@ -1,61 +1,59 @@
 /**
  * Deterministic symbol → color mapping for the entire app.
  *
- * The palette is spread evenly across the hue wheel so that hash
- * collisions still produce visually distinct neighbours. Every
- * component (treemap tiles, table avatars, fund chips) must call
- * `getColorForSymbol` — never maintain a separate color list.
+ * Uses FNV-1a (excellent for short ticker strings) to derive a 32-bit
+ * hash, then computes H / S / L from independent bit-ranges:
+ *
+ *   Hue — golden-angle spacing over a 720-slot virtual ring so that
+ *         adjacent hash values land ~137.5° apart in hue.
+ *   Sat — bits 11-15 → 35–60 %  (wide enough to differentiate close hues)
+ *   Lit — bits 17-21 → 43–60 %
+ *
+ * The effective colour space is ~720 × 26 × 18 ≈ 337 k distinct colours,
+ * making collisions virtually impossible for real portfolios.
+ *
+ * Every component (treemap tiles, table avatars, fund chips) must call
+ * `getColorForSymbol` — never maintain a separate colour list.
  */
-
-import { hashString } from "./utils";
-
-const PALETTE = [
-  // ---- reds / warm ----
-  "#B85C5C", // brick red
-  "#C47858", // terra cotta
-  "#BE6E4A", // rust
-  // ---- oranges / golds ----
-  "#C49A5C", // gold
-  "#B8864A", // copper
-  "#D4976A", // peach
-  // ---- yellows / olives ----
-  "#A89B5C", // olive gold
-  "#9B8B4E", // khaki
-  // ---- greens (only two) ----
-  "#6A9B6A", // sage
-  "#5A8E6E", // jade
-  // ---- teals / cyans ----
-  "#4E9999", // teal
-  "#4A8E9E", // dark teal
-  // ---- blues ----
-  "#5B7BA8", // steel blue
-  "#4A7AAE", // cobalt
-  "#5E8EA8", // ocean
-  "#6478A8", // slate blue
-  // ---- indigos / purples ----
-  "#7B68AE", // iris
-  "#8B74AB", // violet
-  "#9058A0", // grape
-  "#7A5AAE", // deep violet
-  // ---- pinks / magentas ----
-  "#A44E80", // berry
-  "#B86B8B", // fuchsia
-  "#A87B8E", // dusty pink
-  "#AE5A8E", // magenta
-  // ---- roses / mauves ----
-  "#B07878", // rose
-  "#A8607A", // plum
-  "#C46E7A", // coral
-  "#8E6E8A", // mauve
-];
 
 export const DEFAULT_TREEMAP_COLOR = "#64748b";
 
+const GOLDEN_ANGLE = 137.508;
+const HUE_SLOTS = 720;
+
 export function getColorForSymbol(symbol: string): string {
   const normalized = symbol.trim().toUpperCase();
-  if (!normalized) {
-    return DEFAULT_TREEMAP_COLOR;
-  }
+  if (!normalized) return DEFAULT_TREEMAP_COLOR;
 
-  return PALETTE[hashString(normalized, PALETTE.length)] ?? DEFAULT_TREEMAP_COLOR;
+  const hash = fnv1a(normalized);
+
+  const hue = ((hash % HUE_SLOTS) * GOLDEN_ANGLE) % 360;
+  const saturation = 35 + ((hash >>> 11) % 26); // 35 – 60 %
+  const lightness = 43 + ((hash >>> 17) % 18); // 43 – 60 %
+
+  return hslToHex(hue, saturation, lightness);
+}
+
+/** FNV-1a 32-bit — strong avalanche for short strings like tickers. */
+function fnv1a(str: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  const sNorm = s / 100;
+  const lNorm = l / 100;
+  const a = sNorm * Math.min(lNorm, 1 - lNorm);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const c = lNorm - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return Math.round(255 * c)
+      .toString(16)
+      .padStart(2, "0");
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
 }
