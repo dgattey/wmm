@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
-import { SiteFooter, SiteFooterFallback } from "./components/SiteFooter";
+import { SiteFooter } from "./components/SiteFooter";
 import { PendingUploadProvider } from "./contexts/PendingUploadContext";
 import "./globals.css";
 
@@ -23,12 +22,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="flex min-h-screen flex-col antialiased">
+      <body className="antialiased">
         <PendingUploadProvider>
-          <div className="flex min-h-0 flex-1 flex-col">{children}</div>
-          <Suspense fallback={<SiteFooterFallback />}>
+          <div className="flex min-h-dvh flex-col">
+            <div className="flex min-h-0 flex-1 flex-col">{children}</div>
             <SiteFooter />
-          </Suspense>
+          </div>
         </PendingUploadProvider>
       </body>
     </html>

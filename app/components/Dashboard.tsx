@@ -206,7 +206,7 @@ export function Dashboard({
   return (
     <div
       className={cn(
-        "min-h-screen overflow-x-clip",
+        "min-h-0 flex-1 overflow-x-clip",
         enableIntroAnimation && "animate-fade-in",
         isMobile ? "pb-8" : "pb-20"
       )}

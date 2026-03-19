@@ -14,7 +14,7 @@ export function PortfolioLoadingState({
   return (
     <div
       className={[
-        "min-h-screen p-6 max-w-[1400px] mx-auto",
+        "flex min-h-0 flex-1 flex-col p-6 max-w-[1400px] mx-auto w-full",
         enableIntroAnimation ? "animate-fade-in" : "",
       ]
         .filter(Boolean)

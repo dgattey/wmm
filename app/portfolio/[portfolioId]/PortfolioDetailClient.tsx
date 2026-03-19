@@ -135,7 +135,7 @@ export function PortfolioDetailClient({
   }
 
   return (
-    <main className="min-h-screen">
+    <main className="flex min-h-0 flex-1 flex-col">
       <Dashboard
         portfolioData={record.portfolioData}
         portfolioName={record.summary?.name ?? "Portfolio"}

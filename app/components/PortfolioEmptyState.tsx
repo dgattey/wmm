@@ -12,7 +12,7 @@ export function PortfolioEmptyState({
   description,
 }: PortfolioEmptyStateProps) {
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-6">
       <div className="w-full max-w-lg rounded-2xl border border-border/60 bg-surface p-8 shadow-[var(--shadow-lg)]">
         <h1 className="text-2xl font-bold text-text-primary">{title}</h1>
         <p className="mt-2 text-sm text-text-muted">{description}</p>

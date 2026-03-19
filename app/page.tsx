@@ -24,7 +24,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen px-4 py-8 md:px-6 md:py-10">
+    <main className="flex min-h-0 flex-1 flex-col px-4 py-8 md:px-6 md:py-10">
       <div className="mx-auto flex max-w-[1100px] flex-col gap-6 md:gap-8">
         <section className="flex items-start gap-3 md:gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-surface shadow-[var(--shadow)] md:h-14 md:w-14">
