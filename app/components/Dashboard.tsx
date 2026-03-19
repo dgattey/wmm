@@ -24,8 +24,8 @@ import { PortfolioTable } from "./PortfolioTable";
 import { FloatingToolbar } from "./FloatingToolbar";
 import { FetchStatusBadge } from "./primitives/FetchStatusBadge";
 import { cn } from "@/lib/utils";
+import { useIsStickyDocked } from "@/hooks/useIsStickyDocked";
 
-// Search bar lives in header - no docking hook needed
 interface DashboardProps {
   portfolioData: PortfolioData;
   portfolioName: string;
@@ -127,6 +127,9 @@ export function Dashboard({
     filtersRef.current = filters;
   }, [filters]);
 
+  const headerRef = useRef<HTMLElement>(null);
+  const [dockSentinelRef, isSearchDocked, headerHeightPx] = useIsStickyDocked(headerRef);
+
   const handleSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const value = event.target.value;
@@ -155,8 +158,8 @@ export function Dashboard({
         isMobile ? "pb-8" : "pb-20"
       )}
     >
-      {/* Sticky Header — search bar at bottom, z-50 so it sits above header content */}
-      <header className="sticky-header sticky top-0 z-40">
+      {/* Sticky Header */}
+      <header ref={headerRef} className="sticky-header sticky top-0 z-40">
         <div
           className={cn(
             "max-w-[1400px] mx-auto py-5",
@@ -286,17 +289,86 @@ export function Dashboard({
             </div>
           </div>
         </div>
+      </header>
 
-        {/* Search bar — at bottom of header, z-50 above header content, full-width */}
+      {/* TreeMap */}
+      <section
+        className={cn(
+          isMobile ? "pt-2" : "pt-6",
+          "mb-6 max-w-[1400px] mx-auto",
+          enableIntroAnimation && "animate-soft-rise",
+          isMobile ? "px-4" : "px-6"
+        )}
+        style={{ "--enter-delay": "160ms" } as CSSProperties}
+      >
+        <TreeMap
+          key={filteredTreeMapNodes.length > 0 ? "treemap-populated" : "treemap-empty"}
+          nodes={filteredTreeMapNodes}
+          originalWidth={treeMapWidth}
+          originalHeight={treeMapHeight}
+          grouping={treeMapGrouping}
+          selectedFunds={selectedFunds}
+          onToggleFund={onToggleFund}
+          onClearFunds={onClearFunds}
+          isMobile={isMobile}
+          enableIntroAnimation={enableIntroAnimation}
+        />
+      </section>
+
+      {isMobile && (
+        <section className="px-4 mb-6 max-w-[1400px] mx-auto">
+          <FloatingToolbar
+            summary={summary}
+            filters={filters}
+            onFiltersChange={onFiltersChange}
+            lastUpdated={lastUpdated}
+            onRefresh={onRefresh ?? (() => {})}
+            isRefreshing={isRefreshing}
+            viewMode={viewMode}
+            onViewModeChange={onViewModeChange}
+            treeMapGrouping={treeMapGrouping}
+            onTreeMapGroupingChange={onTreeMapGroupingChange}
+            fundOptions={fundOptions}
+            selectedFunds={selectedFunds}
+            onToggleFund={onToggleFund}
+            onClearFunds={onClearFunds}
+            onResetFilters={onResetFilters}
+            isMobile
+            enableIntroAnimation={enableIntroAnimation}
+          />
+        </section>
+      )}
+
+      {/* Table */}
+      <section
+        className={cn(
+          "max-w-[1400px] mx-auto",
+          enableIntroAnimation && "animate-soft-rise",
+          isMobile ? "px-4" : "px-6"
+        )}
+        style={{ "--enter-delay": "220ms" } as CSSProperties}
+      >
+        <div ref={dockSentinelRef} className="h-px" aria-hidden />
         <div
           data-testid="portfolio-search-shell"
           className={cn(
-            "search-bar-docked relative z-50 py-3",
-            "w-screen"
+            "sticky mb-4 py-3",
+            "transition-[background-color,backdrop-filter,box-shadow] duration-200",
+            "w-screen relative",
+            isSearchDocked
+              ? "search-bar-docked top-0 z-50"
+              : "bg-transparent z-40"
           )}
           style={{
             marginLeft: "calc(-50vw + 50%)",
             marginRight: "calc(-50vw + 50%)",
+            top: isSearchDocked
+              ? 0
+              : headerHeightPx > 0
+                ? headerHeightPx
+                : isMobile
+                  ? 92
+                  : 112,
           }}
         >
           <div
@@ -361,65 +433,7 @@ export function Dashboard({
             </p>
           </div>
         </div>
-      </header>
 
-      {/* TreeMap */}
-      <section
-        className={cn(
-          isMobile ? "pt-2" : "pt-6",
-          "mb-6 max-w-[1400px] mx-auto",
-          enableIntroAnimation && "animate-soft-rise",
-          isMobile ? "px-4" : "px-6"
-        )}
-        style={{ "--enter-delay": "160ms" } as CSSProperties}
-      >
-        <TreeMap
-          key={filteredTreeMapNodes.length > 0 ? "treemap-populated" : "treemap-empty"}
-          nodes={filteredTreeMapNodes}
-          originalWidth={treeMapWidth}
-          originalHeight={treeMapHeight}
-          grouping={treeMapGrouping}
-          selectedFunds={selectedFunds}
-          onToggleFund={onToggleFund}
-          onClearFunds={onClearFunds}
-          isMobile={isMobile}
-          enableIntroAnimation={enableIntroAnimation}
-        />
-      </section>
-
-      {isMobile && (
-        <section className="px-4 mb-6 max-w-[1400px] mx-auto">
-          <FloatingToolbar
-            summary={summary}
-            filters={filters}
-            onFiltersChange={onFiltersChange}
-            lastUpdated={lastUpdated}
-            onRefresh={onRefresh ?? (() => {})}
-            isRefreshing={isRefreshing}
-            viewMode={viewMode}
-            onViewModeChange={onViewModeChange}
-            treeMapGrouping={treeMapGrouping}
-            onTreeMapGroupingChange={onTreeMapGroupingChange}
-            fundOptions={fundOptions}
-            selectedFunds={selectedFunds}
-            onToggleFund={onToggleFund}
-            onClearFunds={onClearFunds}
-            onResetFilters={onResetFilters}
-            isMobile
-            enableIntroAnimation={enableIntroAnimation}
-          />
-        </section>
-      )}
-
-      {/* Table */}
-      <section
-        className={cn(
-          "max-w-[1400px] mx-auto",
-          enableIntroAnimation && "animate-soft-rise",
-          isMobile ? "px-4" : "px-6"
-        )}
-        style={{ "--enter-delay": "220ms" } as CSSProperties}
-      >
         <PortfolioTable
           rows={filteredRows}
           sortConfig={sortConfig}
