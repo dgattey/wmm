@@ -173,12 +173,12 @@ export function Dashboard({
             isMobile ? "px-4" : "px-6"
           )}
         >
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div
               className={cn("min-w-0", enableIntroAnimation && "animate-soft-rise")}
               style={{ "--enter-delay": "40ms" } as CSSProperties}
             >
-              <div className="mb-2 flex min-w-0 items-center gap-3">
+              <div className="mb-4 flex min-w-0 items-center gap-3">
                 <button
                   type="button"
                   onClick={onBackToPicker}
