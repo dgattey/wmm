@@ -6,7 +6,7 @@ import { SiteFooter } from "./SiteFooter";
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col md:pb-[var(--floating-toolbar-clearance)]">
       <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       <SiteFooter />
     </div>

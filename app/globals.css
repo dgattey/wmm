@@ -27,6 +27,9 @@
   --glass-bg-strong: rgba(255, 255, 255, 0.9);
   --glass-border: rgba(0, 0, 0, 0.06);
   --glass-highlight: rgba(255, 255, 255, 0.5);
+
+  /* Desktop FloatingToolbar: fixed bottom-4 + bar height + gap so footer isn’t covered */
+  --floating-toolbar-clearance: calc(1rem + 7.75rem + 1rem);
 }
 
 @media (prefers-color-scheme: dark) {
