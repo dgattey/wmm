@@ -158,8 +158,14 @@ export function Dashboard({
         isMobile ? "pb-8" : "pb-20"
       )}
     >
-      {/* Sticky Header */}
-      <header ref={headerRef} className="sticky-header sticky top-0 z-40">
+      {/* Sticky Header — grows with animated padding when search bar docks */}
+      <header
+        ref={headerRef}
+        className={cn(
+          "sticky-header sticky top-0 z-40 transition-[padding] duration-200 ease-out",
+          isSearchDocked && "pb-[3.5rem]"
+        )}
+      >
         <div
           className={cn(
             "max-w-[1400px] mx-auto py-5",
@@ -353,7 +359,7 @@ export function Dashboard({
           data-testid="portfolio-search-shell"
           className={cn(
             "sticky mb-4 py-3",
-            "transition-[background-color,backdrop-filter,box-shadow] duration-200",
+            "transition-[background-color,backdrop-filter,box-shadow,top] duration-200 ease-out",
             "w-screen relative",
             isSearchDocked
               ? "search-bar-docked z-50"
