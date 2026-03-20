@@ -10,6 +10,11 @@ export const socialOgImageContentType = "image/png";
 export const socialOgImageAlt =
   "WMM — Where's my money? One clear view of what you own and how it fits together";
 
+/** Logo is taller than the canvas so it bleeds top/bottom; pulled left so part is clipped. */
+const LOGO_PX = 668;
+const LOGO_LEFT = -278;
+const LOGO_TOP = Math.round((socialOgImageSize.height - LOGO_PX) / 2);
+
 export async function createSocialOgImage(): Promise<ImageResponse> {
   const svg = await readFile(
     join(process.cwd(), "public/icon.svg"),
@@ -23,30 +28,45 @@ export async function createSocialOgImage(): Promise<ImageResponse> {
         style={{
           width: "100%",
           height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "flex-start",
-          padding: "72px 80px",
+          position: "relative",
+          overflow: "hidden",
           background: "linear-gradient(145deg, #fafafa 0%, #eef1f6 55%, #e8ecf4 100%)",
           fontFamily:
             'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         }}
       >
+        {/* eslint-disable-next-line @next/next/no-img-element -- Satori renders this to PNG */}
+        <img
+          src={iconSrc}
+          width={LOGO_PX}
+          height={LOGO_PX}
+          alt=""
+          style={{
+            position: "absolute",
+            left: LOGO_LEFT,
+            top: LOGO_TOP,
+            width: LOGO_PX,
+            height: LOGO_PX,
+          }}
+        />
         <div
           style={{
+            position: "relative",
+            zIndex: 1,
             display: "flex",
-            alignItems: "center",
-            gap: 96,
+            height: "100%",
+            flexDirection: "column",
+            justifyContent: "center",
+            boxSizing: "border-box",
+            padding: "112px 80px 112px 378px",
+            maxWidth: 900,
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element -- Satori renders this to PNG */}
-          <img src={iconSrc} width={360} height={360} alt="" />
           <div
             style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "flex-start",
-              maxWidth: 780,
             }}
           >
             <div
