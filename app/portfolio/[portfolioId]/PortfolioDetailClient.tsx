@@ -72,10 +72,10 @@ export function PortfolioDetailClient({
   });
 
   useEffect(() => {
-    const suffix = " · Where's my money?";
+    const suffix = " · WMM";
     document.title = record.summary
       ? `${record.summary.name}${suffix}`
-      : `Where's my money?`;
+      : "WMM";
   }, [record.summary]);
 
   const immediatePortfolioName = useMemo(

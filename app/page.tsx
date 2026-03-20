@@ -35,10 +35,10 @@ export default function Home() {
             />
           </div>
           <h1 className="col-start-2 row-start-1 min-w-0 text-2xl font-semibold text-text-primary md:text-4xl">
-            Where&apos;s my money?
+            <abbr title="Where's my money?" className="no-underline">WMM</abbr>
           </h1>
           <p className="col-start-2 row-start-2 min-w-0 max-w-2xl text-sm leading-6 text-text-muted md:text-base">
-            Visualize your Fidelity portfolio allocations, live and in detail.
+            Where&apos;s my money? Visualize your Fidelity portfolio allocations, live and in detail.
           </p>
         </section>
 
