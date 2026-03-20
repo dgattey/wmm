@@ -1,11 +1,11 @@
 import { openDB, type IDBPDatabase } from "idb";
 import type { FidelityPosition, PortfolioData } from "./types";
 
-const DB_NAME = "wmm-portfolios";
-const DB_VERSION = 2;
+/** New name: prior `wmm-portfolios` DB is not opened (no migration). */
+const DB_NAME = "wmm-portfolio-store";
+const DB_VERSION = 1;
 const STORE_META = "portfolioMeta" as const;
 const STORE_PAYLOAD = "portfolioPayload" as const;
-const LEGACY_STORE = "portfolios" as const;
 
 /** Library / ordering / summary fields (small). */
 export interface PortfolioMetaRow {
@@ -27,76 +27,16 @@ export interface PortfolioPayloadRow {
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 
-function splitLegacyPortfolioRow(
-  row: unknown
-): { meta: PortfolioMetaRow; payload: PortfolioPayloadRow } | null {
-  if (!row || typeof row !== "object") {
-    return null;
-  }
-  const o = row as Record<string, unknown>;
-  if (
-    typeof o.id !== "string" ||
-    typeof o.name !== "string" ||
-    typeof o.sourceFileName !== "string" ||
-    typeof o.uploadedAt !== "string" ||
-    typeof o.lastViewedAt !== "string" ||
-    !Array.isArray(o.positions)
-  ) {
-    return null;
-  }
-  const positions = o.positions as FidelityPosition[];
-  const portfolioData =
-    o.portfolioData && typeof o.portfolioData === "object"
-      ? (o.portfolioData as PortfolioData)
-      : null;
-  const positionCount =
-    typeof o.positionCount === "number" ? o.positionCount : positions.length;
-  return {
-    meta: {
-      id: o.id,
-      name: o.name,
-      sourceFileName: o.sourceFileName,
-      uploadedAt: o.uploadedAt,
-      lastViewedAt: o.lastViewedAt,
-      positionCount,
-      totalValue: typeof o.totalValue === "number" ? o.totalValue : undefined,
-    },
-    payload: {
-      id: o.id,
-      positions,
-      portfolioData,
-    },
-  };
-}
-
 export function getPortfolioDB(): Promise<IDBPDatabase> {
   if (typeof indexedDB === "undefined") {
     return Promise.reject(new Error("indexedDB not available"));
   }
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
-      async upgrade(db, oldVersion, _newVersion, transaction) {
-        if (oldVersion >= 2) {
-          return;
-        }
-
-        db.createObjectStore(STORE_META, { keyPath: "id" });
-        db.createObjectStore(STORE_PAYLOAD, { keyPath: "id" });
-
-        if (oldVersion === 1 && db.objectStoreNames.contains(LEGACY_STORE)) {
-          const legacy = transaction.objectStore(LEGACY_STORE);
-          const metaStore = transaction.objectStore(STORE_META);
-          const payloadStore = transaction.objectStore(STORE_PAYLOAD);
-          let cursor = await legacy.openCursor();
-          while (cursor) {
-            const split = splitLegacyPortfolioRow(cursor.value);
-            if (split) {
-              metaStore.put(split.meta);
-              payloadStore.put(split.payload);
-            }
-            cursor = await cursor.continue();
-          }
-          db.deleteObjectStore(LEGACY_STORE);
+      upgrade(db, oldVersion) {
+        if (oldVersion === 0) {
+          db.createObjectStore(STORE_META, { keyPath: "id" });
+          db.createObjectStore(STORE_PAYLOAD, { keyPath: "id" });
         }
       },
     });
