@@ -35,6 +35,9 @@ export const TREEMAP_MARK_STROKE = "#e5e7eb";
 const GOLDEN_ANGLE = 137.508;
 const HUE_SLOTS = 720;
 
+/** Pretend portfolio ids are tickers under this prefix so bar colors use the treemap pipeline. */
+export const PORTFOLIO_BAR_SYMBOL_PREFIX = "wmm.bar|" as const;
+
 function treemapColorFromHash32(hash: number): string {
   const hue = ((hash % HUE_SLOTS) * GOLDEN_ANGLE) % 360;
   const saturation = 22 + ((hash >>> 11) % 20); // 22 – 41 %
@@ -49,42 +52,19 @@ export function getColorForSymbol(symbol: string): string {
 }
 
 /**
- * Home library top bar: **same** golden-angle hue + sat/l bands as treemap tiles, but
- * portfolio ids are long uniform base36 strings — raw FNV-1a can cluster in hash space so
- * hue and sat/light (same 32-bit word) skew together (often muddy greens). We xor in a
- * salted second FNV-1a pass and a 32-bit avalanche so ids still map deterministically but
- * behave more like unrelated tickers in perceptual spread.
+ * Home library top bar: same `getColorForSymbol` path as the treemap. Portfolio ids are
+ * hashed as synthetic tickers (`wmm.bar|<id>`) so they never collide with real symbols and
+ * the FNV-1a input differs from a bare base36 string (less hue/sat clustering).
  */
 export function getColorForPortfolioId(portfolioId: string): string {
-  const normalized = portfolioId.trim().toUpperCase();
-  if (!normalized) return DEFAULT_TREEMAP_COLOR;
-  return treemapColorFromHash32(hash32ForPortfolioTreemapBar(normalized));
-}
-
-/**
- * 32-bit hash fed into `treemapColorFromHash32` for portfolio bars only.
- * Exported for distribution tests.
- */
-export function hash32ForPortfolioTreemapBar(normalizedUppercaseId: string): number {
-  const base =
-    fnv1a(normalizedUppercaseId) ^ fnv1a(`wmm.portfolio|${normalizedUppercaseId}`);
-  return avalanche32(base >>> 0);
+  const trimmed = portfolioId.trim();
+  if (!trimmed) return DEFAULT_TREEMAP_COLOR;
+  return getColorForSymbol(`${PORTFOLIO_BAR_SYMBOL_PREFIX}${trimmed}`);
 }
 
 /** FNV-1a output for `symbol` after trim + uppercase; used by treemap colors and tests. */
 export function treemapStringHash32(symbol: string): number {
   return fnv1a(symbol.trim().toUpperCase());
-}
-
-/** Finalizer-style mix; spreads bits so low-entropy id strings don’t cluster hues. */
-function avalanche32(x: number): number {
-  let h = x >>> 0;
-  h ^= h >>> 16;
-  h = Math.imul(h, 0x7feb352d);
-  h ^= h >>> 15;
-  h = Math.imul(h, 0x846ca68b);
-  h ^= h >>> 16;
-  return h >>> 0;
 }
 
 export const TREEMAP_MARK_TILE_FILLS: readonly [

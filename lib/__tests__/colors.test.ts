@@ -4,16 +4,18 @@ import { describe, expect, it } from "vitest";
 import {
   getColorForPortfolioId,
   getColorForSymbol,
-  hash32ForPortfolioTreemapBar,
+  PORTFOLIO_BAR_SYMBOL_PREFIX,
   TREEMAP_MARK_STROKE,
   TREEMAP_MARK_TILE_FILLS,
+  treemapStringHash32,
 } from "../colors";
 
 const HUE_SLOTS = 720;
 const GOLDEN_ANGLE = 137.508;
 
 function portfolioBarHueDegrees(id: string): number {
-  const hash = hash32ForPortfolioTreemapBar(id.trim().toUpperCase());
+  const key = `${PORTFOLIO_BAR_SYMBOL_PREFIX}${id.trim()}`;
+  const hash = treemapStringHash32(key);
   return ((hash % HUE_SLOTS) * GOLDEN_ANGLE) % 360;
 }
 
@@ -32,9 +34,12 @@ describe("treemap mark icon", () => {
 });
 
 describe("getColorForPortfolioId", () => {
-  it("uses treemap HSL mapping but mixes id-shaped strings so bar ≠ raw symbol color", () => {
+  it("is getColorForSymbol with a fixed namespace prefix", () => {
     const id = "ab12cd34efgh";
     expect(getColorForPortfolioId(id)).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(getColorForPortfolioId(id)).toBe(
+      getColorForSymbol(`${PORTFOLIO_BAR_SYMBOL_PREFIX}${id}`)
+    );
     expect(getColorForPortfolioId(id)).not.toBe(getColorForSymbol(id));
   });
 
@@ -65,7 +70,9 @@ describe("getColorForPortfolioId", () => {
     const trials = 24_000;
     for (let i = 0; i < trials; i++) {
       const id = `pf${i.toString(36)}${((i * 2654435761) >>> 0).toString(36)}`;
-      mod8[hash32ForPortfolioTreemapBar(id.toUpperCase()) % 8]++;
+      mod8[
+        treemapStringHash32(`${PORTFOLIO_BAR_SYMBOL_PREFIX}${id}`) % 8
+      ]++;
     }
     const expected = trials / 8;
     for (const count of mod8) {
