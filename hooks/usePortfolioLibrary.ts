@@ -15,6 +15,16 @@ export interface UploadPortfoliosResult {
   failedUploads: Array<{ fileName: string; reason: string }>;
 }
 
+export interface UploadFilesOptions {
+  /**
+   * Runs after each file is parsed and persisted, before the library list refreshes.
+   * Return true to skip `refreshLibrary` (e.g. immediate client navigation away from home).
+   */
+  onPersistedBeforeRefresh?: (
+    result: UploadPortfoliosResult
+  ) => boolean | void;
+}
+
 export function usePortfolioLibrary() {
   const [portfolios, setPortfolios] = useState<StoredPortfolioSummary[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -29,7 +39,10 @@ export function usePortfolioLibrary() {
   }, [refreshLibrary]);
 
   const uploadFiles = useCallback(
-    async (files: File[]): Promise<UploadPortfoliosResult> => {
+    async (
+      files: File[],
+      options?: UploadFilesOptions
+    ): Promise<UploadPortfoliosResult> => {
       setIsUploading(true);
       setError(null);
 
@@ -57,7 +70,16 @@ export function usePortfolioLibrary() {
           }
         }
 
-        await refreshLibrary();
+        const result: UploadPortfoliosResult = {
+          uploadedPortfolios,
+          failedUploads,
+        };
+        const skipLibraryRefresh =
+          options?.onPersistedBeforeRefresh?.(result) === true;
+
+        if (!skipLibraryRefresh) {
+          await refreshLibrary();
+        }
 
         if (failedUploads.length > 0) {
           setError(
@@ -69,7 +91,7 @@ export function usePortfolioLibrary() {
           setError("Select at least one Fidelity positions CSV.");
         }
 
-        return { uploadedPortfolios, failedUploads };
+        return result;
       } finally {
         setIsUploading(false);
       }

@@ -92,24 +92,28 @@ describe("Home page", () => {
 
   it("navigates to the portfolio id returned by uploadFiles", async () => {
     const persistedId = "k3j8m9n2p7qx";
+    const uploadResult = {
+      uploadedPortfolios: [
+        {
+          id: persistedId,
+          name: "alpha",
+          sourceFileName: "alpha.csv",
+          uploadedAt: "2026-03-18T00:00:00.000Z",
+          lastViewedAt: "2026-03-18T00:00:00.000Z",
+          positionCount: 1,
+        },
+      ],
+      failedUploads: [] as Array<{ fileName: string; reason: string }>,
+    };
     mockUsePortfolioLibrary.mockReturnValue({
       portfolios: [],
       isUploading: false,
       error: null,
       setError: vi.fn(),
       refreshLibrary: vi.fn(),
-      uploadFiles: vi.fn().mockResolvedValue({
-        uploadedPortfolios: [
-          {
-            id: persistedId,
-            name: "alpha",
-            sourceFileName: "alpha.csv",
-            uploadedAt: "2026-03-18T00:00:00.000Z",
-            lastViewedAt: "2026-03-18T00:00:00.000Z",
-            positionCount: 1,
-          },
-        ],
-        failedUploads: [],
+      uploadFiles: vi.fn().mockImplementation(async (_files, options) => {
+        options?.onPersistedBeforeRefresh?.(uploadResult);
+        return uploadResult;
       }),
       removePortfolioById: vi.fn(),
       renamePortfolio: vi.fn(),

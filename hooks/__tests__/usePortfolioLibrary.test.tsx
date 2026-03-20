@@ -77,4 +77,29 @@ describe("usePortfolioLibrary", () => {
       expect(result.current.error).toMatch(/bad\.csv/i);
     });
   });
+
+  it("skips library refresh when onPersistedBeforeRefresh returns true", async () => {
+    const { result } = renderHook(() => usePortfolioLibrary());
+
+    await waitFor(() => {
+      expect(result.current.portfolios).toEqual([]);
+    });
+
+    const file = new File(
+      [
+        makeCSV(
+          "TEST-0001,Account A,Stocks,TSTA,SYNTHETIC ALPHA CORP,24,$50.00,+$0.50,$1200.00,+$12.00,+1.01%,+$240.00,+25.00%,12.00%,$960.00,$40.00,Cash,"
+        ),
+      ],
+      "solo.csv",
+      { type: "text/csv" }
+    );
+
+    const uploadResult = await result.current.uploadFiles([file], {
+      onPersistedBeforeRefresh: () => true,
+    });
+
+    expect(uploadResult.uploadedPortfolios).toHaveLength(1);
+    expect(result.current.portfolios).toEqual([]);
+  });
 });
