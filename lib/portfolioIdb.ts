@@ -16,6 +16,7 @@ export interface PortfolioMetaRow {
   lastViewedAt: string;
   positionCount: number;
   totalValue?: number;
+  tintIndex?: number;
 }
 
 /** Positions + server dashboard blob (large). */

@@ -9,6 +9,7 @@ import {
   portfolioViewTransitionTitle,
   portfolioViewTransitionValue,
 } from "@/lib/portfolioViewTransition";
+import { resolvePortfolioTintIndex } from "@/lib/portfolioTints";
 
 interface PortfolioLibraryNavProps {
   portfolios: StoredPortfolioSummary[];
@@ -87,6 +88,12 @@ function PortfolioTile({
         viewTransitionName: portfolioViewTransitionValue(portfolio.id),
       } as CSSProperties)
     : undefined;
+
+  const tintIndex = resolvePortfolioTintIndex(portfolio);
+  const shellSurfaceStyle = {
+    ...vtShellStyle,
+    background: `var(--portfolio-tint-${tintIndex})`,
+  } as CSSProperties;
 
   useEffect(() => {
     if (isEditing) {
@@ -215,10 +222,10 @@ function PortfolioTile({
         "group relative rounded-2xl border p-4 shadow-sm transition-[box-shadow,border-color,background-color] duration-200",
         !isEditing && "cursor-pointer",
         isActive
-          ? "border-accent bg-accent-bg/60 ring-1 ring-accent/20"
-          : "border-border/80 bg-bg/80 hover:border-accent/65 hover:bg-surface-hover/70 hover:shadow-[var(--shadow-lg)]"
+          ? "border-accent ring-1 ring-accent/25"
+          : "border-border/80 hover:border-accent/65 hover:shadow-[var(--shadow-lg)]"
       )}
-      style={vtShellStyle}
+      style={shellSurfaceStyle}
     >
       {isEditing ? (
         <div className="block min-h-full">{cardContent}</div>
