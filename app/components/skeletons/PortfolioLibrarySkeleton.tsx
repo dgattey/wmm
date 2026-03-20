@@ -27,7 +27,7 @@ export function PortfolioLibrarySkeleton() {
 
 function PortfolioTileSkeleton() {
   return (
-    <div className="rounded-2xl border border-border/70 bg-bg/70 p-4">
+    <div className="rounded-2xl border border-border/80 bg-bg/80 p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-2">
           <SkeletonPulse className="h-4 w-3/5 max-w-[12rem]" />
@@ -38,7 +38,10 @@ function PortfolioTileSkeleton() {
       </div>
       <div className="mt-4 flex items-center justify-between gap-2">
         <SkeletonPulse className="h-3 w-24" />
-        <SkeletonPulse className="h-3 w-20" />
+        <div className="flex items-center gap-1">
+          <SkeletonPulse className="h-6 w-[4.5rem]" />
+          <SkeletonPulse className="h-4 w-4 shrink-0 rounded" />
+        </div>
       </div>
     </div>
   );

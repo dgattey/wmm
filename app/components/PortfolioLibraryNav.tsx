@@ -2,9 +2,8 @@
 
 import { useState, useRef, useEffect, type CSSProperties } from "react";
 import Link from "next/link";
-import { formatDollar, formatDate } from "@/lib/utils";
 import type { StoredPortfolioSummary } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatDate, formatDollar, formatHeaderCurrency } from "@/lib/utils";
 import {
   portfolioViewTransitionShell,
   portfolioViewTransitionTitle,
@@ -145,7 +144,7 @@ function PortfolioTile({
           ) : (
             <div className="flex items-center gap-2 min-w-0">
               <p
-                className="truncate text-sm font-semibold text-text-primary"
+                className="truncate text-sm font-semibold text-text-primary transition-colors group-hover:text-accent"
                 style={vtTitleStyle}
               >
                 {portfolio.name}
@@ -183,15 +182,28 @@ function PortfolioTile({
             Uploaded {formatDate(portfolio.uploadedAt)}
           </p>
         </div>
-        <div className="h-8 w-8 shrink-0" />
+        <div className="h-8 w-8 shrink-0" aria-hidden />
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-2 text-xs text-text-muted">
-        <span>{portfolio.positionCount} positions</span>
-        <span style={vtValueStyle}>
-          {typeof portfolio.totalValue === "number"
-            ? formatDollar(portfolio.totalValue)
-            : "Needs refresh"}
+      <div className="mt-4 flex items-center justify-between gap-2">
+        <span className="text-xs text-text-muted">
+          {portfolio.positionCount} positions
+        </span>
+        <span className="flex min-w-0 items-center gap-1">
+          <span
+            className={cn(
+              "min-w-0 truncate text-right text-lg font-bold tabular-nums tracking-tight text-text-primary",
+              typeof portfolio.totalValue !== "number" && "text-sm font-medium text-text-muted"
+            )}
+            style={vtValueStyle}
+          >
+            {typeof portfolio.totalValue === "number"
+              ? formatHeaderCurrency(portfolio.totalValue)
+              : "Needs refresh"}
+          </span>
+          {typeof portfolio.totalValue === "number" && (
+            <OpenHintChevron className="shrink-0 text-text-muted opacity-40 transition-all group-hover:translate-x-px group-hover:opacity-100 group-hover:text-accent" />
+          )}
         </span>
       </div>
     </>
@@ -200,10 +212,11 @@ function PortfolioTile({
   return (
     <div
       className={cn(
-        "group relative rounded-2xl border p-4 transition-colors",
+        "group relative rounded-2xl border p-4 shadow-sm transition-[box-shadow,border-color,background-color] duration-200",
+        !isEditing && "cursor-pointer",
         isActive
-          ? "border-accent bg-accent-bg/60"
-          : "border-border/70 bg-bg/70 hover:border-accent/40 hover:bg-surface-hover/60"
+          ? "border-accent bg-accent-bg/60 ring-1 ring-accent/20"
+          : "border-border/80 bg-bg/80 hover:border-accent/65 hover:bg-surface-hover/70 hover:shadow-[var(--shadow-lg)]"
       )}
       style={vtShellStyle}
     >
@@ -212,8 +225,13 @@ function PortfolioTile({
       ) : (
         <Link
           href={`/portfolio/${portfolio.id}`}
-          className="block min-h-full cursor-pointer after:absolute after:inset-0 after:content-['']"
+          className="relative z-0 block min-h-full cursor-pointer rounded-2xl outline-none after:absolute after:inset-0 after:rounded-2xl after:content-[''] focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
           aria-label={`Open ${portfolio.name}`}
+          title={
+            typeof portfolio.totalValue === "number"
+              ? `Full value ${formatDollar(portfolio.totalValue)}`
+              : undefined
+          }
         >
           {cardContent}
         </Link>
@@ -245,5 +263,22 @@ function PortfolioTile({
         </button>
       )}
     </div>
+  );
+}
+
+function OpenHintChevron({ className }: { className?: string }) {
+  return (
+    <svg
+      className={cn("h-4 w-4", className)}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="m9 18 6-6-6-6" />
+    </svg>
   );
 }
