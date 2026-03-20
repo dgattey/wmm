@@ -6,7 +6,7 @@ Instructions for AI coding agents working in this repo.
 
 **Portfolio Allocation** is a Next.js app that visualizes Fidelity portfolio allocation. Users upload a Fidelity positions CSV, then see an interactive treemap and sortable table enriched with live Yahoo Finance data (quotes, fund holdings).
 
-- **Upload flow**: Client parses CSV → `POST /api/portfolio` with positions → server fetches Yahoo quotes/holdings → computes treemap layout (d3-hierarchy) → returns `PortfolioData`
+- **Upload flow**: Home parses CSV → persists positions in `localStorage` → navigates to `/portfolio/:id` → client `POST /api/portfolio` loads Yahoo quotes/holdings → `PortfolioData` for the dashboard
 - **Client state**: `usePortfolio` hook manages upload, storage (localStorage), filters, sort, expand/collapse, view mode (holdings vs positions), treemap grouping (fund vs holding)
 - **Data flow**: `lib/server/portfolioData.ts` orchestrates; `yahoo.ts` handles Yahoo Finance API with caching, retries, symbol mapping
 

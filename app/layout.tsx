@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { AppShell } from "./components/AppShell";
-import { PendingUploadProvider } from "./contexts/PendingUploadContext";
 import "./globals.css";
 
 function siteOrigin(): string {
@@ -48,9 +47,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        <PendingUploadProvider>
-          <AppShell>{children}</AppShell>
-        </PendingUploadProvider>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

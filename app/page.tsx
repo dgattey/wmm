@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import TreemapMarkIcon from "@/public/icon.svg";
 import { HomeHowItWorksSection } from "./components/HomeHowItWorksSection";
-import { PortfolioLoadingState } from "./components/PortfolioLoadingState";
 import { PortfolioLibraryNav } from "./components/PortfolioLibraryNav";
+import { DashboardSkeleton } from "./components/skeletons";
 import { UploadView } from "./components/UploadView";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { usePortfolioLibrary } from "@/hooks/usePortfolioLibrary";
@@ -23,16 +23,14 @@ export default function Home() {
 
   async function handleFilesSelect(files: File[]) {
     const { uploadedPortfolios } = await uploadFiles(files);
-    if (uploadedPortfolios.length > 0) {
-      const last = uploadedPortfolios[uploadedPortfolios.length - 1];
-      router.push(`/portfolio/${last.id}`);
-    }
+    const id = uploadedPortfolios.at(-1)?.id;
+    if (id) router.push(`/portfolio/${id}`);
   }
 
   if (isUploading) {
     return (
       <main className="flex min-h-0 flex-1 flex-col">
-        <PortfolioLoadingState isMobile={isMobile} enableIntroAnimation={false} />
+        <DashboardSkeleton isMobile={isMobile} enableIntroAnimation={false} />
       </main>
     );
   }

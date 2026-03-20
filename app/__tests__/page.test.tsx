@@ -47,6 +47,10 @@ vi.mock("@/hooks/usePortfolioLibrary", () => ({
   usePortfolioLibrary: vi.fn(),
 }));
 
+vi.mock("@/hooks/useIsMobile", () => ({
+  useIsMobile: () => false,
+}));
+
 import Home from "../page";
 import { usePortfolioLibrary } from "@/hooks/usePortfolioLibrary";
 
@@ -86,7 +90,8 @@ describe("Home page", () => {
     expect(screen.getByTestId("portfolio-library-nav")).toHaveTextContent("alpha");
   });
 
-  it("navigates to the new portfolio after upload completes", async () => {
+  it("navigates to the portfolio id returned by uploadFiles", async () => {
+    const persistedId = "k3j8m9n2p7qx";
     mockUsePortfolioLibrary.mockReturnValue({
       portfolios: [],
       isUploading: false,
@@ -96,7 +101,7 @@ describe("Home page", () => {
       uploadFiles: vi.fn().mockResolvedValue({
         uploadedPortfolios: [
           {
-            id: "new-portfolio",
+            id: persistedId,
             name: "alpha",
             sourceFileName: "alpha.csv",
             uploadedAt: "2026-03-18T00:00:00.000Z",
@@ -114,7 +119,7 @@ describe("Home page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Upload files" }));
 
     await waitFor(() => {
-      expect(pushMock).toHaveBeenCalledWith("/portfolio/new-portfolio");
+      expect(pushMock).toHaveBeenCalledWith(`/portfolio/${persistedId}`);
     });
   });
 

@@ -4,8 +4,8 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Dashboard } from "@/app/components/Dashboard";
 import { PortfolioEmptyState } from "@/app/components/PortfolioEmptyState";
-import { PortfolioLoadingState } from "@/app/components/PortfolioLoadingState";
 import { PortfolioSearchParamsBridge } from "@/app/components/PortfolioSearchParamsBridge";
+import { DashboardSkeleton } from "@/app/components/skeletons";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { usePortfolioUrlSync } from "@/hooks/usePortfolioUrlSync";
 import { usePortfolioViewState } from "@/hooks/usePortfolioViewState";
@@ -102,7 +102,7 @@ export function PortfolioDetailClient({
     );
   } else if (!record.portfolioData) {
     mainContent = (
-      <PortfolioLoadingState
+      <DashboardSkeleton
         portfolioName={record.summary?.name ?? immediatePortfolioName}
         isMobile={isMobile}
         enableIntroAnimation={false}
