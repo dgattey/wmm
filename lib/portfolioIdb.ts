@@ -60,12 +60,21 @@ export async function idbPutPortfolio(record: unknown): Promise<void> {
   await db.put(STORE, record);
 }
 
-export async function idbReplaceAllPortfolios(records: unknown[]): Promise<void> {
+/** Deletes and puts in one transaction (no full store clear). */
+export async function idbApplyPortfolioDelta(
+  deleteIds: string[],
+  recordsToPut: unknown[]
+): Promise<void> {
+  if (deleteIds.length === 0 && recordsToPut.length === 0) {
+    return;
+  }
   const db = await getPortfolioDB();
   const tx = db.transaction(STORE, "readwrite");
-  await tx.store.clear();
-  for (const r of records) {
-    tx.store.put(r);
+  for (const id of deleteIds) {
+    await tx.store.delete(id);
+  }
+  for (const r of recordsToPut) {
+    await tx.store.put(r);
   }
   await tx.done;
 }

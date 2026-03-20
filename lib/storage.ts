@@ -5,11 +5,11 @@ import type {
 } from "./types";
 import {
   deletePortfolioDatabaseForTests,
+  idbApplyPortfolioDelta,
   idbClearAllPortfolios,
   idbGetAllPortfolios,
   idbGetPortfolio,
   idbPutPortfolio,
-  idbReplaceAllPortfolios,
 } from "./portfolioIdb";
 
 const MAX_STORED_PORTFOLIOS = 8;
@@ -40,12 +40,37 @@ async function loadStoreFromIdb(): Promise<PortfolioStore> {
   });
 }
 
-async function persistFullStore(store: PortfolioStore): Promise<PortfolioStore> {
-  const next = pruneStore(store);
+function snapshotById(portfolios: StoredPortfolioRecord[]): Map<string, string> {
+  return new Map(portfolios.map((p) => [p.id, JSON.stringify(p)]));
+}
+
+/** Persists only deleted rows and rows whose pruned payload changed vs `before`. */
+async function persistStoreDelta(
+  before: PortfolioStore,
+  next: PortfolioStore
+): Promise<PortfolioStore> {
   if (typeof window === "undefined") {
     return next;
   }
-  await idbReplaceAllPortfolios(next.portfolios);
+
+  const prevSerialized = snapshotById(before.portfolios);
+  const nextIds = new Set(next.portfolios.map((p) => p.id));
+
+  const deleteIds: string[] = [];
+  for (const id of prevSerialized.keys()) {
+    if (!nextIds.has(id)) {
+      deleteIds.push(id);
+    }
+  }
+
+  const recordsToPut: StoredPortfolioRecord[] = [];
+  for (const p of next.portfolios) {
+    if (prevSerialized.get(p.id) !== JSON.stringify(p)) {
+      recordsToPut.push(p);
+    }
+  }
+
+  await idbApplyPortfolioDelta(deleteIds, recordsToPut);
   return next;
 }
 
@@ -79,15 +104,16 @@ export async function saveUploadedPortfolio({
     portfolioData: null,
   };
 
-  const store = await loadStoreFromIdb();
+  const beforeStore = await loadStoreFromIdb();
   const merged: PortfolioStore = {
     version: STORE_VERSION,
     portfolios: [
       portfolio,
-      ...store.portfolios.filter(({ id }) => id !== portfolio.id),
+      ...beforeStore.portfolios.filter(({ id }) => id !== portfolio.id),
     ],
   };
-  const persisted = await persistFullStore(merged);
+  const nextStore = pruneStore(merged);
+  const persisted = await persistStoreDelta(beforeStore, nextStore);
   return toSummary(findPortfolioById(persisted, portfolio.id) ?? portfolio);
 }
 
@@ -159,21 +185,19 @@ export async function touchStoredPortfolio(portfolioId: string): Promise<void> {
   if (typeof window === "undefined") {
     return;
   }
-  const store = await loadStoreFromIdb();
-  const portfolio = findPortfolioById(store, portfolioId);
-
-  if (!portfolio) {
+  const beforeStore = await loadStoreFromIdb();
+  if (!findPortfolioById(beforeStore, portfolioId)) {
     return;
   }
 
-  portfolio.lastViewedAt = new Date().toISOString();
-  const next = pruneStore({
+  const now = new Date().toISOString();
+  const nextStore = pruneStore({
     version: STORE_VERSION,
-    portfolios: store.portfolios.map((p) =>
-      p.id === portfolioId ? portfolio : p
+    portfolios: beforeStore.portfolios.map((p) =>
+      p.id === portfolioId ? { ...p, lastViewedAt: now } : p
     ),
   });
-  await persistFullStore(next);
+  await persistStoreDelta(beforeStore, nextStore);
 }
 
 export async function updateStoredPortfolioName(
@@ -200,12 +224,13 @@ export async function removeStoredPortfolio(
   if (typeof window === "undefined") {
     return null;
   }
-  const store = await loadStoreFromIdb();
-  const next = await persistFullStore({
-    ...store,
-    portfolios: store.portfolios.filter(({ id }) => id !== portfolioId),
+  const beforeStore = await loadStoreFromIdb();
+  const nextStore = pruneStore({
+    ...beforeStore,
+    portfolios: beforeStore.portfolios.filter(({ id }) => id !== portfolioId),
   });
-  return next.portfolios[0]?.id ?? null;
+  await persistStoreDelta(beforeStore, nextStore);
+  return nextStore.portfolios[0]?.id ?? null;
 }
 
 export async function clearStoredPortfolios(): Promise<void> {
