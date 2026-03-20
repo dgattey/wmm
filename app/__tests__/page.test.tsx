@@ -74,6 +74,7 @@ describe("Home page", () => {
         },
       ],
       isUploading: false,
+      isLibraryLoading: false,
       error: null,
       setError: vi.fn(),
       refreshLibrary: vi.fn(),
@@ -95,6 +96,7 @@ describe("Home page", () => {
     mockUsePortfolioLibrary.mockReturnValue({
       portfolios: [],
       isUploading: false,
+      isLibraryLoading: false,
       error: null,
       setError: vi.fn(),
       refreshLibrary: vi.fn(),
@@ -127,6 +129,7 @@ describe("Home page", () => {
     mockUsePortfolioLibrary.mockReturnValue({
       portfolios: [],
       isUploading: false,
+      isLibraryLoading: false,
       error: null,
       setError: vi.fn(),
       refreshLibrary: vi.fn(),
@@ -137,6 +140,26 @@ describe("Home page", () => {
 
     render(<Home />);
 
+    expect(screen.queryByTestId("portfolio-library-nav")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("portfolio-library-skeleton")).not.toBeInTheDocument();
+  });
+
+  it("shows a skeleton for saved portfolios while the library is loading", () => {
+    mockUsePortfolioLibrary.mockReturnValue({
+      portfolios: [],
+      isUploading: false,
+      isLibraryLoading: true,
+      error: null,
+      setError: vi.fn(),
+      refreshLibrary: vi.fn(),
+      uploadFiles: vi.fn(),
+      removePortfolioById: vi.fn(),
+      renamePortfolio: vi.fn(),
+    });
+
+    render(<Home />);
+
+    expect(screen.getByTestId("portfolio-library-skeleton")).toBeInTheDocument();
     expect(screen.queryByTestId("portfolio-library-nav")).not.toBeInTheDocument();
   });
 });

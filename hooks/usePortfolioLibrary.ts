@@ -18,6 +18,7 @@ export interface UploadPortfoliosResult {
 export function usePortfolioLibrary() {
   const [portfolios, setPortfolios] = useState<StoredPortfolioSummary[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isLibraryLoading, setIsLibraryLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const refreshLibrary = useCallback(async () => {
@@ -25,7 +26,19 @@ export function usePortfolioLibrary() {
   }, []);
 
   useEffect(() => {
-    void refreshLibrary();
+    let cancelled = false;
+    void (async () => {
+      try {
+        await refreshLibrary();
+      } finally {
+        if (!cancelled) {
+          setIsLibraryLoading(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [refreshLibrary]);
 
   const uploadFiles = useCallback(async (files: File[]) => {
@@ -92,6 +105,7 @@ export function usePortfolioLibrary() {
   return {
     portfolios,
     isUploading,
+    isLibraryLoading,
     error,
     setError,
     refreshLibrary,

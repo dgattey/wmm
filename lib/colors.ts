@@ -35,17 +35,36 @@ export const TREEMAP_MARK_STROKE = "#e5e7eb";
 const GOLDEN_ANGLE = 137.508;
 const HUE_SLOTS = 720;
 
-export function getColorForSymbol(symbol: string): string {
-  const normalized = symbol.trim().toUpperCase();
-  if (!normalized) return DEFAULT_TREEMAP_COLOR;
+/** Pretend portfolio ids are tickers under this prefix so bar colors use the treemap pipeline. */
+export const PORTFOLIO_BAR_SYMBOL_PREFIX = "wmm.bar|" as const;
 
-  const hash = fnv1a(normalized);
-
+function treemapColorFromHash32(hash: number): string {
   const hue = ((hash % HUE_SLOTS) * GOLDEN_ANGLE) % 360;
   const saturation = 22 + ((hash >>> 11) % 20); // 22 – 41 %
   const lightness = 44 + ((hash >>> 17) % 14); // 44 – 57 %
-
   return hslToHex(hue, saturation, lightness);
+}
+
+export function getColorForSymbol(symbol: string): string {
+  const normalized = symbol.trim().toUpperCase();
+  if (!normalized) return DEFAULT_TREEMAP_COLOR;
+  return treemapColorFromHash32(fnv1a(normalized));
+}
+
+/**
+ * Home library top bar: same `getColorForSymbol` path as the treemap. Portfolio ids are
+ * hashed as synthetic tickers (`wmm.bar|<id>`) so they never collide with real symbols and
+ * the FNV-1a input differs from a bare base36 string (less hue/sat clustering).
+ */
+export function getColorForPortfolioId(portfolioId: string): string {
+  const trimmed = portfolioId.trim();
+  if (!trimmed) return DEFAULT_TREEMAP_COLOR;
+  return getColorForSymbol(`${PORTFOLIO_BAR_SYMBOL_PREFIX}${trimmed}`);
+}
+
+/** FNV-1a output for `symbol` after trim + uppercase; used by treemap colors and tests. */
+export function treemapStringHash32(symbol: string): number {
+  return fnv1a(symbol.trim().toUpperCase());
 }
 
 export const TREEMAP_MARK_TILE_FILLS: readonly [

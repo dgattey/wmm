@@ -5,3 +5,4 @@ export { SearchBarSkeleton } from "./SearchBarSkeleton";
 export { TableSkeleton } from "./TableSkeleton";
 export { ToolbarSkeleton } from "./ToolbarSkeleton";
 export { SkeletonPulse } from "./SkeletonPulse";
+export { PortfolioLibrarySkeleton } from "./PortfolioLibrarySkeleton";
