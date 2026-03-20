@@ -104,3 +104,13 @@ We don't maintain backwards compatibility. When making changes, migrate to one n
 - **Yahoo rate limits**: `yahoo.ts` retries on 429; fallback to last-good quote/holdings on failure
 - **Symbol mapping**: 401k-style identifiers may resolve via Yahoo search; `SKIP_SYMBOLS` (e.g. FZFXX) skip fetch
 - **Client storage**: Portfolio persisted to `localStorage` via `lib/storage.ts`
+
+## Cursor Cloud specific instructions
+
+This section is for cloud agents whose VM already has dependencies installed via the update script.
+
+- **Node ≥24 required**: The VM snapshot installs Node 24 via `nvm` and activates it with `nvm alias default 24`. Corepack is enabled to provide `pnpm@10.32.0`. If `pnpm` is missing after a fresh shell, run `source ~/.nvm/nvm.sh && nvm use 24 && corepack enable`.
+- **Single service**: Only one service to run — `pnpm dev` starts the Next.js Turbopack dev server on http://localhost:3000. No databases, Docker, or external services required.
+- **Build scripts warning**: `pnpm install` warns about ignored build scripts for `sharp` and `unrs-resolver`. This does not affect dev server, tests, lint, or typecheck. Production builds (`pnpm build`) also succeed without them.
+- **Hello-world test**: Upload `sample/Portfolio_Positions_Sample.csv` via the UI to verify the full upload → Yahoo Finance enrichment → treemap/table flow.
+- **All standard commands** (`pnpm dev`, `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm build`) are documented in the Commands table above.
