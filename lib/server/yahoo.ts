@@ -1,4 +1,5 @@
 import type { QuoteData, FundHolding } from "../types";
+import { MONEY_MARKET_SYMBOLS } from "../fidelitySymbolLink";
 
 import { cacheLife } from "next/cache";
 import YahooFinance from "yahoo-finance2";
@@ -200,8 +201,7 @@ const FUND_DESCRIPTION_TERM_MAP: Record<string, string> = {
   VAL: "VALUE",
 };
 
-/** Known symbols that won't be found on Yahoo Finance */
-const SKIP_SYMBOLS = new Set(["FZFXX", "FDRXX", "SPAXX"]);
+const SKIP_SYMBOLS = MONEY_MARKET_SYMBOLS;
 
 /** Symbols with non-standard format (e.g. 401K fund identifiers) */
 const YAHOO_SYMBOL_PATTERN = /^[A-Z0-9-]+(?:\.[A-Z]+)?$/i;

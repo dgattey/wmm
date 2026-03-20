@@ -64,15 +64,11 @@ function joinDelimitedList(values: string[]): string {
   return normalizeStringArray(values).join("|");
 }
 
-function normalizeSearchQuery(searchQuery?: string): string {
-  return searchQuery?.trim() ?? "";
-}
-
 function normalizeFilterState(filters: FilterState): FilterState {
   return {
     accounts: normalizeStringArray(filters.accounts),
     investmentTypes: normalizeStringArray(filters.investmentTypes),
-    searchQuery: normalizeSearchQuery(filters.searchQuery),
+    searchQuery: filters.searchQuery?.trim() ?? "",
   };
 }
 

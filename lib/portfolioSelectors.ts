@@ -15,7 +15,7 @@ import {
   matchesTreeMapNodeSearch,
 } from "./portfolioFilters";
 import { sortTableRows } from "./tableSort";
-import { relayoutTreeMapNodes } from "./treemap";
+import { getTreeMapGroupKey, relayoutTreeMapNodes } from "./treemap";
 import type {
   ActivePortfolioSummary,
   FidelityPosition,
@@ -279,6 +279,3 @@ function filterTreeMapNodesBySearch(
   return nodes.filter((node) => visibleNodeIds.has(node.id));
 }
 
-function getTreeMapGroupKey(symbol: string, account?: string): string {
-  return `${symbol}::${account ?? ""}`;
-}

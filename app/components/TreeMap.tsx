@@ -11,11 +11,75 @@ import type { TreeMapGrouping, TreeMapNode } from "@/lib/types";
 import { isFundInvestmentType } from "@/lib/investmentTypes";
 import { filterFundTreeMapNodes } from "@/lib/treemap";
 import { cn, formatCompact } from "@/lib/utils";
-import {
-  isFidelityLinkable,
-  getFidelityQuoteUrl,
-} from "@/lib/fidelitySymbolLink";
 import { TreeMapTooltip } from "./TreeMapTooltip";
+import { SymbolLink } from "./primitives/SymbolLink";
+
+interface ZoomTransform {
+  scaleX: number;
+  scaleY: number;
+  offsetX: number;
+  offsetY: number;
+}
+
+interface Rect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+function applyZoom(x: number, y: number, w: number, h: number, zoom: ZoomTransform | null): Rect {
+  if (!zoom) return { left: x, top: y, width: w, height: h };
+  return {
+    left: x * zoom.scaleX + zoom.offsetX,
+    top: y * zoom.scaleY + zoom.offsetY,
+    width: w * zoom.scaleX,
+    height: h * zoom.scaleY,
+  };
+}
+
+function isSelectableFund(node: TreeMapNode): boolean {
+  return node.depth === 1 && isFundInvestmentType(node.investmentType);
+}
+
+function computeZoomTransform(
+  selectedNodes: TreeMapNode[],
+  scaleX: number,
+  scaleY: number,
+  containerWidth: number,
+  scaledHeight: number
+): ZoomTransform | null {
+  if (selectedNodes.length === 0) return null;
+
+  const x0 = Math.min(...selectedNodes.map((n) => n.x0)) * scaleX;
+  const y0 = Math.min(...selectedNodes.map((n) => n.y0)) * scaleY;
+  const x1 = Math.max(...selectedNodes.map((n) => n.x1)) * scaleX;
+  const y1 = Math.max(...selectedNodes.map((n) => n.y1)) * scaleY;
+  const w = x1 - x0;
+  const h = y1 - y0;
+
+  if (w <= 0 || h <= 0) return null;
+
+  return {
+    scaleX: containerWidth / w,
+    scaleY: scaledHeight / h,
+    offsetX: -x0 * (containerWidth / w),
+    offsetY: -y0 * (scaledHeight / h),
+  };
+}
+
+function partitionNodes(nodes: TreeMapNode[]): { parents: TreeMapNode[]; leaves: TreeMapNode[] } {
+  const parentSymbols = new Set(
+    nodes.filter((n) => n.depth === 2 && n.parentSymbol).map((n) => n.parentSymbol!)
+  );
+
+  return {
+    parents: nodes.filter((n) => n.depth === 1 && parentSymbols.has(n.symbol)),
+    leaves: nodes.filter(
+      (n) => n.depth === 2 || (n.depth === 1 && !parentSymbols.has(n.symbol))
+    ),
+  };
+}
 
 interface TreeMapProps {
   nodes: TreeMapNode[];
@@ -64,48 +128,16 @@ export function TreeMap({
 
   const hasSelectedFunds = selectedFunds.length > 0;
 
-  // Compute zoom for the current fund selection by fitting the selected group bounds.
-  let zoomTransform: {
-    scaleX: number;
-    scaleY: number;
-    offsetX: number;
-    offsetY: number;
-  } | null = null;
-
   const selectedNodes =
     grouping === "fund" && hasSelectedFunds
       ? filterFundTreeMapNodes(nodes, selectedFunds)
       : [];
   const visibleNodeIds = new Set(selectedNodes.map((node) => node.id));
-
-  if (selectedNodes.length > 0) {
-    const x0 = Math.min(...selectedNodes.map((node) => node.x0)) * scaleX;
-    const y0 = Math.min(...selectedNodes.map((node) => node.y0)) * scaleY;
-    const x1 = Math.max(...selectedNodes.map((node) => node.x1)) * scaleX;
-    const y1 = Math.max(...selectedNodes.map((node) => node.y1)) * scaleY;
-    const selectionWidth = x1 - x0;
-    const selectionHeight = y1 - y0;
-
-    if (selectionWidth > 0 && selectionHeight > 0) {
-      zoomTransform = {
-        scaleX: containerWidth / selectionWidth,
-        scaleY: scaledHeight / selectionHeight,
-        offsetX: -x0 * (containerWidth / selectionWidth),
-        offsetY: -y0 * (scaledHeight / selectionHeight),
-      };
-    }
-  }
-
-  // Separate parent (depth 1 with children) and leaf nodes
-  const parentNodes = nodes.filter(
-    (n) => n.depth === 1 && nodes.some((c) => c.parentSymbol === n.symbol)
+  const zoomTransform = computeZoomTransform(
+    selectedNodes, scaleX, scaleY, containerWidth, scaledHeight
   );
-  const leafNodes = nodes.filter((n) => {
-    if (n.depth === 1 && !nodes.some((c) => c.parentSymbol === n.symbol))
-      return true;
-    if (n.depth === 2) return true;
-    return false;
-  });
+
+  const { parents: parentNodes, leaves: leafNodes } = partitionNodes(nodes);
 
   function handleMouseMove(e: MouseEvent) {
     setMousePos({ x: e.clientX, y: e.clientY });
@@ -127,6 +159,10 @@ export function TreeMap({
     }
   }
 
+  function isNodeVisible(node: TreeMapNode): boolean {
+    return grouping !== "fund" || !hasSelectedFunds || visibleNodeIds.has(node.id);
+  }
+
   if (nodes.length === 0) {
     return (
       <div
@@ -138,24 +174,6 @@ export function TreeMap({
         No matches
       </div>
     );
-  }
-
-  function getTransformedPos(x: number, y: number, w: number, h: number) {
-    if (!zoomTransform) return { left: x, top: y, width: w, height: h };
-    return {
-      left: x * zoomTransform.scaleX + zoomTransform.offsetX,
-      top: y * zoomTransform.scaleY + zoomTransform.offsetY,
-      width: w * zoomTransform.scaleX,
-      height: h * zoomTransform.scaleY,
-    };
-  }
-
-  function isNodeVisible(node: TreeMapNode): boolean {
-    return grouping !== "fund" || !hasSelectedFunds || visibleNodeIds.has(node.id);
-  }
-
-  function isSelectableFund(node: TreeMapNode): boolean {
-    return node.depth === 1 && isFundInvestmentType(node.investmentType);
   }
 
   return (
@@ -184,7 +202,7 @@ export function TreeMap({
             w: (node.x1 - node.x0) * scaleX,
             h: (node.y1 - node.y0) * scaleY,
           };
-          const pos = getTransformedPos(rawPos.x, rawPos.y, rawPos.w, rawPos.h);
+          const pos = applyZoom(rawPos.x, rawPos.y, rawPos.w, rawPos.h, zoomTransform);
 
           return (
             <div
@@ -218,19 +236,11 @@ export function TreeMap({
                   maxWidth: pos.width - 8,
                 }}
               >
-                {isFidelityLinkable(node.symbol) ? (
-                  <a
-                    href={getFidelityQuoteUrl(node.symbol)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:opacity-100 hover:underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {node.symbol}
-                  </a>
-                ) : (
-                  node.symbol
-                )}
+                <SymbolLink
+                  symbol={node.symbol}
+                  linkClassName="hover:opacity-100 hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                />
               </span>
             </div>
           );
@@ -245,7 +255,7 @@ export function TreeMap({
             w: (node.x1 - node.x0) * scaleX,
             h: (node.y1 - node.y0) * scaleY,
           };
-          const pos = getTransformedPos(rawPos.x, rawPos.y, rawPos.w, rawPos.h);
+          const pos = applyZoom(rawPos.x, rawPos.y, rawPos.w, rawPos.h, zoomTransform);
           const w = pos.width;
           const h = pos.height;
           const showSymbol = visible && w > (isMobile ? 36 : 45) && h > (isMobile ? 20 : 25);
@@ -286,21 +296,12 @@ export function TreeMap({
               }}
             >
               {showSymbol && (
-                <span className="text-white font-bold text-xs drop-shadow-sm leading-none">
-                  {isFidelityLinkable(node.symbol) ? (
-                    <a
-                      href={getFidelityQuoteUrl(node.symbol)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {node.symbol}
-                    </a>
-                  ) : (
-                    node.symbol
-                  )}
-                </span>
+                <SymbolLink
+                  symbol={node.symbol}
+                  className="text-white font-bold text-xs drop-shadow-sm leading-none"
+                  linkClassName="hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                />
               )}
               {showValue && (
                 <span className="text-white/80 text-[10px] mt-0.5 drop-shadow-sm leading-none">

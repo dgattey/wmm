@@ -4,17 +4,14 @@ import { useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { getColorForSymbol } from "@/lib/colors";
-import {
-  isFidelityLinkable,
-  getFidelityQuoteUrl,
-} from "@/lib/fidelitySymbolLink";
+import { SymbolLink } from "./SymbolLink";
 
 interface TickerIdentityProps {
   symbol: string;
   name: string;
   size?: "sm" | "md" | "lg";
   className?: string;
-  /** When true (default), wrap symbol in Fidelity quote link when linkable */
+  /** When true (default), wrap the symbol text in a Fidelity quote link */
   linkToFidelity?: boolean;
 }
 
@@ -36,17 +33,9 @@ export function TickerIdentity({
   const avatarColor = getColorForSymbol(symbol);
   const avatarText = symbol.replace(/[^A-Z0-9]/gi, "").slice(0, 2) || symbol.slice(0, 2);
   const logoUrl = `https://financialmodelingprep.com/image-stock/${encodeURIComponent(symbol)}.png`;
-  const canLink = linkToFidelity && isFidelityLinkable(symbol);
-
-  const symbolEl = (
-    <span className={cn("font-semibold text-text-primary", config.text)}>
-      {symbol}
-    </span>
-  );
 
   return (
     <div className={cn("flex items-center", config.gap, className)}>
-      {/* Fall back to a deterministic avatar when a remote logo 404s. */}
       <div
         className="flex-shrink-0 rounded-full overflow-hidden"
         style={{ width: config.logo, height: config.logo }}
@@ -74,20 +63,18 @@ export function TickerIdentity({
         )}
       </div>
 
-      {/* Symbol + Name */}
       <div className="min-w-0">
-        {canLink ? (
-          <a
-            href={getFidelityQuoteUrl(symbol)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-accent hover:underline focus:outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-2 focus:ring-offset-bg rounded"
+        {linkToFidelity ? (
+          <SymbolLink
+            symbol={symbol}
+            className={cn("font-semibold text-text-primary", config.text)}
+            linkClassName="hover:text-accent hover:underline focus:outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-2 focus:ring-offset-bg rounded"
             onClick={(e) => e.stopPropagation()}
-          >
-            {symbolEl}
-          </a>
+          />
         ) : (
-          symbolEl
+          <span className={cn("font-semibold text-text-primary", config.text)}>
+            {symbol}
+          </span>
         )}
         <div
           className={cn(
