@@ -10,12 +10,12 @@ export const socialOgImageContentType = "image/png";
 export const socialOgImageAlt =
   "WMM — Where\u2019s my money? One clear view of what you own and how it fits together";
 
-/** Square logo taller than canvas (630): flex-center bleeds top/bottom; clip column + negative margin nudges it left (Satori-safe). */
+/** Square logo taller than canvas (630): flex-center bleeds top/bottom; clip column + negative margin (Satori-safe). */
 const LOGO_PX = 796;
-/** Visible strip width for the logo before text starts. */
-const LOGO_CLIP_W = 384;
-/** How far left to shift the image inside the clip (smaller = less off-canvas). */
-const LOGO_PULL_LEFT = 218;
+/** Width reserved for the logo (text column starts after this). */
+const LOGO_CLIP_W = 620;
+/** Shift image left so its right edge meets the clip column edge—nothing cropped on the right. */
+const LOGO_PULL_LEFT = LOGO_PX - LOGO_CLIP_W;
 
 export async function createSocialOgImage(): Promise<ImageResponse> {
   const svg = await readFile(
@@ -69,8 +69,7 @@ export async function createSocialOgImage(): Promise<ImageResponse> {
             justifyContent: "center",
             boxSizing: "border-box",
             minWidth: 0,
-            padding: "112px 80px 112px 40px",
-            maxWidth: 900,
+            padding: "112px 72px 112px 28px",
           }}
         >
           <div
