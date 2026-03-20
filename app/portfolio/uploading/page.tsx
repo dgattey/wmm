@@ -6,28 +6,33 @@ import { DashboardSkeleton } from "@/app/components/skeletons";
 import { usePendingUpload } from "@/app/contexts/PendingUploadContext";
 import { usePortfolioLibrary } from "@/hooks/usePortfolioLibrary";
 
+/**
+ * Survives React Strict Mode’s effect cleanup + remount and avoids re-running
+ * the effect when `setProcessing(false)` fires (which must not be in the
+ * effect dependency array, or a follow-up run sees no pending files and sends
+ * the user home instead of to the new portfolio).
+ */
+let uploadRouteSessionActive = false;
+
 export default function UploadingPage() {
   const router = useRouter();
-  const { takePendingFiles, isProcessing, setProcessing } = usePendingUpload();
+  const { takePendingFiles, setProcessing } = usePendingUpload();
   const { uploadFiles, setError } = usePortfolioLibrary();
 
   useEffect(() => {
     const files = takePendingFiles();
 
     if (!files || files.length === 0) {
-      // Don't navigate home if another run is processing (e.g. React Strict Mode)
-      if (!isProcessing) {
+      if (!uploadRouteSessionActive) {
         router.replace("/");
       }
       return;
     }
 
-    let cancelled = false;
+    uploadRouteSessionActive = true;
 
     uploadFiles(files)
       .then(({ uploadedPortfolios, failedUploads }) => {
-        if (cancelled) return;
-
         if (failedUploads.length > 0) {
           setError(
             failedUploads
@@ -47,16 +52,13 @@ export default function UploadingPage() {
         }
       })
       .catch(() => {
-        if (!cancelled) router.replace("/");
+        router.replace("/");
       })
       .finally(() => {
+        uploadRouteSessionActive = false;
         setProcessing(false);
       });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [takePendingFiles, isProcessing, setProcessing, uploadFiles, setError, router]);
+  }, [takePendingFiles, setProcessing, uploadFiles, setError, router]);
 
   return <DashboardSkeleton enableIntroAnimation={false} />;
 }
