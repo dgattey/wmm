@@ -28,9 +28,9 @@
   --glass-border: rgba(0, 0, 0, 0.06);
   --glass-highlight: rgba(255, 255, 255, 0.5);
 
-  /* Skeleton shimmer: base + barely-different mid (low-contrast ripple) */
-  --skeleton-shimmer-a: #f6f7f9;
-  --skeleton-shimmer-b: #f2f3f6;
+  /* Skeleton: flat base + sheen overlay (see .skeleton::after) */
+  --skeleton-base: #eceef2;
+  --skeleton-sheen: rgba(255, 255, 255, 0.55);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -59,8 +59,8 @@
     --glass-border: rgba(255, 255, 255, 0.06);
     --glass-highlight: rgba(255, 255, 255, 0.04);
 
-    --skeleton-shimmer-a: #1c1f27;
-    --skeleton-shimmer-b: #1f232c;
+    --skeleton-base: #252a34;
+    --skeleton-sheen: rgba(255, 255, 255, 0.07);
   }
 }
 
@@ -145,23 +145,37 @@ body {
   100% { background-color: transparent; }
 }
 
-/* === Skeleton Shimmer === */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+/* === Skeleton (content-placeholder loaders) ===
+   Solid base + a soft highlight band swept across (common in major apps),
+   instead of sliding the whole fill which reads as a muddy ripple. */
+@keyframes skeleton-sheen {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--skeleton-shimmer-a) 0%,
-    var(--skeleton-shimmer-a) 44%,
-    var(--skeleton-shimmer-b) 50%,
-    var(--skeleton-shimmer-a) 56%,
-    var(--skeleton-shimmer-a) 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 3.2s cubic-bezier(0.48, 0, 0.52, 1) infinite;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--skeleton-base);
   border-radius: 8px;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 38%,
+    var(--skeleton-sheen) 50%,
+    transparent 62%,
+    transparent 100%
+  );
+  animation: skeleton-sheen 1.35s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 /* === Scale In === */
@@ -262,6 +276,7 @@ body {
   .animate-soft-rise,
   .animate-soft-pop,
   .animate-tile-in,
+  .skeleton::after,
   .skeleton,
   .sticky-header,
   .sticky-header-search-absorber,
@@ -273,6 +288,10 @@ body {
   .hover-lift:hover,
   .press-down:active {
     transform: none !important;
+  }
+
+  .skeleton::after {
+    opacity: 0;
   }
 
   html::view-transition-old(root),
