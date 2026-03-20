@@ -28,9 +28,9 @@
   --glass-border: rgba(0, 0, 0, 0.06);
   --glass-highlight: rgba(255, 255, 255, 0.5);
 
-  /* Skeleton shimmer: base + barely-different mid (low-contrast ripple) */
-  --skeleton-shimmer-a: #f6f7f9;
-  --skeleton-shimmer-b: #f2f3f6;
+  /* Skeleton: text-tinted fill + subtle dark mid-stop for the wave */
+  --skeleton-base: color-mix(in srgb, var(--text) 11%, transparent);
+  --skeleton-wave-mid: rgba(0, 0, 0, 0.04);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -59,8 +59,8 @@
     --glass-border: rgba(255, 255, 255, 0.06);
     --glass-highlight: rgba(255, 255, 255, 0.04);
 
-    --skeleton-shimmer-a: #1c1f27;
-    --skeleton-shimmer-b: #1f232c;
+    --skeleton-base: color-mix(in srgb, var(--text) 13%, transparent);
+    --skeleton-wave-mid: rgba(255, 255, 255, 0.08);
   }
 }
 
@@ -145,23 +145,40 @@ body {
   100% { background-color: transparent; }
 }
 
-/* === Skeleton Shimmer === */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+/* === Skeleton wave (gradient sweep, pause between loops) === */
+@keyframes skeleton-wave {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    /* second half of the cycle is idle — pause between sweeps */
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 .skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--skeleton-base);
+  border-radius: 8px;
+  /* Safari: mask improves ::after wave compositing */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  mask-image: radial-gradient(white, black);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
   background: linear-gradient(
     90deg,
-    var(--skeleton-shimmer-a) 0%,
-    var(--skeleton-shimmer-a) 44%,
-    var(--skeleton-shimmer-b) 50%,
-    var(--skeleton-shimmer-a) 56%,
-    var(--skeleton-shimmer-a) 100%
+    transparent,
+    var(--skeleton-wave-mid),
+    transparent
   );
-  background-size: 200% 100%;
-  animation: shimmer 3.2s cubic-bezier(0.48, 0, 0.52, 1) infinite;
-  border-radius: 8px;
+  animation: skeleton-wave 2s linear 0.5s infinite;
 }
 
 /* === Scale In === */
@@ -262,6 +279,7 @@ body {
   .animate-soft-rise,
   .animate-soft-pop,
   .animate-tile-in,
+  .skeleton::after,
   .skeleton,
   .sticky-header,
   .sticky-header-search-absorber,
@@ -273,6 +291,10 @@ body {
   .hover-lift:hover,
   .press-down:active {
     transform: none !important;
+  }
+
+  .skeleton::after {
+    opacity: 0;
   }
 
   html::view-transition-old(root),
