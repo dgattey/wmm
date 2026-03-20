@@ -88,7 +88,7 @@ export async function createSocialOgImage(): Promise<ImageResponse> {
             >
               <div
                 style={{
-                  fontSize: 132,
+                  fontSize: 158,
                   fontWeight: 700,
                   letterSpacing: "-0.04em",
                   color: "#1a1f2e",
