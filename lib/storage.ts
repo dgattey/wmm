@@ -1,4 +1,3 @@
-import { pickRandomPortfolioTintIndex } from "./portfolioTints";
 import type {
   FidelityPosition,
   PortfolioData,
@@ -40,7 +39,6 @@ function toMetaRow(p: StoredPortfolioRecord): PortfolioMetaRow {
     lastViewedAt: p.lastViewedAt,
     positionCount: p.positions.length,
     totalValue: p.totalValue,
-    tintIndex: p.tintIndex,
   };
 }
 
@@ -65,7 +63,6 @@ function mergePortfolioRow(
     lastViewedAt: meta.lastViewedAt,
     positionCount,
     totalValue: meta.totalValue,
-    tintIndex: meta.tintIndex,
     positions: payload.positions,
     portfolioData: payload.portfolioData,
   };
@@ -165,7 +162,6 @@ export async function saveUploadedPortfolio({
     uploadedAt: now,
     lastViewedAt: now,
     positionCount: positions.length,
-    tintIndex: pickRandomPortfolioTintIndex(),
     positions,
     portfolioData: null,
   };
@@ -369,7 +365,6 @@ function toSummary(portfolio: StoredPortfolioRecord): StoredPortfolioSummary {
     lastViewedAt: portfolio.lastViewedAt,
     positionCount: portfolio.positions.length,
     totalValue: portfolio.totalValue,
-    tintIndex: portfolio.tintIndex,
   };
 }
 
@@ -382,7 +377,6 @@ function toSummaryFromMeta(meta: PortfolioMetaRow): StoredPortfolioSummary {
     lastViewedAt: meta.lastViewedAt,
     positionCount: meta.positionCount,
     totalValue: meta.totalValue,
-    tintIndex: meta.tintIndex,
   };
 }
 

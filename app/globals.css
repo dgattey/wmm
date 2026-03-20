@@ -16,19 +16,6 @@
   --accent: #5B7BA8;
   --accent-bg: rgba(91, 123, 168, 0.08);
 
-  /*
-   * Home library card top bar (saturated). Dark/light follows semantic tokens.
-   * Indices must match PORTFOLIO_TINT_COUNT in lib/portfolioTints.ts.
-   */
-  --portfolio-bar-0: var(--accent);
-  --portfolio-bar-1: var(--positive);
-  --portfolio-bar-2: var(--negative);
-  --portfolio-bar-3: color-mix(in srgb, var(--accent) 58%, var(--positive));
-  --portfolio-bar-4: color-mix(in srgb, var(--accent) 58%, var(--negative));
-  --portfolio-bar-5: color-mix(in srgb, var(--positive) 55%, var(--negative));
-  --portfolio-bar-6: color-mix(in srgb, var(--accent) 38%, var(--positive));
-  --portfolio-bar-7: color-mix(in srgb, var(--accent) 38%, var(--negative));
-
   /* Layered shadows for depth */
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 4px rgba(0, 0, 0, 0.03);
   --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.04);

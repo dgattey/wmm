@@ -9,7 +9,7 @@ import {
   portfolioViewTransitionTitle,
   portfolioViewTransitionValue,
 } from "@/lib/portfolioViewTransition";
-import { resolvePortfolioTintIndex } from "@/lib/portfolioTints";
+import { getColorForPortfolioId } from "@/lib/colors";
 
 interface PortfolioLibraryNavProps {
   portfolios: StoredPortfolioSummary[];
@@ -89,9 +89,8 @@ function PortfolioTile({
       } as CSSProperties)
     : undefined;
 
-  const tintIndex = resolvePortfolioTintIndex(portfolio);
   const portfolioBarStyle = {
-    background: `var(--portfolio-bar-${tintIndex})`,
+    background: getColorForPortfolioId(portfolio.id),
   } as CSSProperties;
 
   useEffect(() => {
@@ -227,7 +226,7 @@ function PortfolioTile({
       style={vtShellStyle}
     >
       <div
-        className="h-1.5 w-full shrink-0"
+        className="h-2 w-full shrink-0"
         style={portfolioBarStyle}
         aria-hidden
       />

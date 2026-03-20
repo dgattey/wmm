@@ -28,7 +28,7 @@ export function PortfolioLibrarySkeleton() {
 function PortfolioTileSkeleton() {
   return (
     <div className="overflow-hidden rounded-2xl border border-border/80 bg-bg/80 shadow-sm">
-      <SkeletonPulse className="h-1.5 w-full rounded-none" />
+      <SkeletonPulse className="h-2 w-full rounded-none" />
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1 space-y-2">

@@ -48,6 +48,20 @@ export function getColorForSymbol(symbol: string): string {
   return hslToHex(hue, saturation, lightness);
 }
 
+/**
+ * Home library top bar: same FNV-1a → HSL path as treemap tiles (`getColorForSymbol`).
+ * Random portfolio ids approximate a uniform draw over the hash space, so hues spread
+ * evenly (see `lib/__tests__/colors.test.ts`).
+ */
+export function getColorForPortfolioId(portfolioId: string): string {
+  return getColorForSymbol(portfolioId);
+}
+
+/** FNV-1a output for `symbol` after trim + uppercase; used by treemap colors and tests. */
+export function treemapStringHash32(symbol: string): number {
+  return fnv1a(symbol.trim().toUpperCase());
+}
+
 export const TREEMAP_MARK_TILE_FILLS: readonly [
   string,
   string,

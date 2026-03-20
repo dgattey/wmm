@@ -28,8 +28,6 @@ export interface StoredPortfolioSummary {
   lastViewedAt: string;
   positionCount: number;
   totalValue?: number;
-  /** Assigned at upload; older rows omit this and resolve from `id` in the UI. */
-  tintIndex?: number;
 }
 
 export type InvestmentType =
