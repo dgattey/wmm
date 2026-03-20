@@ -153,23 +153,35 @@ export function usePortfolioViewState({
     [effectiveFilters, positions, effectiveSelectedFunds]
   );
 
-  const filteredTreeMapNodes =
-    treeMapGrouping === "fund"
-      ? filterAndRelayoutFundTreeMapNodes(
-          filteredFundTreeMapNodes,
-          effectiveSelectedFunds,
-          treeMapLayout.width,
-          treeMapLayout.height
-        )
-      : buildFlatHoldingTreeMapNodes({
-          rows: portfolioData?.tableRows ?? [],
-          filters: effectiveFilters,
-          selectedFunds: effectiveSelectedFunds,
-          totalPortfolioValue:
-            activeSummary?.value ?? portfolioData?.summary.totalValue ?? 0,
-          width: treeMapLayout.width,
-          height: treeMapLayout.height,
-        });
+  const filteredTreeMapNodes = useMemo(
+    () =>
+      treeMapGrouping === "fund"
+        ? filterAndRelayoutFundTreeMapNodes(
+            filteredFundTreeMapNodes,
+            effectiveSelectedFunds,
+            treeMapLayout.width,
+            treeMapLayout.height
+          )
+        : buildFlatHoldingTreeMapNodes({
+            rows: portfolioData?.tableRows ?? [],
+            filters: effectiveFilters,
+            selectedFunds: effectiveSelectedFunds,
+            totalPortfolioValue:
+              activeSummary?.value ?? portfolioData?.summary.totalValue ?? 0,
+            width: treeMapLayout.width,
+            height: treeMapLayout.height,
+          }),
+    [
+      treeMapGrouping,
+      filteredFundTreeMapNodes,
+      effectiveSelectedFunds,
+      effectiveFilters,
+      portfolioData,
+      activeSummary,
+      treeMapLayout.width,
+      treeMapLayout.height,
+    ]
+  );
 
   function toggleExpand(symbol: string) {
     setExpandedRows((prev) => {
