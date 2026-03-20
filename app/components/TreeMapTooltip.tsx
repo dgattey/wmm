@@ -3,11 +3,8 @@
 import { createPortal } from "react-dom";
 import type { TreeMapNode } from "@/lib/types";
 import { formatDollar, formatPercent, formatPrice } from "@/lib/utils";
-import {
-  isFidelityLinkable,
-  getFidelityQuoteUrl,
-} from "@/lib/fidelitySymbolLink";
 import { GainLoss } from "./primitives/GainLoss";
+import { SymbolLink } from "./primitives/SymbolLink";
 import { FiftyTwoWeekRange } from "./primitives/FiftyTwoWeekRange";
 import { Badge } from "./primitives/Badge";
 
@@ -65,20 +62,11 @@ export function TreeMapTooltip({ node, mouseX, mouseY }: TreeMapTooltipProps) {
       >
         {/* Header */}
         <div className="flex items-center gap-2 mb-2">
-          {isFidelityLinkable(node.symbol) ? (
-            <a
-              href={getFidelityQuoteUrl(node.symbol)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-bold text-text-primary text-sm hover:text-accent hover:underline pointer-events-auto"
-            >
-              {node.symbol}
-            </a>
-          ) : (
-            <span className="font-bold text-text-primary text-sm">
-              {node.symbol}
-            </span>
-          )}
+          <SymbolLink
+            symbol={node.symbol}
+            className="font-bold text-text-primary text-sm"
+            linkClassName="hover:text-accent hover:underline pointer-events-auto"
+          />
           {node.investmentType && (
             <Badge label={node.investmentType} />
           )}
@@ -113,25 +101,15 @@ export function TreeMapTooltip({ node, mouseX, mouseY }: TreeMapTooltipProps) {
                 Derived from{" "}
                 <strong className="text-text-primary">
                   {node.parentName}
-                  {node.parentSymbol ? (
+                  {node.parentSymbol && (
                     <>
                       {" ("}
-                      {isFidelityLinkable(node.parentSymbol) ? (
-                        <a
-                          href={getFidelityQuoteUrl(node.parentSymbol)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-accent hover:underline pointer-events-auto"
-                        >
-                          {node.parentSymbol}
-                        </a>
-                      ) : (
-                        node.parentSymbol
-                      )}
+                      <SymbolLink
+                        symbol={node.parentSymbol}
+                        linkClassName="hover:text-accent hover:underline pointer-events-auto"
+                      />
                       {")"}
                     </>
-                  ) : (
-                    ""
                   )}
                 </strong>
               </span>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { PortfolioLoadingState } from "@/app/components/PortfolioLoadingState";
+import { DashboardSkeleton } from "@/app/components/skeletons";
 import { PortfolioDetailClient } from "./PortfolioDetailClient";
 
 interface PageProps {
@@ -8,11 +8,6 @@ interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-/**
- * Server-side tab title (see root `metadata.title.template`). The saved display
- * name only exists in localStorage, so the client still refines `document.title`
- * once `useStoredPortfolioRecord` has loaded.
- */
 export async function generateMetadata({
   params,
 }: {
@@ -27,13 +22,9 @@ function flattenSearchParams(
 ): string {
   const u = new URLSearchParams();
   for (const [key, value] of Object.entries(record)) {
-    if (value === undefined) {
-      continue;
-    }
+    if (value === undefined) continue;
     if (Array.isArray(value)) {
-      for (const v of value) {
-        u.append(key, v);
-      }
+      for (const v of value) u.append(key, v);
     } else {
       u.set(key, value);
     }
@@ -50,7 +41,7 @@ async function PortfolioDetailPageContent({
   const initialSearchParamsString = flattenSearchParams(spRecord);
 
   if (!portfolioId) {
-    return <PortfolioLoadingState enableIntroAnimation={false} />;
+    return <DashboardSkeleton enableIntroAnimation={false} />;
   }
 
   return (
@@ -63,7 +54,7 @@ async function PortfolioDetailPageContent({
 
 export default function PortfolioDetailPage(props: PageProps) {
   return (
-    <Suspense fallback={<PortfolioLoadingState enableIntroAnimation={false} />}>
+    <Suspense fallback={<DashboardSkeleton enableIntroAnimation={false} />}>
       <PortfolioDetailPageContent {...props} />
     </Suspense>
   );

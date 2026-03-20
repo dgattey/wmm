@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { PortfolioLoadingState } from "@/app/components/PortfolioLoadingState";
+import { DashboardSkeleton } from "@/app/components/skeletons";
 import { usePendingUpload } from "@/app/contexts/PendingUploadContext";
 import { usePortfolioLibrary } from "@/hooks/usePortfolioLibrary";
 
@@ -58,5 +58,5 @@ export default function UploadingPage() {
     };
   }, [takePendingFiles, isProcessing, setProcessing, uploadFiles, setError, router]);
 
-  return <PortfolioLoadingState enableIntroAnimation={false} />;
+  return <DashboardSkeleton enableIntroAnimation={false} />;
 }

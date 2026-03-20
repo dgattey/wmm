@@ -316,6 +316,6 @@ export function buildFlatHoldingTreeMapNodes({
   }));
 }
 
-function getTreeMapGroupKey(symbol: string, account?: string): string {
+export function getTreeMapGroupKey(symbol: string, account?: string): string {
   return `${symbol}::${account ?? ""}`;
 }

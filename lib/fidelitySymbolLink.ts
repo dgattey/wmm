@@ -11,8 +11,8 @@
 const FIDELITY_QUOTE_BASE =
   "https://digital.fidelity.com/prgw/digital/research/quote";
 
-/** Symbols Fidelity does not have standard quote pages for (cash, sweep, etc.) */
-const FIDELITY_SKIP_SYMBOLS = new Set(["FZFXX", "FDRXX", "SPAXX"]);
+/** Cash/sweep symbols with no standard quote page on Fidelity or Yahoo Finance */
+export const MONEY_MARKET_SYMBOLS = new Set(["FZFXX", "FDRXX", "SPAXX"]);
 
 /** Standard ticker: letters/numbers/hyphen, optional .EXCHANGE suffix */
 const FIDELITY_SYMBOL_PATTERN = /^[A-Z0-9-]+(?:\.[A-Z]+)?$/i;
@@ -36,7 +36,7 @@ function isNonStandardSymbol(symbol: string): boolean {
 export function isFidelityLinkable(symbol: string): boolean {
   const normalized = symbol.trim().toUpperCase();
   if (!normalized || normalized.length > 15) return false;
-  if (FIDELITY_SKIP_SYMBOLS.has(normalized)) return false;
+  if (MONEY_MARKET_SYMBOLS.has(normalized)) return false;
   if (!FIDELITY_SYMBOL_PATTERN.test(normalized)) return false;
   return !isNonStandardSymbol(normalized);
 }

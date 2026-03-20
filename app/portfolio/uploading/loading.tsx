@@ -1,5 +1,5 @@
-import { PortfolioLoadingState } from "@/app/components/PortfolioLoadingState";
+import { DashboardSkeleton } from "@/app/components/skeletons";
 
 export default function UploadingLoading() {
-  return <PortfolioLoadingState enableIntroAnimation={false} />;
+  return <DashboardSkeleton enableIntroAnimation={false} />;
 }

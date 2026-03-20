@@ -63,6 +63,14 @@ export function getMostRecentPortfolioId(): string | null {
   return listStoredPortfolios()[0]?.id ?? null;
 }
 
+/** Lightweight read — returns only the summary (name, dates) without positions or data */
+export function getStoredPortfolioSummary(
+  portfolioId: string
+): StoredPortfolioSummary | null {
+  const portfolio = findPortfolioById(readStore(), portfolioId);
+  return portfolio ? toSummary(portfolio) : null;
+}
+
 export function loadStoredPortfolio(
   portfolioId: string
 ): StoredPortfolioPayload | null {

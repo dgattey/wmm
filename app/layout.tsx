@@ -5,8 +5,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Where's my money?",
-    template: "%s · Where's my money?",
+    default: "WMM",
+    template: "%s · WMM",
   },
   description: "Visualize your portfolio allocation from Fidelity exports",
   icons: {

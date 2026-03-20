@@ -14,7 +14,10 @@ import {
   DESKTOP_TREE_MAP_LAYOUT,
   MOBILE_TREE_MAP_LAYOUT,
 } from "@/lib/portfolioLayout";
-import { updateStoredPortfolioName } from "@/lib/storage";
+import {
+  getStoredPortfolioSummary,
+  updateStoredPortfolioName,
+} from "@/lib/storage";
 import { parsePortfolioUrlState } from "@/lib/urlFilters";
 
 interface PortfolioDetailClientProps {
@@ -69,11 +72,16 @@ export function PortfolioDetailClient({
   });
 
   useEffect(() => {
-    const suffix = " · Where's my money?";
+    const suffix = " · WMM";
     document.title = record.summary
       ? `${record.summary.name}${suffix}`
-      : `Where's my money?`;
+      : "WMM";
   }, [record.summary]);
+
+  const immediatePortfolioName = useMemo(
+    () => getStoredPortfolioSummary(portfolioId)?.name,
+    [portfolioId]
+  );
 
   const handleRenamePortfolio = useCallback(
     (id: string, name: string) => {
@@ -83,57 +91,65 @@ export function PortfolioDetailClient({
     [record]
   );
 
-  const mainContent = record.isMissing ? (
-    <PortfolioEmptyState
-      title="Portfolio not found"
-      description="That saved portfolio is no longer available on this device."
-    />
-  ) : !record.positions ? (
-    <PortfolioLoadingState error={record.error} />
-  ) : !record.portfolioData ? (
-    <PortfolioLoadingState
-      enableIntroAnimation={!record.restoredFromStorage}
-      error={record.error}
-    />
-  ) : (
-    <main className="flex min-h-0 flex-1 flex-col">
-      <Dashboard
-        portfolioData={record.portfolioData}
-        portfolioName={record.summary?.name ?? "Portfolio"}
-        portfolioId={portfolioId}
-        viewTransitionPortfolioId={portfolioId}
-        onRenamePortfolio={handleRenamePortfolio}
-        filteredTreeMapNodes={viewState.filteredTreeMapNodes}
-        filteredRows={viewState.filteredRows}
-        isMobile={isMobile}
-        filters={viewState.filters}
-        onFiltersChange={viewState.setFilters}
-        onResetFilters={viewState.resetFilters}
-        sortConfig={viewState.sortConfig}
-        onSort={viewState.handleSort}
-        expandedRows={viewState.expandedRows}
-        onToggleExpand={viewState.toggleExpand}
-        onBackToPicker={() => router.back()}
-        isLoading={record.isLoading}
-        viewMode={viewState.viewMode}
-        onViewModeChange={viewState.setViewMode}
-        treeMapGrouping={viewState.treeMapGrouping}
-        onTreeMapGroupingChange={viewState.setTreeMapGrouping}
-        selectedFunds={viewState.selectedFunds}
-        onToggleFund={viewState.toggleFundSelection}
-        onClearFunds={viewState.clearSelectedFunds}
-        fundOptions={viewState.fundOptions}
-        activeSummary={viewState.activeSummary}
-        treeMapWidth={viewState.treeMapWidth}
-        treeMapHeight={viewState.treeMapHeight}
-        enableIntroAnimation={!record.restoredFromStorage}
-        enableValueAnimations={!record.restoredFromStorage}
-        fetchError={record.error}
-        onRefresh={record.refreshData}
-        isRefreshing={record.isRefreshing}
+  let mainContent: React.ReactNode;
+
+  if (record.isMissing) {
+    mainContent = (
+      <PortfolioEmptyState
+        title="Portfolio not found"
+        description="That saved portfolio is no longer available on this device."
       />
-    </main>
-  );
+    );
+  } else if (!record.portfolioData) {
+    mainContent = (
+      <PortfolioLoadingState
+        portfolioName={record.summary?.name ?? immediatePortfolioName}
+        isMobile={isMobile}
+        enableIntroAnimation={!record.restoredFromStorage}
+        error={record.error}
+      />
+    );
+  } else {
+    mainContent = (
+      <main className="flex min-h-0 flex-1 flex-col">
+        <Dashboard
+          portfolioData={record.portfolioData}
+          portfolioName={record.summary?.name ?? "Portfolio"}
+          portfolioId={portfolioId}
+          viewTransitionPortfolioId={portfolioId}
+          onRenamePortfolio={handleRenamePortfolio}
+          filteredTreeMapNodes={viewState.filteredTreeMapNodes}
+          filteredRows={viewState.filteredRows}
+          isMobile={isMobile}
+          filters={viewState.filters}
+          onFiltersChange={viewState.setFilters}
+          onResetFilters={viewState.resetFilters}
+          sortConfig={viewState.sortConfig}
+          onSort={viewState.handleSort}
+          expandedRows={viewState.expandedRows}
+          onToggleExpand={viewState.toggleExpand}
+          onBackToPicker={() => router.back()}
+          isLoading={record.isLoading}
+          viewMode={viewState.viewMode}
+          onViewModeChange={viewState.setViewMode}
+          treeMapGrouping={viewState.treeMapGrouping}
+          onTreeMapGroupingChange={viewState.setTreeMapGrouping}
+          selectedFunds={viewState.selectedFunds}
+          onToggleFund={viewState.toggleFundSelection}
+          onClearFunds={viewState.clearSelectedFunds}
+          fundOptions={viewState.fundOptions}
+          activeSummary={viewState.activeSummary}
+          treeMapWidth={viewState.treeMapWidth}
+          treeMapHeight={viewState.treeMapHeight}
+          enableIntroAnimation={!record.restoredFromStorage}
+          enableValueAnimations={!record.restoredFromStorage}
+          fetchError={record.error}
+          onRefresh={record.refreshData}
+          isRefreshing={record.isRefreshing}
+        />
+      </main>
+    );
+  }
 
   return (
     <>

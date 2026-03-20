@@ -17,7 +17,118 @@ import type {
 import { DEFAULT_TREEMAP_COLOR, getColorForSymbol } from "../colors";
 import { isFundInvestmentType } from "../investmentTypes";
 
-// === Intermediate types for treemap hierarchy ===
+// === Shared row-building types ===
+
+interface RowAccumulator {
+  symbol: string;
+  name: string;
+  totalDirectValue: number;
+  totalGainLossDollar: number;
+  costBasis: number;
+  investmentTypes: Set<string>;
+  accounts: Set<string>;
+  sources: PositionSource[];
+}
+
+function percentOf(part: number, total: number): number {
+  return total > 0 ? (part / total) * 100 : 0;
+}
+
+function createDirectSource(pos: FidelityPosition, totalValue: number): PositionSource {
+  return {
+    type: "direct",
+    sourceSymbol: "DIRECT",
+    sourceName: pos.accountName,
+    value: pos.currentValue,
+    percentOfSource: 100,
+    percentOfPortfolio: percentOf(pos.currentValue, totalValue),
+    account: pos.accountName,
+    investmentType: pos.investmentType,
+    totalGainLossDollar: pos.totalGainLossDollar,
+    costBasisTotal: pos.costBasisTotal,
+  };
+}
+
+function createFundSource(
+  fund: FidelityPosition,
+  holdingValue: number,
+  holdingPercent: number,
+  totalValue: number
+): PositionSource {
+  return {
+    type: "fund",
+    sourceSymbol: fund.symbol,
+    sourceName: fund.description,
+    value: holdingValue,
+    percentOfSource: holdingPercent * 100,
+    percentOfPortfolio: percentOf(holdingValue, totalValue),
+    account: fund.accountName,
+    investmentType: fund.investmentType,
+    totalGainLossDollar: 0,
+    costBasisTotal: 0,
+  };
+}
+
+function addDirectPositionToRow(
+  rowMap: Map<string, RowAccumulator>,
+  pos: FidelityPosition,
+  quotes: Record<string, QuoteData>,
+  totalValue: number
+): void {
+  const existing = rowMap.get(pos.symbol);
+  const source = createDirectSource(pos, totalValue);
+
+  if (existing) {
+    existing.totalDirectValue += pos.currentValue;
+    existing.totalGainLossDollar += pos.totalGainLossDollar;
+    existing.costBasis += pos.costBasisTotal;
+    existing.investmentTypes.add(pos.investmentType);
+    existing.accounts.add(pos.accountName);
+    existing.sources.push(source);
+  } else {
+    const quote = quotes[pos.symbol];
+    rowMap.set(pos.symbol, {
+      symbol: pos.symbol,
+      name: quote?.longName || quote?.shortName || pos.description,
+      totalDirectValue: pos.currentValue,
+      totalGainLossDollar: pos.totalGainLossDollar,
+      costBasis: pos.costBasisTotal,
+      investmentTypes: new Set([pos.investmentType]),
+      accounts: new Set([pos.accountName]),
+      sources: [source],
+    });
+  }
+}
+
+// === Main entry point ===
+
+export function computePortfolioData(
+  positions: FidelityPosition[],
+  quotes: Record<string, QuoteData>,
+  holdings: Record<string, FundHolding[]>,
+  layoutWidth: number,
+  layoutHeight: number
+): PortfolioData {
+  const totalValue = positions.reduce((sum, p) => sum + (p.currentValue || 0), 0);
+  const totalGainLoss = positions.reduce((sum, p) => sum + p.totalGainLossDollar, 0);
+  const totalCostBasis = positions.reduce((sum, p) => sum + p.costBasisTotal, 0);
+
+  const treeMapNodes = buildTreeMap(positions, quotes, holdings, totalValue, layoutWidth, layoutHeight);
+  const tableRows = buildHoldingsView(positions, quotes, holdings, totalValue);
+  const positionRows = buildPositionsView(positions, quotes, totalValue);
+
+  const summary: PortfolioSummary = {
+    totalValue,
+    totalGainLoss,
+    totalGainLossPercent: percentOf(totalGainLoss, totalCostBasis),
+    accounts: [...new Set(positions.map((p) => p.accountName))],
+    investmentTypes: [...new Set(positions.map((p) => p.investmentType))],
+  };
+
+  return { treeMapNodes, tableRows, positionRows, summary, lastUpdated: new Date().toISOString() };
+}
+
+// === TreeMap building ===
 
 interface HierarchyData {
   name: string;
@@ -42,63 +153,22 @@ interface TreeMapNodeMeta {
   account?: string;
 }
 
-// === Main entry point ===
-
-export function computePortfolioData(
-  positions: FidelityPosition[],
-  quotes: Record<string, QuoteData>,
-  holdings: Record<string, FundHolding[]>,
-  layoutWidth: number,
-  layoutHeight: number
-): PortfolioData {
-  const totalValue = computeTotalValue(positions);
-  const totalGainLoss = positions.reduce(
-    (sum, p) => sum + p.totalGainLossDollar,
-    0
-  );
-  const totalCostBasis = positions.reduce(
-    (sum, p) => sum + p.costBasisTotal,
-    0
-  );
-
-  const treeMapNodes = buildTreeMap(
-    positions,
-    quotes,
-    holdings,
-    totalValue,
-    layoutWidth,
-    layoutHeight
-  );
-
-  // Build both table views
-  const tableRows = buildHoldingsView(positions, quotes, holdings, totalValue);
-  const positionRows = buildPositionsView(positions, quotes, totalValue);
-
-  const summary: PortfolioSummary = {
-    totalValue,
-    totalGainLoss,
-    totalGainLossPercent:
-      totalCostBasis > 0 ? (totalGainLoss / totalCostBasis) * 100 : 0,
-    accounts: [...new Set(positions.map((p) => p.accountName))],
-    investmentTypes: [...new Set(positions.map((p) => p.investmentType))],
-  };
-
+function buildPositionMeta(
+  pos: FidelityPosition,
+  quote: QuoteData | undefined,
+  totalValue: number
+): TreeMapNodeMeta {
   return {
-    treeMapNodes,
-    tableRows,
-    positionRows,
-    summary,
-    lastUpdated: new Date().toISOString(),
+    percentOfPortfolio: percentOf(pos.currentValue, totalValue),
+    currentPrice: quote?.regularMarketPrice ?? pos.lastPrice,
+    totalGainLossDollar: pos.totalGainLossDollar,
+    totalGainLossPercent: pos.totalGainLossPercent,
+    fiftyTwoWeekHigh: quote?.fiftyTwoWeekHigh,
+    fiftyTwoWeekLow: quote?.fiftyTwoWeekLow,
+    investmentType: pos.investmentType,
+    account: pos.accountName,
   };
 }
-
-// === Total value ===
-
-function computeTotalValue(positions: FidelityPosition[]): number {
-  return positions.reduce((sum, p) => sum + (p.currentValue || 0), 0);
-}
-
-// === TreeMap building — ALL holdings, no "Other" bucket ===
 
 function buildTreeMap(
   positions: FidelityPosition[],
@@ -108,146 +178,91 @@ function buildTreeMap(
   width: number,
   height: number
 ): TreeMapNode[] {
-  const funds = positions.filter(
-    (position) => isFundInvestmentType(position.investmentType)
-  );
-  const stocks = positions.filter((p) => p.investmentType === "Stocks");
-  const cash = positions.filter((p) => p.investmentType === "Cash");
-
   const children: HierarchyData[] = [];
 
-  // Add fund groups with ALL their holdings (no cap, no "Other")
-  for (const fund of funds) {
-    const fundHoldings = holdings[fund.symbol] || [];
-    const quote = quotes[fund.symbol];
-    const fundColor = getColorForSymbol(fund.symbol);
+  for (const pos of positions) {
+    const quote = quotes[pos.symbol];
+    const color = getColorForSymbol(pos.symbol);
 
-    if (fundHoldings.length > 0) {
-      const fundChildren: HierarchyData[] = fundHoldings.map((h) => {
-        const holdingQuote = quotes[h.symbol];
-        const holdingValue = fund.currentValue * h.holdingPercent;
-        return {
-          name: h.holdingName,
-          symbol: h.symbol,
-          value: holdingValue,
-          color: getColorForSymbol(h.symbol),
+    if (isFundInvestmentType(pos.investmentType)) {
+      const fundHoldings = holdings[pos.symbol] || [];
+
+      if (fundHoldings.length > 0) {
+        children.push({
+          name: pos.description,
+          symbol: pos.symbol,
+          color,
+          meta: buildPositionMeta(pos, quote, totalValue),
+          children: fundHoldings.map((h) => {
+            const hQuote = quotes[h.symbol];
+            const holdingValue = pos.currentValue * h.holdingPercent;
+            return {
+              name: h.holdingName,
+              symbol: h.symbol,
+              value: holdingValue,
+              color: getColorForSymbol(h.symbol),
+              meta: {
+                parentSymbol: pos.symbol,
+                parentName: pos.description,
+                percentOfParent: h.holdingPercent * 100,
+                percentOfPortfolio: percentOf(holdingValue, totalValue),
+                currentPrice: hQuote?.regularMarketPrice,
+                totalGainLossDollar: hQuote?.regularMarketChange,
+                totalGainLossPercent: hQuote?.regularMarketChangePercent,
+                fiftyTwoWeekHigh: hQuote?.fiftyTwoWeekHigh,
+                fiftyTwoWeekLow: hQuote?.fiftyTwoWeekLow,
+                investmentType: pos.investmentType,
+                account: pos.accountName,
+              },
+            };
+          }),
+        });
+      } else {
+        children.push({
+          name: pos.description,
+          symbol: pos.symbol,
+          value: pos.currentValue,
+          color,
+          meta: buildPositionMeta(pos, quote, totalValue),
+        });
+      }
+    } else if (pos.investmentType === "Cash") {
+      if (pos.currentValue > 0) {
+        children.push({
+          name: pos.description || "Cash",
+          symbol: pos.symbol,
+          value: pos.currentValue,
+          color: color ?? DEFAULT_TREEMAP_COLOR,
           meta: {
-            parentSymbol: fund.symbol,
-            parentName: fund.description,
-            percentOfParent: h.holdingPercent * 100,
-            percentOfPortfolio:
-              totalValue > 0 ? (holdingValue / totalValue) * 100 : 0,
-            currentPrice: holdingQuote?.regularMarketPrice,
-            totalGainLossDollar: holdingQuote?.regularMarketChange,
-            totalGainLossPercent: holdingQuote?.regularMarketChangePercent,
-            fiftyTwoWeekHigh: holdingQuote?.fiftyTwoWeekHigh,
-            fiftyTwoWeekLow: holdingQuote?.fiftyTwoWeekLow,
-            investmentType: fund.investmentType,
-            account: fund.accountName,
+            percentOfPortfolio: percentOf(pos.currentValue, totalValue),
+            investmentType: "Cash",
+            account: pos.accountName,
           },
-        };
-      });
-
-      children.push({
-        name: fund.description,
-        symbol: fund.symbol,
-        color: fundColor,
-        children: fundChildren,
-        meta: {
-          percentOfPortfolio:
-            totalValue > 0 ? (fund.currentValue / totalValue) * 100 : 0,
-          currentPrice: quote?.regularMarketPrice ?? fund.lastPrice,
-          totalGainLossDollar: fund.totalGainLossDollar,
-          totalGainLossPercent: fund.totalGainLossPercent,
-          fiftyTwoWeekHigh: quote?.fiftyTwoWeekHigh,
-          fiftyTwoWeekLow: quote?.fiftyTwoWeekLow,
-          investmentType: fund.investmentType,
-          account: fund.accountName,
-        },
-      });
+        });
+      }
     } else {
-      // Fund without holdings data — show as single leaf
       children.push({
-        name: fund.description,
-        symbol: fund.symbol,
-        value: fund.currentValue,
-        color: fundColor,
-        meta: {
-          percentOfPortfolio:
-            totalValue > 0 ? (fund.currentValue / totalValue) * 100 : 0,
-          currentPrice: quote?.regularMarketPrice ?? fund.lastPrice,
-          totalGainLossDollar: fund.totalGainLossDollar,
-          totalGainLossPercent: fund.totalGainLossPercent,
-          fiftyTwoWeekHigh: quote?.fiftyTwoWeekHigh,
-          fiftyTwoWeekLow: quote?.fiftyTwoWeekLow,
-          investmentType: fund.investmentType,
-          account: fund.accountName,
-        },
-      });
-    }
-  }
-
-  for (const stock of stocks) {
-    const quote = quotes[stock.symbol];
-    const stockColor = getColorForSymbol(stock.symbol);
-    children.push({
-      name: stock.description,
-      symbol: stock.symbol,
-      value: stock.currentValue,
-      color: stockColor,
-      meta: {
-        percentOfPortfolio:
-          totalValue > 0 ? (stock.currentValue / totalValue) * 100 : 0,
-        currentPrice: quote?.regularMarketPrice ?? stock.lastPrice,
-        totalGainLossDollar: stock.totalGainLossDollar,
-        totalGainLossPercent: stock.totalGainLossPercent,
-        fiftyTwoWeekHigh: quote?.fiftyTwoWeekHigh,
-        fiftyTwoWeekLow: quote?.fiftyTwoWeekLow,
-        investmentType: stock.investmentType,
-        account: stock.accountName,
-      },
-    });
-  }
-
-  // Add cash positions
-  for (const c of cash) {
-    if (c.currentValue > 0) {
-      children.push({
-        name: c.description || "Cash",
-        symbol: c.symbol,
-        value: c.currentValue,
-        color: getColorForSymbol(c.symbol) ?? DEFAULT_TREEMAP_COLOR,
-        meta: {
-          percentOfPortfolio:
-            totalValue > 0 ? (c.currentValue / totalValue) * 100 : 0,
-          investmentType: "Cash",
-          account: c.accountName,
-        },
+        name: pos.description,
+        symbol: pos.symbol,
+        value: pos.currentValue,
+        color,
+        meta: buildPositionMeta(pos, quote, totalValue),
       });
     }
   }
 
   if (children.length === 0) return [];
 
-  const root: HierarchyData = {
-    name: "Portfolio",
-    symbol: "ROOT",
-    children,
-  };
-
-  const h = hierarchy(root)
+  const root = hierarchy<HierarchyData>({ name: "Portfolio", symbol: "ROOT", children })
     .sum((d) => d.value || 0)
     .sort((a, b) => (b.value || 0) - (a.value || 0));
 
-  const treemapLayout = treemap<HierarchyData>()
+  const laid = treemap<HierarchyData>()
     .size([width, height])
     .tile(treemapSquarify)
     .paddingOuter(4)
-    // Reserve a label band for fund groups, but not for the root container.
     .paddingTop((node) => (node.depth === 0 ? 0 : 20))
-    .paddingInner(4);
-
-  const laid = treemapLayout(h);
+    .paddingInner(4)(root);
 
   const nodes: TreeMapNode[] = [];
   flattenNode(laid, nodes, { value: 0 });
@@ -261,10 +276,8 @@ function flattenNode(
 ): void {
   if (node.depth === 0) {
     counter.value = 0;
-    if (node.children) {
-      for (const child of node.children) {
-        flattenNode(child, result, counter);
-      }
+    for (const child of node.children ?? []) {
+      flattenNode(child, result, counter);
     }
     return;
   }
@@ -297,15 +310,12 @@ function flattenNode(
     account: meta.account,
   });
 
-  if (node.children) {
-    for (const child of node.children) {
-      flattenNode(child, result, counter);
-    }
+  for (const child of node.children ?? []) {
+    flattenNode(child, result, counter);
   }
 }
 
 // === TABLE: Holdings view (aggregated by underlying symbol) ===
-// No fund-level rows. Everything aggregated by underlying stock symbol.
 
 function buildHoldingsView(
   positions: FidelityPosition[],
@@ -313,109 +323,25 @@ function buildHoldingsView(
   holdings: Record<string, FundHolding[]>,
   totalValue: number
 ): TableRow[] {
-  const rowMap = new Map<
-    string,
-    {
-      symbol: string;
-      name: string;
-      totalDirectValue: number;
-      totalGainLossDollar: number;
-      costBasis: number;
-      investmentTypes: Set<string>;
-      accounts: Set<string>;
-      sources: PositionSource[];
-    }
-  >();
+  const rowMap = new Map<string, RowAccumulator>();
 
-  // 1. Add positions that should remain as direct rows in holdings view.
-  // If we have constituent holdings for a fund, we'll decompose it below instead.
   for (const pos of positions) {
-    const hasHoldingsData = (holdings[pos.symbol]?.length ?? 0) > 0;
-    if (hasHoldingsData) {
-      continue;
-    }
-
-    const key = pos.symbol;
-    const existing = rowMap.get(key);
-    if (existing) {
-      existing.totalDirectValue += pos.currentValue;
-      existing.totalGainLossDollar += pos.totalGainLossDollar;
-      existing.costBasis += pos.costBasisTotal;
-      existing.investmentTypes.add(pos.investmentType);
-      existing.accounts.add(pos.accountName);
-      existing.sources.push({
-        type: "direct",
-        sourceSymbol: "DIRECT",
-        sourceName: pos.accountName,
-        value: pos.currentValue,
-        percentOfSource: 100,
-        percentOfPortfolio: totalValue > 0 ? (pos.currentValue / totalValue) * 100 : 0,
-        account: pos.accountName,
-        investmentType: pos.investmentType,
-          totalGainLossDollar: pos.totalGainLossDollar,
-          costBasisTotal: pos.costBasisTotal,
-      });
-    } else {
-      rowMap.set(key, {
-        symbol: pos.symbol,
-        name:
-          quotes[pos.symbol]?.longName ||
-          quotes[pos.symbol]?.shortName ||
-          pos.description,
-        totalDirectValue: pos.currentValue,
-        totalGainLossDollar: pos.totalGainLossDollar,
-        costBasis: pos.costBasisTotal,
-        investmentTypes: new Set([pos.investmentType]),
-        accounts: new Set([pos.accountName]),
-        sources: [
-          {
-            type: "direct",
-            sourceSymbol: "DIRECT",
-            sourceName: pos.accountName,
-            value: pos.currentValue,
-            percentOfSource: 100,
-            percentOfPortfolio:
-              totalValue > 0 ? (pos.currentValue / totalValue) * 100 : 0,
-            account: pos.accountName,
-            investmentType: pos.investmentType,
-            totalGainLossDollar: pos.totalGainLossDollar,
-            costBasisTotal: pos.costBasisTotal,
-          },
-        ],
-      });
-    }
+    if ((holdings[pos.symbol]?.length ?? 0) > 0) continue;
+    addDirectPositionToRow(rowMap, pos, quotes, totalValue);
   }
 
-  // 2. Decompose only positions with actual constituent holdings data
-  const fundPositions = positions.filter(
-    (p) => (holdings[p.symbol]?.length ?? 0) > 0
-  );
-
-  for (const fund of fundPositions) {
-    const fundHoldings = holdings[fund.symbol] || [];
-
-    // Distribute fund value across its holdings
-    for (const h of fundHoldings) {
+  for (const fund of positions.filter((p) => (holdings[p.symbol]?.length ?? 0) > 0)) {
+    for (const h of holdings[fund.symbol] || []) {
       if (!h.symbol) continue;
+
       const holdingValue = fund.currentValue * h.holdingPercent;
+      const source = createFundSource(fund, holdingValue, h.holdingPercent, totalValue);
       const existing = rowMap.get(h.symbol);
 
       if (existing) {
         existing.accounts.add(fund.accountName);
         existing.investmentTypes.add(fund.investmentType);
-        existing.sources.push({
-          type: "fund",
-          sourceSymbol: fund.symbol,
-          sourceName: fund.description,
-          value: holdingValue,
-          percentOfSource: h.holdingPercent * 100,
-          percentOfPortfolio:
-            totalValue > 0 ? (holdingValue / totalValue) * 100 : 0,
-          account: fund.accountName,
-          investmentType: fund.investmentType,
-          totalGainLossDollar: 0,
-          costBasisTotal: 0,
-        });
+        existing.sources.push(source);
       } else {
         const hQuote = quotes[h.symbol];
         rowMap.set(h.symbol, {
@@ -429,101 +355,26 @@ function buildHoldingsView(
           costBasis: 0,
           investmentTypes: new Set([fund.investmentType]),
           accounts: new Set([fund.accountName]),
-          sources: [
-            {
-              type: "fund",
-              sourceSymbol: fund.symbol,
-              sourceName: fund.description,
-              value: holdingValue,
-              percentOfSource: h.holdingPercent * 100,
-              percentOfPortfolio:
-                totalValue > 0 ? (holdingValue / totalValue) * 100 : 0,
-              account: fund.accountName,
-              investmentType: fund.investmentType,
-              totalGainLossDollar: 0,
-              costBasisTotal: 0,
-            },
-          ],
+          sources: [source],
         });
       }
     }
   }
 
-  // 3. Convert to TableRow[]
   return convertToTableRows(rowMap, quotes, positions, totalValue);
 }
 
-// === TABLE: Positions view (original per-position, including fund rows) ===
+// === TABLE: Positions view (one row per portfolio position) ===
 
 function buildPositionsView(
   positions: FidelityPosition[],
   quotes: Record<string, QuoteData>,
   totalValue: number
 ): TableRow[] {
-  const rowMap = new Map<
-    string,
-    {
-      symbol: string;
-      name: string;
-      totalDirectValue: number;
-      totalGainLossDollar: number;
-      costBasis: number;
-      investmentTypes: Set<string>;
-      accounts: Set<string>;
-      sources: PositionSource[];
-    }
-  >();
+  const rowMap = new Map<string, RowAccumulator>();
 
   for (const pos of positions) {
-    const key = pos.symbol;
-    const existing = rowMap.get(key);
-    if (existing) {
-      existing.totalDirectValue += pos.currentValue;
-      existing.totalGainLossDollar += pos.totalGainLossDollar;
-      existing.costBasis += pos.costBasisTotal;
-      existing.investmentTypes.add(pos.investmentType);
-      existing.accounts.add(pos.accountName);
-      existing.sources.push({
-        type: "direct",
-        sourceSymbol: "DIRECT",
-        sourceName: pos.accountName,
-        value: pos.currentValue,
-        percentOfSource: 100,
-        percentOfPortfolio: totalValue > 0 ? (pos.currentValue / totalValue) * 100 : 0,
-        account: pos.accountName,
-        investmentType: pos.investmentType,
-        totalGainLossDollar: pos.totalGainLossDollar,
-        costBasisTotal: pos.costBasisTotal,
-      });
-    } else {
-      rowMap.set(key, {
-        symbol: pos.symbol,
-        name:
-          quotes[pos.symbol]?.longName ||
-          quotes[pos.symbol]?.shortName ||
-          pos.description,
-        totalDirectValue: pos.currentValue,
-        totalGainLossDollar: pos.totalGainLossDollar,
-        costBasis: pos.costBasisTotal,
-        investmentTypes: new Set([pos.investmentType]),
-        accounts: new Set([pos.accountName]),
-        sources: [
-          {
-            type: "direct",
-            sourceSymbol: "DIRECT",
-            sourceName: pos.accountName,
-            value: pos.currentValue,
-            percentOfSource: 100,
-            percentOfPortfolio:
-              totalValue > 0 ? (pos.currentValue / totalValue) * 100 : 0,
-            account: pos.accountName,
-            investmentType: pos.investmentType,
-            totalGainLossDollar: pos.totalGainLossDollar,
-            costBasisTotal: pos.costBasisTotal,
-          },
-        ],
-      });
-    }
+    addDirectPositionToRow(rowMap, pos, quotes, totalValue);
   }
 
   return convertToTableRows(rowMap, quotes, positions, totalValue);
@@ -532,19 +383,7 @@ function buildPositionsView(
 // === Shared: convert rowMap to TableRow[] ===
 
 function convertToTableRows(
-  rowMap: Map<
-    string,
-    {
-      symbol: string;
-      name: string;
-      totalDirectValue: number;
-      totalGainLossDollar: number;
-      costBasis: number;
-      investmentTypes: Set<string>;
-      accounts: Set<string>;
-      sources: PositionSource[];
-    }
-  >,
+  rowMap: Map<string, RowAccumulator>,
   quotes: Record<string, QuoteData>,
   positions: FidelityPosition[],
   totalValue: number
@@ -553,14 +392,10 @@ function convertToTableRows(
 
   for (const [, data] of rowMap) {
     const quote = quotes[data.symbol];
-
-    const directValue = data.totalDirectValue;
     const fundSliceValue = data.sources
       .filter((s) => s.type === "fund")
       .reduce((sum, s) => sum + s.value, 0);
-    const combinedValue = directValue + fundSliceValue;
-
-    const hasMultipleSources = data.sources.length > 1;
+    const combinedValue = data.totalDirectValue + fundSliceValue;
 
     rows.push({
       symbol: data.symbol,
@@ -568,18 +403,13 @@ function convertToTableRows(
       accounts: [...data.accounts],
       investmentTypes: [...data.investmentTypes],
       totalValue: combinedValue,
-      percentOfPortfolio:
-        totalValue > 0 ? (combinedValue / totalValue) * 100 : 0,
-      currentPrice:
-        quote?.regularMarketPrice ?? findLastPrice(positions, data.symbol),
+      percentOfPortfolio: percentOf(combinedValue, totalValue),
+      currentPrice: quote?.regularMarketPrice ?? findLastPrice(positions, data.symbol),
       totalGainLossDollar: data.totalGainLossDollar,
-      totalGainLossPercent:
-        data.costBasis > 0
-          ? (data.totalGainLossDollar / data.costBasis) * 100
-          : 0,
+      totalGainLossPercent: percentOf(data.totalGainLossDollar, data.costBasis),
       fiftyTwoWeekHigh: quote?.fiftyTwoWeekHigh ?? 0,
       fiftyTwoWeekLow: quote?.fiftyTwoWeekLow ?? 0,
-      isExpandable: hasMultipleSources,
+      isExpandable: data.sources.length > 1,
       sources: data.sources,
     });
   }
@@ -587,10 +417,6 @@ function convertToTableRows(
   return rows;
 }
 
-function findLastPrice(
-  positions: FidelityPosition[],
-  symbol: string
-): number {
-  const pos = positions.find((p) => p.symbol === symbol);
-  return pos?.lastPrice || 0;
+function findLastPrice(positions: FidelityPosition[], symbol: string): number {
+  return positions.find((p) => p.symbol === symbol)?.lastPrice || 0;
 }

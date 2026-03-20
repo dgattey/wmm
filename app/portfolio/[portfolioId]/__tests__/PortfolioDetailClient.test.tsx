@@ -71,6 +71,7 @@ vi.mock("@/hooks/useStoredPortfolioRecord", () => ({
 
 vi.mock("@/lib/storage", () => ({
   updateStoredPortfolioName: vi.fn(),
+  getStoredPortfolioSummary: vi.fn(() => null),
 }));
 
 vi.mock("@/app/components/Dashboard", () => ({
