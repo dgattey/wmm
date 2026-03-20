@@ -83,12 +83,12 @@ export async function createSocialOgImage(): Promise<ImageResponse> {
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: 24,
+                gap: 26,
               }}
             >
               <div
                 style={{
-                  fontSize: 110,
+                  fontSize: 132,
                   fontWeight: 700,
                   letterSpacing: "-0.04em",
                   color: "#1a1f2e",
@@ -99,7 +99,7 @@ export async function createSocialOgImage(): Promise<ImageResponse> {
               </div>
               <div
                 style={{
-                  fontSize: 38,
+                  fontSize: 46,
                   fontWeight: 600,
                   color: "#5B7BA8",
                   letterSpacing: "-0.02em",
@@ -114,7 +114,7 @@ export async function createSocialOgImage(): Promise<ImageResponse> {
                 fontWeight: 400,
                 color: "#4b5563",
                 lineHeight: 1.4,
-                marginTop: 68,
+                marginTop: 56,
                 maxWidth: 720,
               }}
             >
