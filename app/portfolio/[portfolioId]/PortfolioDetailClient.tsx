@@ -14,10 +14,7 @@ import {
   DESKTOP_TREE_MAP_LAYOUT,
   MOBILE_TREE_MAP_LAYOUT,
 } from "@/lib/portfolioLayout";
-import {
-  getStoredPortfolioSummary,
-  updateStoredPortfolioName,
-} from "@/lib/storage";
+import { updateStoredPortfolioName } from "@/lib/storage";
 import { parsePortfolioUrlState } from "@/lib/urlFilters";
 
 interface PortfolioDetailClientProps {
@@ -78,15 +75,10 @@ export function PortfolioDetailClient({
       : "WMM";
   }, [record.summary]);
 
-  const immediatePortfolioName = useMemo(
-    () => getStoredPortfolioSummary(portfolioId)?.name,
-    [portfolioId]
-  );
-
   const handleRenamePortfolio = useCallback(
-    (id: string, name: string) => {
-      updateStoredPortfolioName(id, name);
-      record.refreshFromStorage();
+    async (id: string, name: string) => {
+      await updateStoredPortfolioName(id, name);
+      await record.refreshFromStorage();
     },
     [record]
   );
@@ -103,7 +95,7 @@ export function PortfolioDetailClient({
   } else if (!record.portfolioData) {
     mainContent = (
       <DashboardSkeleton
-        portfolioName={record.summary?.name ?? immediatePortfolioName}
+        portfolioName={record.summary?.name}
         isMobile={isMobile}
         enableIntroAnimation={false}
         error={record.error}

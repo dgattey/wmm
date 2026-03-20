@@ -1,5 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { resetPortfolioPersistenceForTests } from "@/lib/storage";
 import { usePortfolioLibrary } from "../usePortfolioLibrary";
 
 const VALID_HEADER =
@@ -10,8 +11,8 @@ function makeCSV(row: string): string {
 }
 
 describe("usePortfolioLibrary", () => {
-  beforeEach(() => {
-    localStorage.clear();
+  beforeEach(async () => {
+    await resetPortfolioPersistenceForTests();
     vi.restoreAllMocks();
   });
 

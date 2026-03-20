@@ -53,7 +53,7 @@ All four should pass. Run them before committing.
 |------|---------|
 | `app/` | Next.js App Router: `page.tsx`, `layout.tsx`, `api/portfolio/route.ts` |
 | `app/components/` | React UI: `Dashboard`, `TreeMap`, `PortfolioTable`, `UploadView`, toolbar, primitives |
-| `lib/` | Pure logic: CSV parsing, treemap layout, types, filters, sort, storage |
+| `lib/` | Pure logic: CSV parsing, treemap layout, types, filters, sort, `storage` + `portfolioIdb` |
 | `lib/server/` | Server-only: Yahoo API, aggregation, `portfolioData` builder |
 | `hooks/` | `usePortfolio`, `useTimeAgo` |
 | `vitest.setup.ts` | Vitest + jsdom + matchMedia mock |
@@ -103,4 +103,4 @@ We don't maintain backwards compatibility. When making changes, migrate to one n
 
 - **Yahoo rate limits**: `yahoo.ts` retries on 429; fallback to last-good quote/holdings on failure
 - **Symbol mapping**: 401k-style identifiers may resolve via Yahoo search; `SKIP_SYMBOLS` (e.g. FZFXX) skip fetch
-- **Client storage**: Portfolio persisted to `localStorage` via `lib/storage.ts`
+- **Client storage**: Portfolios in **IndexedDB** (`wmm-portfolios`, per-row `put` for dashboard updates); legacy `localStorage` key `portfolio_store` migrates once on first load (`lib/storage.ts`, `lib/portfolioIdb.ts`)

@@ -31,7 +31,7 @@ export interface StoredPortfolioRecordState {
   restoredFromStorage: boolean;
   isMissing: boolean;
   refreshData: () => Promise<void>;
-  refreshFromStorage: () => void;
+  refreshFromStorage: () => Promise<void>;
 }
 
 export function useStoredPortfolioRecord({
@@ -87,7 +87,7 @@ export function useStoredPortfolioRecord({
         }
 
         setPortfolioData(nextPortfolioData);
-        saveStoredPortfolioData(portfolioIdRef.current, nextPortfolioData);
+        await saveStoredPortfolioData(portfolioIdRef.current, nextPortfolioData);
         const now = new Date().toISOString();
         setSummary((currentSummary) =>
           currentSummary
@@ -132,36 +132,52 @@ export function useStoredPortfolioRecord({
       return;
     }
 
-    requestTokenRef.current += 1;
-    setError(null);
+    let cancelled = false;
 
-    const storedPortfolio = loadStoredPortfolio(portfolioId);
-    if (!storedPortfolio) {
-      setSummary(null);
-      setPositions(null);
-      setPortfolioData(null);
-      setIsMissing(true);
-      setIsLoading(false);
-      setRestoredFromStorage(false);
-      return;
-    }
+    void (async () => {
+      const id = portfolioId;
+      setError(null);
 
-    resetInitialScrollPosition();
-    touchStoredPortfolio(portfolioId);
-    setIsMissing(false);
-    setSummary(storedPortfolio.summary);
-    setPositions(storedPortfolio.positions);
-    setPortfolioData(storedPortfolio.portfolioData);
-    setRestoredFromStorage(storedPortfolio.portfolioData !== null);
+      const storedPortfolio = await loadStoredPortfolio(id);
+      if (cancelled || portfolioIdRef.current !== id) {
+        return;
+      }
 
-    if (storedPortfolio.portfolioData !== null) {
-      setIsLoading(false);
-      void refreshPortfolioData(storedPortfolio.positions, "/api/portfolio", false);
-      return;
-    }
+      if (!storedPortfolio) {
+        setSummary(null);
+        setPositions(null);
+        setPortfolioData(null);
+        setIsMissing(true);
+        setIsLoading(false);
+        setRestoredFromStorage(false);
+        return;
+      }
 
-    setIsLoading(true);
-    void refreshPortfolioData(storedPortfolio.positions, "/api/portfolio", true);
+      resetInitialScrollPosition();
+      await touchStoredPortfolio(id);
+      if (cancelled || portfolioIdRef.current !== id) {
+        return;
+      }
+
+      setIsMissing(false);
+      setSummary(storedPortfolio.summary);
+      setPositions(storedPortfolio.positions);
+      setPortfolioData(storedPortfolio.portfolioData);
+      setRestoredFromStorage(storedPortfolio.portfolioData !== null);
+
+      if (storedPortfolio.portfolioData !== null) {
+        setIsLoading(false);
+        void refreshPortfolioData(storedPortfolio.positions, "/api/portfolio", false);
+        return;
+      }
+
+      setIsLoading(true);
+      void refreshPortfolioData(storedPortfolio.positions, "/api/portfolio", true);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [portfolioId, refreshPortfolioData]);
 
   useEffect(() => {
@@ -226,9 +242,10 @@ export function useStoredPortfolioRecord({
     setIsRefreshing(false);
   }, [refreshPortfolioData]);
 
-  const refreshFromStorage = useCallback(() => {
-    const stored = loadStoredPortfolio(portfolioId);
-    if (stored) {
+  const refreshFromStorage = useCallback(async () => {
+    const id = portfolioId;
+    const stored = await loadStoredPortfolio(id);
+    if (stored && portfolioIdRef.current === id) {
       setSummary(stored.summary);
     }
   }, [portfolioId]);

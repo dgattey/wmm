@@ -1,6 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  resetPortfolioPersistenceForTests,
   saveStoredPortfolioData,
   saveUploadedPortfolio,
 } from "@/lib/storage";
@@ -61,18 +62,17 @@ const refreshedData: PortfolioData = {
 };
 
 describe("useStoredPortfolioRecord", () => {
-  beforeEach(() => {
-    localStorage.clear();
+  beforeEach(async () => {
+    await resetPortfolioPersistenceForTests();
     vi.restoreAllMocks();
-    vi.useRealTimers();
   });
 
   it("restores cached data before refreshing the active portfolio", async () => {
-    const summary = saveUploadedPortfolio({
+    const summary = await saveUploadedPortfolio({
       sourceFileName: "account-a.csv",
       positions,
     });
-    saveStoredPortfolioData(summary.id, cachedData);
+    await saveStoredPortfolioData(summary.id, cachedData);
 
     let resolveFetch: ((value: Response) => void) | undefined;
     const fetchMock = vi.fn(
@@ -125,11 +125,11 @@ describe("useStoredPortfolioRecord", () => {
   });
 
   it("keeps positions loaded when treemap dimensions change (no storage reload)", async () => {
-    const summary = saveUploadedPortfolio({
+    const summary = await saveUploadedPortfolio({
       sourceFileName: "account-a.csv",
       positions,
     });
-    saveStoredPortfolioData(summary.id, cachedData);
+    await saveStoredPortfolioData(summary.id, cachedData);
 
     const fetchMock = vi.fn(() =>
       Promise.resolve(

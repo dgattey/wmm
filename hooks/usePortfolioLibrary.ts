@@ -20,73 +20,76 @@ export function usePortfolioLibrary() {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const refreshLibrary = useCallback(() => {
-    setPortfolios(listStoredPortfolios());
+  const refreshLibrary = useCallback(async () => {
+    setPortfolios(await listStoredPortfolios());
   }, []);
 
   useEffect(() => {
-    refreshLibrary();
+    void refreshLibrary();
   }, [refreshLibrary]);
 
-  const uploadFiles = useCallback(async (files: File[]): Promise<UploadPortfoliosResult> => {
-    setIsUploading(true);
-    setError(null);
+  const uploadFiles = useCallback(
+    async (files: File[]): Promise<UploadPortfoliosResult> => {
+      setIsUploading(true);
+      setError(null);
 
-    const uploadedPortfolios: StoredPortfolioSummary[] = [];
-    const failedUploads: Array<{ fileName: string; reason: string }> = [];
+      const uploadedPortfolios: StoredPortfolioSummary[] = [];
+      const failedUploads: Array<{ fileName: string; reason: string }> = [];
 
-    try {
-      for (const file of files) {
-        try {
-          const positions = parseCSV(await file.text());
-          uploadedPortfolios.push(
-            saveUploadedPortfolio({
-              sourceFileName: file.name,
-              positions,
-            })
-          );
-        } catch (nextError) {
-          failedUploads.push({
-            fileName: file.name,
-            reason:
-              nextError instanceof Error
-                ? nextError.message
-                : "Failed to parse CSV file",
-          });
+      try {
+        for (const file of files) {
+          try {
+            const positions = parseCSV(await file.text());
+            uploadedPortfolios.push(
+              await saveUploadedPortfolio({
+                sourceFileName: file.name,
+                positions,
+              })
+            );
+          } catch (nextError) {
+            failedUploads.push({
+              fileName: file.name,
+              reason:
+                nextError instanceof Error
+                  ? nextError.message
+                  : "Failed to parse CSV file",
+            });
+          }
         }
+
+        await refreshLibrary();
+
+        if (failedUploads.length > 0) {
+          setError(
+            failedUploads
+              .map(({ fileName, reason }) => `${fileName}: ${reason}`)
+              .join(" | ")
+          );
+        } else if (uploadedPortfolios.length === 0) {
+          setError("Select at least one Fidelity positions CSV.");
+        }
+
+        return { uploadedPortfolios, failedUploads };
+      } finally {
+        setIsUploading(false);
       }
-
-      refreshLibrary();
-
-      if (failedUploads.length > 0) {
-        setError(
-          failedUploads
-            .map(({ fileName, reason }) => `${fileName}: ${reason}`)
-            .join(" | ")
-        );
-      } else if (uploadedPortfolios.length === 0) {
-        setError("Select at least one Fidelity positions CSV.");
-      }
-
-      return { uploadedPortfolios, failedUploads };
-    } finally {
-      setIsUploading(false);
-    }
-  }, [refreshLibrary]);
+    },
+    [refreshLibrary]
+  );
 
   const removePortfolioById = useCallback(
-    (portfolioId: string) => {
-      const nextPortfolioId = removeStoredPortfolio(portfolioId);
-      refreshLibrary();
+    async (portfolioId: string) => {
+      const nextPortfolioId = await removeStoredPortfolio(portfolioId);
+      await refreshLibrary();
       return nextPortfolioId;
     },
     [refreshLibrary]
   );
 
   const renamePortfolio = useCallback(
-    (portfolioId: string, name: string) => {
-      updateStoredPortfolioName(portfolioId, name);
-      refreshLibrary();
+    async (portfolioId: string, name: string) => {
+      await updateStoredPortfolioName(portfolioId, name);
+      await refreshLibrary();
     },
     [refreshLibrary]
   );

@@ -1,8 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
   getMostRecentPortfolioId,
   loadStoredPortfolio,
   removeStoredPortfolio,
+  resetPortfolioPersistenceForTests,
   saveStoredPortfolioData,
   saveUploadedPortfolio,
   touchStoredPortfolio,
@@ -53,59 +54,60 @@ function makePortfolioData(
   };
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 describe("portfolio storage", () => {
-  beforeEach(() => {
-    localStorage.clear();
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-03-18T00:00:00.000Z"));
+  beforeEach(async () => {
+    await resetPortfolioPersistenceForTests();
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it("stores portfolios newest-first and keeps only recent dashboard caches", () => {
-    const summaries = Array.from({ length: 4 }, (_, index) => {
-      vi.setSystemTime(new Date(`2026-03-18T00:00:0${index}.000Z`));
-      const summary = saveUploadedPortfolio({
+  it("stores portfolios newest-first and keeps only recent dashboard caches", async () => {
+    const summaries: Awaited<ReturnType<typeof saveUploadedPortfolio>>[] = [];
+    for (let index = 0; index < 4; index++) {
+      await sleep(5);
+      const summary = await saveUploadedPortfolio({
         sourceFileName: `portfolio-${index + 1}.csv`,
         positions: makePositions(`ASSET-${index + 1}`, 100 * (index + 1)),
       });
-      vi.setSystemTime(new Date(`2026-03-18T00:00:1${index}.000Z`));
-      saveStoredPortfolioData(
+      await saveStoredPortfolioData(
         summary.id,
-        makePortfolioData(100 * (index + 1), `2026-03-18T00:00:1${index}.000Z`)
+        makePortfolioData(
+          100 * (index + 1),
+          `2026-03-18T00:00:1${index}.000Z`
+        )
       );
-      return summary;
-    });
+      summaries.push(summary);
+    }
 
-    expect(listStoredPortfolios().map(({ sourceFileName }) => sourceFileName)).toEqual([
+    expect((await listStoredPortfolios()).map(({ sourceFileName }) => sourceFileName)).toEqual([
       "portfolio-4.csv",
       "portfolio-3.csv",
       "portfolio-2.csv",
       "portfolio-1.csv",
     ]);
-    expect(loadStoredPortfolio(summaries[3].id)?.portfolioData).not.toBeNull();
-    expect(loadStoredPortfolio(summaries[2].id)?.portfolioData).not.toBeNull();
-    expect(loadStoredPortfolio(summaries[1].id)?.portfolioData).not.toBeNull();
-    expect(loadStoredPortfolio(summaries[0].id)?.portfolioData).toBeNull();
+    expect((await loadStoredPortfolio(summaries[3].id))?.portfolioData).not.toBeNull();
+    expect((await loadStoredPortfolio(summaries[2].id))?.portfolioData).not.toBeNull();
+    expect((await loadStoredPortfolio(summaries[1].id))?.portfolioData).not.toBeNull();
+    expect((await loadStoredPortfolio(summaries[0].id))?.portfolioData).toBeNull();
   });
 
-  it("updates recency and returns the next available portfolio when removing", () => {
-    const first = saveUploadedPortfolio({
+  it("updates recency and returns the next available portfolio when removing", async () => {
+    const first = await saveUploadedPortfolio({
       sourceFileName: "first.csv",
       positions: makePositions("ASSET-1", 100),
     });
-    vi.setSystemTime(new Date("2026-03-18T00:05:00.000Z"));
-    const second = saveUploadedPortfolio({
+    await sleep(5);
+    const second = await saveUploadedPortfolio({
       sourceFileName: "second.csv",
       positions: makePositions("ASSET-2", 200),
     });
-    vi.setSystemTime(new Date("2026-03-18T00:10:00.000Z"));
-    touchStoredPortfolio(first.id);
+    await sleep(5);
+    await touchStoredPortfolio(first.id);
 
-    expect(getMostRecentPortfolioId()).toBe(first.id);
-    expect(removeStoredPortfolio(first.id)).toBe(second.id);
-    expect(listStoredPortfolios().map(({ id }) => id)).toEqual([second.id]);
+    expect(await getMostRecentPortfolioId()).toBe(first.id);
+    expect(await removeStoredPortfolio(first.id)).toBe(second.id);
+    expect((await listStoredPortfolios()).map(({ id }) => id)).toEqual([second.id]);
   });
 });

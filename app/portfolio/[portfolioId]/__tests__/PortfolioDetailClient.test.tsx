@@ -65,13 +65,12 @@ vi.mock("@/hooks/useStoredPortfolioRecord", () => ({
     restoredFromStorage: true,
     isMissing: false,
     refreshData: vi.fn(),
-    refreshFromStorage: vi.fn(),
+    refreshFromStorage: vi.fn().mockResolvedValue(undefined),
   }),
 }));
 
 vi.mock("@/lib/storage", () => ({
-  updateStoredPortfolioName: vi.fn(),
-  getStoredPortfolioSummary: vi.fn(() => null),
+  updateStoredPortfolioName: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("@/app/components/Dashboard", () => ({
