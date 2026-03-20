@@ -8,7 +8,7 @@ export const socialOgImageContentType = "image/png";
 
 /** Shared by Open Graph and Twitter metadata routes — no request or portfolio data. */
 export const socialOgImageAlt =
-  "WMM — Where\u2019s my money? One clear view of what you own and how it fits together";
+  "WMM, Where\u2019s my money? One clear view of what you own and how it fits together";
 
 /** Square logo taller than canvas (630): flex-center bleeds top/bottom; clip column + negative margin (Satori-safe). */
 const LOGO_PX = 796;
@@ -118,7 +118,7 @@ export async function createSocialOgImage(): Promise<ImageResponse> {
                 maxWidth: 720,
               }}
             >
-              What you own, where it sits—and how it fits together.
+              What you own, where it sits, and how it fits together.
             </div>
           </div>
         </div>
