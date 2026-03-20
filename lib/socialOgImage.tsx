@@ -36,11 +36,11 @@ export async function createSocialOgImage(): Promise<ImageResponse> {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 64,
+            gap: 96,
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- Satori renders this to PNG */}
-          <img src={iconSrc} width={272} height={272} alt="" />
+          <img src={iconSrc} width={360} height={360} alt="" />
           <div
             style={{
               display: "flex",
@@ -53,7 +53,7 @@ export async function createSocialOgImage(): Promise<ImageResponse> {
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: 14,
+                gap: 22,
               }}
             >
               <div
@@ -84,7 +84,7 @@ export async function createSocialOgImage(): Promise<ImageResponse> {
                 fontWeight: 400,
                 color: "#4b5563",
                 lineHeight: 1.42,
-                marginTop: 52,
+                marginTop: 80,
                 maxWidth: 720,
               }}
             >
