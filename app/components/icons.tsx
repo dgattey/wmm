@@ -3,11 +3,11 @@ import { cn } from "@/lib/utils";
 
 type IconProps = SVGProps<SVGSVGElement> & { size?: number };
 
-function defaultProps(size: number, props: IconProps): SVGProps<SVGSVGElement> {
-  const { size: _, className, ...rest } = props;
+function defaultProps(defaultSize: number, props: IconProps): SVGProps<SVGSVGElement> {
+  const { size, className, ...rest } = props;
   return {
-    width: props.size ?? size,
-    height: props.size ?? size,
+    width: size ?? defaultSize,
+    height: size ?? defaultSize,
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",

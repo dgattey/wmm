@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, CSSProperties } from "react";
 import type {
   ActivePortfolioSummary,
-  FilterState,
   PortfolioData,
 } from "@/lib/types";
 import { formatDollar, formatHeaderCurrency } from "@/lib/utils";
