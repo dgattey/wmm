@@ -27,6 +27,10 @@
   --glass-bg-strong: rgba(255, 255, 255, 0.9);
   --glass-border: rgba(0, 0, 0, 0.06);
   --glass-highlight: rgba(255, 255, 255, 0.5);
+
+  /* Skeleton shimmer: keep stops close so the sweep never hits pure white or deep gray */
+  --skeleton-shimmer-a: #f6f7f9;
+  --skeleton-shimmer-b: #e8eaef;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -54,6 +58,9 @@
     --glass-bg-strong: rgba(25, 28, 36, 0.9);
     --glass-border: rgba(255, 255, 255, 0.06);
     --glass-highlight: rgba(255, 255, 255, 0.04);
+
+    --skeleton-shimmer-a: #1c1f27;
+    --skeleton-shimmer-b: #262b36;
   }
 }
 
@@ -144,9 +151,16 @@ body {
   100% { background-position: 200% 0; }
 }
 .skeleton {
-  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-hover) 50%, var(--surface) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-shimmer-a) 0%,
+    var(--skeleton-shimmer-a) 36%,
+    var(--skeleton-shimmer-b) 50%,
+    var(--skeleton-shimmer-a) 64%,
+    var(--skeleton-shimmer-a) 100%
+  );
   background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
+  animation: shimmer 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
   border-radius: 8px;
 }
 
