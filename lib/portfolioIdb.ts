@@ -50,6 +50,11 @@ export async function idbGetAllPortfolios(): Promise<unknown[]> {
   return db.getAll(STORE);
 }
 
+export async function idbGetPortfolio(id: string): Promise<unknown | undefined> {
+  const db = await getPortfolioDB();
+  return db.get(STORE, id);
+}
+
 export async function idbPutPortfolio(record: unknown): Promise<void> {
   const db = await getPortfolioDB();
   await db.put(STORE, record);

@@ -7,6 +7,7 @@ import {
   deletePortfolioDatabaseForTests,
   idbClearAllPortfolios,
   idbGetAllPortfolios,
+  idbGetPortfolio,
   idbPutPortfolio,
   idbReplaceAllPortfolios,
 } from "./portfolioIdb";
@@ -95,7 +96,7 @@ export async function listStoredPortfolios(): Promise<StoredPortfolioSummary[]> 
     return [];
   }
   const store = await loadStoreFromIdb();
-  return sortPortfolios(store.portfolios).map(toSummary);
+  return store.portfolios.map(toSummary);
 }
 
 export async function getMostRecentPortfolioId(): Promise<string | null> {
@@ -109,8 +110,8 @@ export async function getStoredPortfolioSummary(
   if (typeof window === "undefined" || !portfolioId) {
     return null;
   }
-  const store = await loadStoreFromIdb();
-  const portfolio = findPortfolioById(store, portfolioId);
+  const raw = await idbGetPortfolio(portfolioId);
+  const portfolio = normalizePortfolio(raw);
   return portfolio ? toSummary(portfolio) : null;
 }
 
@@ -141,8 +142,8 @@ export async function saveStoredPortfolioData(
   if (typeof window === "undefined") {
     return;
   }
-  const store = await loadStoreFromIdb();
-  const portfolio = findPortfolioById(store, portfolioId);
+  const raw = await idbGetPortfolio(portfolioId);
+  const portfolio = normalizePortfolio(raw);
 
   if (!portfolio) {
     return;
@@ -182,8 +183,8 @@ export async function updateStoredPortfolioName(
   if (typeof window === "undefined") {
     return;
   }
-  const store = await loadStoreFromIdb();
-  const portfolio = findPortfolioById(store, portfolioId);
+  const raw = await idbGetPortfolio(portfolioId);
+  const portfolio = normalizePortfolio(raw);
 
   if (!portfolio) {
     return;
@@ -204,7 +205,7 @@ export async function removeStoredPortfolio(
     ...store,
     portfolios: store.portfolios.filter(({ id }) => id !== portfolioId),
   });
-  return sortPortfolios(next.portfolios)[0]?.id ?? null;
+  return next.portfolios[0]?.id ?? null;
 }
 
 export async function clearStoredPortfolios(): Promise<void> {
