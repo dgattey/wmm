@@ -306,7 +306,7 @@ export function DashboardSearchBar({
     <div
       className={cn(
         "relative z-10 flex items-center gap-3",
-        isSearchDocked && "z-[1]",
+        isSearchDocked && "z-[2]",
         isMobile ? "px-4" : "px-6",
         "max-w-[1400px] mx-auto"
       )}
@@ -314,9 +314,11 @@ export function DashboardSearchBar({
       <div
         className={cn(
           "relative min-w-0 flex-1",
-          isSearchDocked && "z-[1]",
+          isSearchDocked &&
+            "z-[2] isolate rounded-xl border border-border/90 bg-surface/96 shadow-[0_14px_36px_rgba(0,0,0,0.22)] ring-1 ring-inset ring-white/[0.05] backdrop-blur-xl focus-within:border-border focus-within:shadow-[0_16px_40px_rgba(0,0,0,0.24)]",
           !isMobile && "max-w-xl lg:max-w-2xl"
         )}
+        data-testid="portfolio-search-input-shell"
       >
         <SearchIcon
           className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 z-10 text-text-muted"
@@ -331,7 +333,7 @@ export function DashboardSearchBar({
           className={cn(
             "w-full rounded-xl border border-border py-2.5 pl-10 text-sm text-text-primary shadow-[var(--shadow-sm)]",
             isSearchDocked
-              ? "bg-[var(--glass-bg)] backdrop-blur-xl ring-1 ring-inset ring-white/[0.05] shadow-[0_12px_32px_rgba(0,0,0,0.18)]"
+              ? "relative z-[1] border-transparent bg-transparent shadow-none"
               : "bg-surface/95 backdrop-blur-xl",
             "outline-none transition-colors placeholder:text-text-muted hover:border-border/80 focus:border-border",
             searchInput.length > 0 ? "pr-10" : "pr-3"
