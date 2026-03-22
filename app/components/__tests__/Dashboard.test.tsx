@@ -213,7 +213,6 @@ describe("Dashboard portfolio actions", () => {
 
     const searchShell = screen.getByTestId("portfolio-search-shell");
     expect(searchShell).toBeInTheDocument();
-    expect(screen.getByTestId("header-search-absorber")).toBeInTheDocument();
     expect(screen.getByTestId("inline-holdings-count")).toHaveTextContent(
       "0 holdings"
     );
@@ -242,6 +241,7 @@ describe("Dashboard portfolio actions", () => {
     renderDashboard();
 
     expect(screen.getByRole("banner")).toHaveClass("is-search-docked");
+    expect(screen.queryByTestId("header-search-absorber")).not.toBeInTheDocument();
     expect(screen.queryByTestId("portfolio-search-shell-background")).not.toBeInTheDocument();
     expect(screen.getByRole("searchbox", { name: "Search portfolio" })).toHaveClass(
       "bg-[var(--glass-bg)]"

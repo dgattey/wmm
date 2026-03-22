@@ -117,7 +117,7 @@ export function Dashboard({
     filtersRef.current = filters;
   }, [filters]);
 
-  const headerRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
   const searchShellRef = useRef<HTMLDivElement>(null);
   const [dockSentinelRef, isSearchDocked, headerHeightPx] = useIsStickyDocked(headerRef);
   const [searchShellHeightPx, setSearchShellHeightPx] = useState(0);
@@ -166,34 +166,37 @@ export function Dashboard({
     >
       {/* Sticky Header */}
       <header
-        ref={headerRef}
         className={cn(
           "sticky-header sticky top-0 z-40",
           isSearchDocked && "is-search-docked border-b-0"
         )}
-        style={{ "--header-search-absorb-height": `${searchShellHeightPx}px` } as CSSProperties}
+        style={
+          isSearchDocked
+            ? ({
+                paddingBottom: `${searchShellHeightPx}px`,
+                marginBottom: `${-searchShellHeightPx}px`,
+              } as CSSProperties)
+            : undefined
+        }
       >
-        <div
-          aria-hidden="true"
-          data-testid="header-search-absorber"
-          className={cn("sticky-header-search-absorber", isSearchDocked && "is-docked")}
-        />
-        <DashboardHeader
-          portfolioData={portfolioData}
-          portfolioName={portfolioName}
-          portfolioId={portfolioId}
-          onRenamePortfolio={onRenamePortfolio}
-          onBackToPicker={onBackToPicker}
-          activeSummary={activeSummary}
-          isMobile={isMobile}
-          isLoading={isLoading}
-          enableIntroAnimation={enableIntroAnimation}
-          enableValueAnimations={enableValueAnimations}
-          fetchError={fetchError}
-          onRefresh={onRefresh}
-          isRefreshing={isRefreshing}
-          viewTransitionPortfolioId={viewTransitionPortfolioId}
-        />
+        <div ref={headerRef}>
+          <DashboardHeader
+            portfolioData={portfolioData}
+            portfolioName={portfolioName}
+            portfolioId={portfolioId}
+            onRenamePortfolio={onRenamePortfolio}
+            onBackToPicker={onBackToPicker}
+            activeSummary={activeSummary}
+            isMobile={isMobile}
+            isLoading={isLoading}
+            enableIntroAnimation={enableIntroAnimation}
+            enableValueAnimations={enableValueAnimations}
+            fetchError={fetchError}
+            onRefresh={onRefresh}
+            isRefreshing={isRefreshing}
+            viewTransitionPortfolioId={viewTransitionPortfolioId}
+          />
+        </div>
       </header>
 
       {/* TreeMap */}

@@ -200,34 +200,13 @@ body {
   border-bottom: 1px solid transparent;
   isolation: isolate;
   overflow: visible;
-}
-
-.sticky-header.is-search-docked,
-.sticky-header.is-search-docked .sticky-header-search-absorber {
-  background-color: var(--glass-bg);
-}
-
-.sticky-header-search-absorber {
-  position: absolute;
-  inset-inline: 0;
-  top: 100%;
-  height: var(--header-search-absorb-height, 0px);
-  background-color: var(--glass-bg);
-  backdrop-filter: blur(20px) saturate(1.2);
-  transform: scaleY(0);
-  transform-origin: top;
-  opacity: 0;
   transition:
-    transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 220ms ease,
-    box-shadow 220ms ease;
-  will-change: transform, opacity;
-  z-index: 0;
+    padding-bottom 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    margin-bottom 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.sticky-header-search-absorber.is-docked {
-  transform: scaleY(1);
-  opacity: 1;
+.sticky-header.is-search-docked {
+  background-color: var(--glass-bg);
 }
 
 /* === Utility Classes === */
@@ -281,7 +260,6 @@ body {
   .skeleton::after,
   .skeleton,
   .sticky-header,
-  .sticky-header-search-absorber,
   .hover-lift {
     animation: none !important;
     transition-duration: 0.01ms !important;
