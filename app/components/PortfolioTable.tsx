@@ -5,7 +5,7 @@ import {
   FIFTY_TWO_WEEK_POSITION_SORT_KEY,
   sortSourcesForExpandedRow,
 } from "@/lib/tableSort";
-import type { TableRow, SortConfig } from "@/lib/types";
+import type { TableRow, SortConfig, ViewMode } from "@/lib/types";
 import { cn, formatDollar, formatPercent, formatPrice } from "@/lib/utils";
 import { TickerIdentity } from "./primitives/TickerIdentity";
 import { GainLoss } from "./primitives/GainLoss";
@@ -20,6 +20,8 @@ interface PortfolioTableProps {
   onSort: (key: string) => void;
   expandedRows: Set<string>;
   onToggleExpand: (symbol: string) => void;
+  /** When `holdings` (aggregated table), show which portfolio funds hold each symbol. */
+  viewMode?: ViewMode;
   isMobile?: boolean;
   enableIntroAnimation?: boolean;
   enableValueAnimations?: boolean;
@@ -43,16 +45,44 @@ const SORTABLE_COLUMNS: {
   },
 ];
 
+/** Unique fund tickers that contribute to an aggregated row (stable order). */
+function fundSourceTickers(row: TableRow): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const s of row.sources) {
+    if (s.type === "fund" && !seen.has(s.sourceSymbol)) {
+      seen.add(s.sourceSymbol);
+      out.push(s.sourceSymbol);
+    }
+  }
+  return out;
+}
+
+function fundSourcesTitle(row: TableRow): string | undefined {
+  const bySymbol = new Map<string, string>();
+  for (const s of row.sources) {
+    if (s.type === "fund" && !bySymbol.has(s.sourceSymbol)) {
+      bySymbol.set(s.sourceSymbol, s.sourceName);
+    }
+  }
+  if (bySymbol.size === 0) return undefined;
+  return [...bySymbol.entries()]
+    .map(([sym, name]) => `${sym} — ${name}`)
+    .join("; ");
+}
+
 export function PortfolioTable({
   rows,
   sortConfig,
   onSort,
   expandedRows,
   onToggleExpand,
+  viewMode = "positions",
   isMobile = false,
   enableIntroAnimation = true,
   enableValueAnimations = true,
 }: PortfolioTableProps) {
+  const showAggregatedFundSources = viewMode === "holdings";
   if (rows.length === 0) {
     return (
       <div className="text-center py-12 text-text-muted text-sm">
@@ -108,6 +138,7 @@ export function PortfolioTable({
               sortConfig={sortConfig}
               isExpanded={expandedRows.has(row.symbol)}
               onToggle={() => onToggleExpand(row.symbol)}
+              showAggregatedFundSources={showAggregatedFundSources}
               enableValueAnimations={enableValueAnimations}
             />
           ))}
@@ -124,7 +155,14 @@ export function PortfolioTable({
       )}
       style={{ "--enter-delay": "80ms" } as CSSProperties}
     >
-      <table className="w-full border-collapse min-w-[980px] xl:min-w-[1040px]">
+      <table
+        className={cn(
+          "w-full border-collapse",
+          showAggregatedFundSources
+            ? "min-w-[1060px] xl:min-w-[1120px]"
+            : "min-w-[980px] xl:min-w-[1040px]"
+        )}
+      >
         <thead>
           <tr className="border-b border-border">
             {/* Sticky: Identity column */}
@@ -147,6 +185,13 @@ export function PortfolioTable({
                 Account
               </span>
             </th>
+            {showAggregatedFundSources && (
+              <th className="w-[9rem] max-w-[11rem] text-left px-3 py-3">
+                <span className="text-xs font-medium uppercase tracking-wider text-text-muted">
+                  Source funds
+                </span>
+              </th>
+            )}
             {/* Type */}
             <th className="text-left px-3 py-3">
               <span className="text-xs font-medium uppercase tracking-wider text-text-muted">
@@ -184,6 +229,7 @@ export function PortfolioTable({
               index={idx}
               isExpanded={expandedRows.has(row.symbol)}
               onToggle={() => onToggleExpand(row.symbol)}
+              showAggregatedFundSources={showAggregatedFundSources}
               enableIntroAnimation={enableIntroAnimation}
               enableValueAnimations={enableValueAnimations}
             />
@@ -199,15 +245,19 @@ function MobileRowCard({
   sortConfig,
   isExpanded,
   onToggle,
+  showAggregatedFundSources,
   enableValueAnimations = true,
 }: {
   row: TableRow;
   sortConfig: SortConfig;
   isExpanded: boolean;
   onToggle: () => void;
+  showAggregatedFundSources: boolean;
   enableValueAnimations?: boolean;
 }) {
   const sortedSources = sortSourcesForExpandedRow(row.sources, sortConfig, row);
+  const fundTickers = fundSourceTickers(row);
+  const fundTitle = fundSourcesTitle(row);
   return (
     <article className="rounded-2xl border border-border/60 bg-surface p-4 shadow-[var(--shadow-md)]">
       <div className="flex items-start justify-between gap-3">
@@ -235,6 +285,16 @@ function MobileRowCard({
             {row.accounts.join(", ")}
           </span>
         </MetricCell>
+        {showAggregatedFundSources && fundTickers.length > 0 && (
+          <MetricCell label="Source funds" className="col-span-2">
+            <span
+              className="text-sm text-text-primary break-words"
+              title={fundTitle}
+            >
+              {fundTickers.join(", ")}
+            </span>
+          </MetricCell>
+        )}
         <MetricCell label="Value">
           <AnimatedNumber
             value={row.totalValue}
@@ -354,6 +414,7 @@ function TableRowGroup({
   index,
   isExpanded,
   onToggle,
+  showAggregatedFundSources,
   enableIntroAnimation = true,
   enableValueAnimations = true,
 }: {
@@ -362,11 +423,14 @@ function TableRowGroup({
   index: number;
   isExpanded: boolean;
   onToggle: () => void;
+  showAggregatedFundSources: boolean;
   enableIntroAnimation?: boolean;
   enableValueAnimations?: boolean;
 }) {
   const isEven = index % 2 === 0;
   const sortedSources = sortSourcesForExpandedRow(row.sources, sortConfig, row);
+  const fundTickers = fundSourceTickers(row);
+  const fundTitle = fundSourcesTitle(row);
 
   return (
     <>
@@ -419,6 +483,14 @@ function TableRowGroup({
         >
           {row.accounts.join(", ")}
         </td>
+        {showAggregatedFundSources && (
+          <td
+            className="w-[9rem] max-w-[11rem] px-3 py-3 text-sm text-text-muted whitespace-normal leading-5"
+            title={fundTitle}
+          >
+            {fundTickers.length > 0 ? fundTickers.join(", ") : "—"}
+          </td>
+        )}
         {/* Type */}
         <td className="px-3 py-3">
           <div className="flex flex-wrap gap-1">
@@ -502,6 +574,11 @@ function TableRowGroup({
             >
               {source.account}
             </td>
+            {showAggregatedFundSources && (
+              <td className="w-[9rem] max-w-[11rem] px-3 py-2 text-xs text-text-muted">
+                {source.type === "fund" ? source.sourceSymbol : "—"}
+              </td>
+            )}
             <td className="px-3 py-2">
               <Badge label={source.investmentType} />
             </td>
