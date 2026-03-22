@@ -1,7 +1,10 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
-import { FIFTY_TWO_WEEK_POSITION_SORT_KEY } from "@/lib/tableSort";
+import {
+  FIFTY_TWO_WEEK_POSITION_SORT_KEY,
+  sortSourcesForExpandedRow,
+} from "@/lib/tableSort";
 import type { TableRow, SortConfig } from "@/lib/types";
 import { cn, formatDollar, formatPercent, formatPrice } from "@/lib/utils";
 import { TickerIdentity } from "./primitives/TickerIdentity";
@@ -102,6 +105,7 @@ export function PortfolioTable({
             <MobileRowCard
               key={row.symbol}
               row={row}
+              sortConfig={sortConfig}
               isExpanded={expandedRows.has(row.symbol)}
               onToggle={() => onToggleExpand(row.symbol)}
               enableValueAnimations={enableValueAnimations}
@@ -176,6 +180,7 @@ export function PortfolioTable({
             <TableRowGroup
               key={row.symbol}
               row={row}
+              sortConfig={sortConfig}
               index={idx}
               isExpanded={expandedRows.has(row.symbol)}
               onToggle={() => onToggleExpand(row.symbol)}
@@ -191,15 +196,18 @@ export function PortfolioTable({
 
 function MobileRowCard({
   row,
+  sortConfig,
   isExpanded,
   onToggle,
   enableValueAnimations = true,
 }: {
   row: TableRow;
+  sortConfig: SortConfig;
   isExpanded: boolean;
   onToggle: () => void;
   enableValueAnimations?: boolean;
 }) {
+  const sortedSources = sortSourcesForExpandedRow(row.sources, sortConfig, row);
   return (
     <article className="rounded-2xl border border-border/60 bg-surface p-4 shadow-[var(--shadow-md)]">
       <div className="flex items-start justify-between gap-3">
@@ -265,14 +273,14 @@ function MobileRowCard({
         </MetricCell>
       </div>
 
-      {isExpanded && row.sources.length > 0 && (
+      {isExpanded && sortedSources.length > 0 && (
         <div className="mt-4 space-y-2 border-t border-border pt-4">
           <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-text-muted">
             Source breakdown
           </span>
-          {row.sources.map((source, index) => (
+          {sortedSources.map((source, index) => (
             <div
-              key={`${row.symbol}-${source.sourceSymbol}-${index}`}
+              key={`${row.symbol}-${source.sourceSymbol}-${source.account}-${index}`}
               className="rounded-xl border border-border/50 bg-bg px-3 py-3"
             >
               <div className="flex items-start justify-between gap-3">
@@ -342,6 +350,7 @@ function MetricCell({
 
 function TableRowGroup({
   row,
+  sortConfig,
   index,
   isExpanded,
   onToggle,
@@ -349,6 +358,7 @@ function TableRowGroup({
   enableValueAnimations = true,
 }: {
   row: TableRow;
+  sortConfig: SortConfig;
   index: number;
   isExpanded: boolean;
   onToggle: () => void;
@@ -356,6 +366,7 @@ function TableRowGroup({
   enableValueAnimations?: boolean;
 }) {
   const isEven = index % 2 === 0;
+  const sortedSources = sortSourcesForExpandedRow(row.sources, sortConfig, row);
 
   return (
     <>
@@ -459,9 +470,9 @@ function TableRowGroup({
 
       {/* Expanded source rows */}
       {isExpanded &&
-        row.sources.map((source, sIdx) => (
+        sortedSources.map((source, sIdx) => (
           <tr
-            key={`${row.symbol}-${source.sourceSymbol}-${sIdx}`}
+            key={`${row.symbol}-${source.sourceSymbol}-${source.account}-${sIdx}`}
             className={cn(
               "border-b border-border-subtle",
               "bg-surface-hover/20",
