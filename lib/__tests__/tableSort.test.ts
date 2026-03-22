@@ -2,9 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   FIFTY_TWO_WEEK_POSITION_SORT_KEY,
+  sortSourcesForExpandedRow,
   sortTableRows,
 } from "../tableSort";
-import type { SortConfig, TableRow } from "../types";
+import type { PositionSource, SortConfig, TableRow } from "../types";
 
 function makeRow(overrides: Partial<TableRow>): TableRow {
   return {
@@ -105,5 +106,61 @@ describe("sortTableRows", () => {
       "VALID",
       "NO_RANGE",
     ]);
+  });
+});
+
+function makeFundSource(
+  fundSymbol: string,
+  value: number,
+  account: string
+): PositionSource {
+  return {
+    type: "fund",
+    sourceSymbol: fundSymbol,
+    sourceName: `${fundSymbol} fund`,
+    value,
+    percentOfSource: 1,
+    percentOfPortfolio: value / 10,
+    account,
+    investmentType: "ETFs",
+  };
+}
+
+describe("sortSourcesForExpandedRow", () => {
+  const parentRow = makeRow({ symbol: "MSFT", totalValue: 1000 });
+
+  it("sorts fund sources by value descending when table sort is totalValue desc", () => {
+    const sources: PositionSource[] = [
+      makeFundSource("SPY", 100, "A"),
+      makeFundSource("VTI", 500, "A"),
+      makeFundSource("VOO", 200, "B"),
+    ];
+    const sortConfig: SortConfig = { key: "totalValue", direction: "desc" };
+    expect(
+      sortSourcesForExpandedRow(sources, sortConfig, parentRow).map((s) => s.sourceSymbol)
+    ).toEqual(["VTI", "VOO", "SPY"]);
+  });
+
+  it("sorts fund sources by value ascending when table sort is totalValue asc", () => {
+    const sources: PositionSource[] = [
+      makeFundSource("SPY", 100, "A"),
+      makeFundSource("VTI", 500, "A"),
+    ];
+    const sortConfig: SortConfig = { key: "totalValue", direction: "asc" };
+    expect(
+      sortSourcesForExpandedRow(sources, sortConfig, parentRow).map((s) => s.sourceSymbol)
+    ).toEqual(["SPY", "VTI"]);
+  });
+
+  it("does not group by account ahead of the active sort key", () => {
+    const sources: PositionSource[] = [
+      makeFundSource("A", 50, "Zebra"),
+      makeFundSource("B", 200, "Apple"),
+      makeFundSource("C", 100, "Mango"),
+    ];
+    const sortConfig: SortConfig = { key: "totalValue", direction: "desc" };
+    expect(
+      sortSourcesForExpandedRow(sources, sortConfig, parentRow).map((s) => s.sourceSymbol)
+    ).toEqual(["B", "C", "A"]);
   });
 });
