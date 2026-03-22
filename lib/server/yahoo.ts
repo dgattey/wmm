@@ -2,6 +2,7 @@ import type { QuoteData, FundHolding } from "../types";
 import { MONEY_MARKET_SYMBOLS } from "../fidelitySymbolLink";
 
 import { cacheLife } from "next/cache";
+import { fetchSecNPortHoldingsBatch } from "./secNport";
 import { getYahooFinance } from "./yahooClient";
 import { withYahooRetry, mapWithConcurrency } from "./yahooRetry";
 import {
@@ -19,6 +20,7 @@ const SHOULD_BYPASS_NEXT_CACHE = process.env.NODE_ENV === "test";
 const LOOKTHROUGH_DEPTH = 1;
 const MIN_HOLDING_PERCENT = 0.000001;
 const HOLDINGS_CONCURRENCY = 4;
+const QUOTE_BATCH_SIZE = 100;
 
 const SKIP_SYMBOLS = MONEY_MARKET_SYMBOLS;
 
@@ -83,41 +85,46 @@ async function fetchQuotesUncached(
 
   try {
     const yahooFinance = getYahooFinance();
-    const yahooSymbols = symbols.map(toYahooSymbol);
+    const symbolBatches = [];
+    for (let index = 0; index < symbols.length; index += QUOTE_BATCH_SIZE) {
+      symbolBatches.push(symbols.slice(index, index + QUOTE_BATCH_SIZE));
+    }
 
-    const quotes = await withYahooRetry("Yahoo quote fetch", () =>
-      yahooFinance.quote(yahooSymbols, {}, { validateResult: false })
-    );
+    for (const batch of symbolBatches) {
+      const yahooSymbols = batch.map(toYahooSymbol);
+      const quotes = await withYahooRetry("Yahoo quote fetch", () =>
+        yahooFinance.quote(yahooSymbols, {}, { validateResult: false })
+      );
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const quotesArray: any[] = Array.isArray(quotes) ? quotes : [quotes];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const quotesArray: any[] = Array.isArray(quotes) ? quotes : [quotes];
 
-    for (const q of quotesArray) {
-      if (!q?.symbol) continue;
+      for (const q of quotesArray) {
+        if (!q?.symbol) continue;
 
-      const ourSymbol =
-        symbols.find((s) => toYahooSymbol(s) === q.symbol) || q.symbol;
-      const prev = fallbackQuotes[ourSymbol];
+        const ourSymbol = batch.find((s) => toYahooSymbol(s) === q.symbol) || q.symbol;
+        const prev = fallbackQuotes[ourSymbol];
 
-      const quoteData: QuoteData = {
-        symbol: ourSymbol,
-        regularMarketPrice: numOr(q.regularMarketPrice, prev?.regularMarketPrice ?? 0),
-        regularMarketChange: numOr(q.regularMarketChange, prev?.regularMarketChange ?? 0),
-        regularMarketChangePercent: numOr(
-          q.regularMarketChangePercent,
-          prev?.regularMarketChangePercent ?? 0
-        ),
-        fiftyTwoWeekHigh: numOr(q.fiftyTwoWeekHigh, prev?.fiftyTwoWeekHigh ?? 0),
-        fiftyTwoWeekLow: numOr(q.fiftyTwoWeekLow, prev?.fiftyTwoWeekLow ?? 0),
-        shortName: textOr(q.shortName, prev?.shortName ?? ""),
-        longName: textOr(
-          q.longName,
-          textOr(prev?.longName, textOr(q.shortName, prev?.shortName ?? ""))
-        ),
-      };
+        const quoteData: QuoteData = {
+          symbol: ourSymbol,
+          regularMarketPrice: numOr(q.regularMarketPrice, prev?.regularMarketPrice ?? 0),
+          regularMarketChange: numOr(q.regularMarketChange, prev?.regularMarketChange ?? 0),
+          regularMarketChangePercent: numOr(
+            q.regularMarketChangePercent,
+            prev?.regularMarketChangePercent ?? 0
+          ),
+          fiftyTwoWeekHigh: numOr(q.fiftyTwoWeekHigh, prev?.fiftyTwoWeekHigh ?? 0),
+          fiftyTwoWeekLow: numOr(q.fiftyTwoWeekLow, prev?.fiftyTwoWeekLow ?? 0),
+          shortName: textOr(q.shortName, prev?.shortName ?? ""),
+          longName: textOr(
+            q.longName,
+            textOr(prev?.longName, textOr(q.shortName, prev?.shortName ?? ""))
+          ),
+        };
 
-      result[ourSymbol] = quoteData;
-      rememberQuote(quoteData);
+        result[ourSymbol] = quoteData;
+        rememberQuote(quoteData);
+      }
     }
   } catch (error) {
     console.error("Error fetching quotes:", error);
@@ -177,7 +184,7 @@ async function fetchYahooDirectHoldings(symbol: string): Promise<FundHolding[]> 
   return holdings;
 }
 
-async function fetchDirectHoldingsUncached(
+async function fetchYahooResolvedHoldingsUncached(
   symbol: string,
   description?: string
 ): Promise<FundHolding[]> {
@@ -209,10 +216,37 @@ async function fetchDirectHoldingsUncached(
   return [];
 }
 
+interface DirectHoldingsResult {
+  holdings: FundHolding[];
+  isComplete: boolean;
+}
+
+async function fetchDirectHoldingsUncached(
+  symbol: string,
+  description?: string
+): Promise<DirectHoldingsResult> {
+  if (SKIP_SYMBOLS.has(symbol)) return { holdings: [], isComplete: true };
+
+  try {
+    const secHoldings = await fetchSecNPortHoldingsBatch([{ symbol, description }]);
+    const direct = secHoldings[symbol];
+    if (direct && direct.length > 0) {
+      return { holdings: direct, isComplete: true };
+    }
+  } catch (error) {
+    console.error(`Error fetching SEC N-PORT holdings for ${symbol}:`, error);
+  }
+
+  return {
+    holdings: await fetchYahooResolvedHoldingsUncached(symbol, description),
+    isComplete: false,
+  };
+}
+
 async function fetchDirectHoldingsCached(
   symbol: string,
   description: string | null
-): Promise<FundHolding[]> {
+): Promise<DirectHoldingsResult> {
   "use cache";
   cacheLife({
     stale: 5 * 60,
@@ -224,8 +258,14 @@ async function fetchDirectHoldingsCached(
 
 async function fetchDirectHoldings(
   symbol: string,
-  description?: string
-): Promise<FundHolding[]> {
+  description?: string,
+  prefetchedSecHoldings?: Record<string, FundHolding[]>
+): Promise<DirectHoldingsResult> {
+  const prefetched = prefetchedSecHoldings?.[symbol];
+  if (prefetched && prefetched.length > 0) {
+    return { holdings: prefetched, isComplete: true };
+  }
+
   return SHOULD_BYPASS_NEXT_CACHE
     ? fetchDirectHoldingsUncached(symbol, description)
     : fetchDirectHoldingsCached(symbol, description ?? null);
@@ -271,18 +311,19 @@ async function fetchHoldingsForSymbol(
   symbol: string,
   description?: string,
   depth = 0,
-  visited = new Set<string>()
+  visited = new Set<string>(),
+  prefetchedSecHoldings?: Record<string, FundHolding[]>
 ): Promise<FundHolding[]> {
-  const directHoldings = await fetchDirectHoldings(symbol, description);
-  if (directHoldings.length === 0) return getLastGoodHoldings(symbol) ?? [];
+  const direct = await fetchDirectHoldings(symbol, description, prefetchedSecHoldings);
+  if (direct.holdings.length === 0) return getLastGoodHoldings(symbol) ?? [];
 
-  const reportedPercent = sumHoldingPercents(directHoldings);
-  const residual = buildResidualHolding(symbol, description, Math.max(0, 1 - reportedPercent));
+  const reportedPercent = sumHoldingPercents(direct.holdings);
+  const residual = direct.isComplete
+    ? null
+    : buildResidualHolding(symbol, description, Math.max(0, 1 - reportedPercent));
 
-  if (depth >= LOOKTHROUGH_DEPTH) {
-    const holdings = aggregateHoldings(
-      residual ? [...directHoldings, residual] : directHoldings
-    );
+  if (direct.isComplete || depth >= LOOKTHROUGH_DEPTH) {
+    const holdings = aggregateHoldings(residual ? [...direct.holdings, residual] : direct.holdings);
     rememberHoldings(symbol, holdings);
     return holdings;
   }
@@ -291,13 +332,19 @@ async function fetchHoldingsForSymbol(
   nextVisited.add(symbol);
 
   const expanded: FundHolding[] = [];
-  for (const h of directHoldings) {
+  for (const h of direct.holdings) {
     if (nextVisited.has(h.symbol)) {
       expanded.push(h);
       continue;
     }
 
-    const nested = await fetchHoldingsForSymbol(h.symbol, h.holdingName, depth + 1, nextVisited);
+    const nested = await fetchHoldingsForSymbol(
+      h.symbol,
+      h.holdingName,
+      depth + 1,
+      nextVisited,
+      prefetchedSecHoldings
+    );
     if (nested.length === 0) {
       expanded.push(h);
       continue;
@@ -328,12 +375,25 @@ export async function fetchAllHoldings(
       : { symbol: f.symbol, description: f.description }
   );
 
+  let prefetchedSecHoldings: Record<string, FundHolding[]> = {};
+  try {
+    prefetchedSecHoldings = await fetchSecNPortHoldingsBatch(normalized);
+  } catch (error) {
+    console.error("Error prefetching SEC N-PORT holdings batch:", error);
+  }
+
   const results = await mapWithConcurrency(
     normalized,
     HOLDINGS_CONCURRENCY,
     async ({ symbol, description }) => ({
       symbol,
-      holdings: await fetchHoldingsForSymbol(symbol, description),
+      holdings: await fetchHoldingsForSymbol(
+        symbol,
+        description,
+        0,
+        new Set<string>(),
+        prefetchedSecHoldings
+      ),
     })
   );
 

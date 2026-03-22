@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockQuote = vi.fn();
 const mockQuoteSummary = vi.fn();
 const mockSearch = vi.fn();
+const mockFetchSecNPortHoldingsBatch = vi.fn();
 
 vi.mock("yahoo-finance2", () => {
   class MockYahooFinance {
@@ -15,6 +16,10 @@ vi.mock("yahoo-finance2", () => {
     default: MockYahooFinance,
   };
 });
+
+vi.mock("../secNport", () => ({
+  fetchSecNPortHoldingsBatch: mockFetchSecNPortHoldingsBatch,
+}));
 
 describe("shouldSkipYahooSymbol", () => {
   it("keeps exchange-qualified numeric symbols fetchable", async () => {
@@ -46,6 +51,8 @@ describe("yahoo fund symbol lookups", () => {
     mockQuote.mockReset();
     mockQuoteSummary.mockReset();
     mockSearch.mockReset();
+    mockFetchSecNPortHoldingsBatch.mockReset();
+    mockFetchSecNPortHoldingsBatch.mockResolvedValue({});
   });
 
   it("automatically resolves a public proxy share class from description", async () => {
@@ -210,6 +217,43 @@ describe("yahoo fund symbol lookups", () => {
         symbol: "EQTYA",
         holdingName: "Synthetic Equity A",
         holdingPercent: 0.12,
+      },
+    ]);
+  });
+
+  it("prefers SEC N-PORT holdings when a mapped fund is available", async () => {
+    mockFetchSecNPortHoldingsBatch.mockResolvedValue({
+      VTI: [
+        {
+          symbol: "MSFT",
+          holdingName: "MICROSOFT CORP",
+          holdingPercent: 0.05,
+        },
+        {
+          symbol: "AAPL",
+          holdingName: "APPLE INC",
+          holdingPercent: 0.04,
+        },
+      ],
+    });
+
+    const { fetchAllHoldings } = await import("../yahoo");
+    const result = await fetchAllHoldings([{ symbol: "VTI" }]);
+
+    expect(mockFetchSecNPortHoldingsBatch).toHaveBeenCalled();
+    expect(mockQuoteSummary).not.toHaveBeenCalledWith("VTI", {
+      modules: ["topHoldings"],
+    });
+    expect(result.VTI).toEqual([
+      {
+        symbol: "MSFT",
+        holdingName: "MICROSOFT CORP",
+        holdingPercent: 0.05,
+      },
+      {
+        symbol: "AAPL",
+        holdingName: "APPLE INC",
+        holdingPercent: 0.04,
       },
     ]);
   });

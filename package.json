@@ -23,7 +23,8 @@
     "next": "16.1.7",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "yahoo-finance2": "^3.13.2"
+    "yahoo-finance2": "^3.13.2",
+    "yauzl": "^3.2.1"
   },
   "devDependencies": {
     "@svgr/webpack": "^8.1.0",
@@ -35,6 +36,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/yauzl": "^2.10.3",
     "@vitejs/plugin-react": "^6.0.0",
     "babel-plugin-react-compiler": "^19.1.0-rc.2",
     "eslint": "^9",

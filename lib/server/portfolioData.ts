@@ -8,6 +8,8 @@ import type {
 import { computePortfolioData } from "./aggregation";
 import { fetchQuotes, fetchAllHoldings } from "./yahoo";
 
+const MAX_HOLDING_QUOTES = 250;
+
 export async function buildPortfolioData(
   positions: FidelityPosition[],
   width: number,
@@ -29,28 +31,46 @@ export async function buildPortfolioData(
     fetchAllHoldings(uniqueFundSymbols),
   ]);
 
-  await hydrateHoldingQuotes(quotes, holdings);
+  await hydrateHoldingQuotes(quotes, holdings, positions);
 
   return computePortfolioData(positions, quotes, holdings, width, height);
 }
 
 async function hydrateHoldingQuotes(
   quotes: Record<string, QuoteData>,
-  holdings: Record<string, FundHolding[]>
+  holdings: Record<string, FundHolding[]>,
+  positions: FidelityPosition[]
 ) {
-  const holdingSymbols = new Set<string>();
+  const fundValueBySymbol = new Map<string, number>();
+  for (const position of positions) {
+    fundValueBySymbol.set(
+      position.symbol,
+      (fundValueBySymbol.get(position.symbol) ?? 0) + position.currentValue
+    );
+  }
 
-  for (const fundHoldings of Object.values(holdings)) {
+  const holdingSymbolScores = new Map<string, number>();
+
+  for (const [fundSymbol, fundHoldings] of Object.entries(holdings)) {
+    const fundValue = fundValueBySymbol.get(fundSymbol) ?? 0;
     for (const holding of fundHoldings) {
-      if (holding.symbol && !quotes[holding.symbol]) {
-        holdingSymbols.add(holding.symbol);
-      }
+      if (!holding.symbol || quotes[holding.symbol]) continue;
+
+      holdingSymbolScores.set(
+        holding.symbol,
+        (holdingSymbolScores.get(holding.symbol) ?? 0) + fundValue * holding.holdingPercent
+      );
     }
   }
 
-  if (holdingSymbols.size === 0) {
+  if (holdingSymbolScores.size === 0) {
     return;
   }
 
-  Object.assign(quotes, await fetchQuotes([...holdingSymbols]));
+  const prioritizedSymbols = [...holdingSymbolScores.entries()]
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, MAX_HOLDING_QUOTES)
+    .map(([symbol]) => symbol);
+
+  Object.assign(quotes, await fetchQuotes(prioritizedSymbols));
 }
