@@ -280,6 +280,7 @@ export function Dashboard({
           onSort={onSort}
           expandedRows={expandedRows}
           onToggleExpand={onToggleExpand}
+          viewMode={viewMode}
           isMobile={isMobile}
           enableIntroAnimation={enableIntroAnimation}
           enableValueAnimations={enableValueAnimations}
