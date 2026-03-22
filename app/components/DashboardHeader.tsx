@@ -306,11 +306,18 @@ export function DashboardSearchBar({
     <div
       className={cn(
         "relative z-10 flex items-center gap-3",
+        isSearchDocked && "z-[1]",
         isMobile ? "px-4" : "px-6",
         "max-w-[1400px] mx-auto"
       )}
     >
-      <div className={cn("relative min-w-0 flex-1", !isMobile && "max-w-xl lg:max-w-2xl")}>
+      <div
+        className={cn(
+          "relative min-w-0 flex-1",
+          isSearchDocked && "z-[1]",
+          !isMobile && "max-w-xl lg:max-w-2xl"
+        )}
+      >
         <SearchIcon
           className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 z-10 text-text-muted"
         />

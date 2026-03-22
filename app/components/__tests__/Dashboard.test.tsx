@@ -240,6 +240,7 @@ describe("Dashboard portfolio actions", () => {
 
     renderDashboard();
 
+    expect(screen.getByTestId("portfolio-search-shell")).toHaveClass("z-[60]");
     expect(screen.getByRole("banner")).toHaveClass("is-search-docked");
     expect(screen.queryByTestId("header-search-absorber")).not.toBeInTheDocument();
     expect(screen.queryByTestId("portfolio-search-shell-background")).not.toBeInTheDocument();
