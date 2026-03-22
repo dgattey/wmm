@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import TreemapMarkIcon from "@/public/icon.svg";
 import { HomeHowItWorksSection } from "./components/HomeHowItWorksSection";
 import { PortfolioLibraryNav } from "./components/PortfolioLibraryNav";
-import { DashboardSkeleton } from "./components/skeletons";
+import { DashboardSkeleton, PortfolioLibrarySkeleton } from "./components/skeletons";
 import { UploadView } from "./components/UploadView";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { usePortfolioLibrary } from "@/hooks/usePortfolioLibrary";
@@ -15,6 +15,7 @@ export default function Home() {
   const {
     portfolios,
     isUploading,
+    isLibraryLoading,
     error,
     uploadFiles,
     refreshLibrary,
@@ -58,13 +59,17 @@ export default function Home() {
           </p>
         </section>
 
-        {portfolios.length > 0 && (
+        {(isLibraryLoading || portfolios.length > 0) && (
           <section className="rounded-[30px] border border-border/70 bg-surface px-5 py-5 shadow-[var(--shadow-lg)] md:px-8 md:py-8">
-            <PortfolioLibraryNav
-              portfolios={portfolios}
-              onRemovePortfolio={removePortfolioById}
-              onRenamePortfolio={renamePortfolio}
-            />
+            {isLibraryLoading ? (
+              <PortfolioLibrarySkeleton />
+            ) : (
+              <PortfolioLibraryNav
+                portfolios={portfolios}
+                onRemovePortfolio={removePortfolioById}
+                onRenamePortfolio={renamePortfolio}
+              />
+            )}
           </section>
         )}
 

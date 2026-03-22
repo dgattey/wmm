@@ -16,6 +16,15 @@ describe("usePortfolioLibrary", () => {
     vi.restoreAllMocks();
   });
 
+  it("sets isLibraryLoading false after the initial library read", async () => {
+    const { result } = renderHook(() => usePortfolioLibrary());
+
+    expect(result.current.isLibraryLoading).toBe(true);
+    await waitFor(() => {
+      expect(result.current.isLibraryLoading).toBe(false);
+    });
+  });
+
   it("uploads multiple files and keeps the parsed portfolios in the library", async () => {
     const { result } = renderHook(() => usePortfolioLibrary());
 

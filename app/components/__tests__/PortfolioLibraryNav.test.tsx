@@ -46,6 +46,10 @@ describe("PortfolioLibraryNav", () => {
     );
 
     expect(screen.getByText("Pick up where you left off")).toBeInTheDocument();
+    expect(screen.getByText("$3k")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /open sample_portfolio_beta/i })
+    ).toHaveAttribute("title", "Full value $3,000.00");
     fireEvent.click(screen.getByRole("button", { name: /remove sample_portfolio_beta/i }));
     expect(onRemovePortfolio).toHaveBeenCalledWith("beta");
   });
