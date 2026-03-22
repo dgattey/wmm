@@ -323,7 +323,9 @@ export function DashboardSearchBar({
           aria-label="Search portfolio"
           className={cn(
             "w-full rounded-xl border border-border py-2.5 pl-10 text-sm text-text-primary shadow-[var(--shadow-sm)]",
-            isSearchDocked ? "bg-surface/92" : "bg-surface/95 backdrop-blur-xl",
+            isSearchDocked
+              ? "bg-[var(--glass-bg)] backdrop-blur-xl ring-1 ring-inset ring-white/[0.05] shadow-[0_12px_32px_rgba(0,0,0,0.18)]"
+              : "bg-surface/95 backdrop-blur-xl",
             "outline-none transition-colors placeholder:text-text-muted hover:border-border/80 focus:border-border",
             searchInput.length > 0 ? "pr-10" : "pr-3"
           )}

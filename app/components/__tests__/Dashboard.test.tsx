@@ -244,11 +244,12 @@ describe("Dashboard portfolio actions", () => {
     expect(screen.getByRole("banner")).toHaveClass("is-search-docked");
     expect(screen.queryByTestId("portfolio-search-shell-background")).not.toBeInTheDocument();
     expect(screen.getByRole("searchbox", { name: "Search portfolio" })).toHaveClass(
-      "bg-surface/92"
+      "bg-[var(--glass-bg)]"
     );
-    expect(screen.getByRole("searchbox", { name: "Search portfolio" })).not.toHaveClass(
+    expect(screen.getByRole("searchbox", { name: "Search portfolio" })).toHaveClass(
       "backdrop-blur-xl"
     );
+    expect(screen.getByRole("searchbox", { name: "Search portfolio" })).toHaveClass("ring-1");
   });
 
   it("shows and uses Clear button when search has text", () => {

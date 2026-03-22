@@ -204,14 +204,14 @@ body {
 
 .sticky-header.is-search-docked,
 .sticky-header.is-search-docked .sticky-header-search-absorber {
-  background-color: var(--glass-bg-strong);
+  background-color: var(--glass-bg);
 }
 
 .sticky-header-search-absorber {
   position: absolute;
   inset-inline: 0;
   top: 100%;
-  height: calc(var(--header-search-absorb-height, 0px) + 1rem);
+  height: var(--header-search-absorb-height, 0px);
   background-color: var(--glass-bg);
   backdrop-filter: blur(20px) saturate(1.2);
   transform: scaleY(0);
@@ -228,7 +228,6 @@ body {
 .sticky-header-search-absorber.is-docked {
   transform: scaleY(1);
   opacity: 1;
-  box-shadow: var(--shadow);
 }
 
 /* === Utility Classes === */
