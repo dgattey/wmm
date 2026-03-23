@@ -310,8 +310,8 @@ describe("yahoo fund symbol lookups", () => {
       topHoldings: {
         holdings: [
           {
-            symbol: `${symbol}-HOLDING`,
-            holdingName: `${symbol} Holding`,
+            symbol,
+            holdingName: `${symbol} Fund`,
             holdingPercent: 1,
           },
         ],
@@ -329,15 +329,15 @@ describe("yahoo fund symbol lookups", () => {
     expect(mockQuoteSummary).toHaveBeenCalledTimes(2);
     expect(result.SPY).toEqual([
       {
-        symbol: "SPY-HOLDING",
-        holdingName: "SPY Holding",
+        symbol: "SPY",
+        holdingName: "SPY Fund",
         holdingPercent: 1,
       },
     ]);
     expect(result.QQQ).toEqual([
       {
-        symbol: "QQQ-HOLDING",
-        holdingName: "QQQ Holding",
+        symbol: "QQQ",
+        holdingName: "QQQ Fund",
         holdingPercent: 1,
       },
     ]);
