@@ -150,4 +150,9 @@ describe("secNport helpers", () => {
       })
     ).toBe("91282CNN7");
   });
+
+  it("converts SEC percentage points into decimal holding weights", () => {
+    expect(__private__.parseSecHoldingPercent("6.25")).toBeCloseTo(0.0625);
+    expect(__private__.parseSecHoldingPercent(".5")).toBeCloseTo(0.005);
+  });
 });

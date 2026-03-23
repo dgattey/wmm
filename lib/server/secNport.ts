@@ -149,6 +149,12 @@ function parseSecNumber(value: string | undefined): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function parseSecHoldingPercent(value: string | undefined): number | null {
+  const parsed = parseSecNumber(value);
+  if (parsed === null) return null;
+  return parsed / 100;
+}
+
 function parseSecDate(value: string): number {
   const trimmed = value.trim();
   if (!trimmed) return 0;
@@ -662,7 +668,7 @@ async function extractHoldingsForAccessions(
     const parsedHoldings: FundHolding[] = [];
 
     for (const row of holdings) {
-      const holdingPercent = parseSecNumber(row.percentage);
+      const holdingPercent = parseSecHoldingPercent(row.percentage);
       if (holdingPercent === null || holdingPercent <= MIN_HOLDING_PERCENT) continue;
 
       const ticker = tickersByHoldingId.get(row.holdingId) || "";
@@ -763,4 +769,5 @@ export const __private__ = {
   aggregateHoldings,
   buildMetadataIndex,
   findResolvedFund,
+  parseSecHoldingPercent,
 };
