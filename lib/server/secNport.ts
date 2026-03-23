@@ -457,7 +457,7 @@ async function openZipEntryStream(archivePath: string, entryName: string) {
       zipFile.on("error", fail);
       zipFile.on("entry", (entry) => {
         if (entry.fileName !== entryName) {
-          zipFile.readEntry();
+          setImmediate(() => zipFile.readEntry());
           return;
         }
 
@@ -478,7 +478,7 @@ async function openZipEntryStream(archivePath: string, entryName: string) {
         }
       });
 
-      zipFile.readEntry();
+      setImmediate(() => zipFile.readEntry());
     });
   });
 }

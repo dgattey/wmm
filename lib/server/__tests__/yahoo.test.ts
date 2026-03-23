@@ -304,6 +304,45 @@ describe("yahoo fund symbol lookups", () => {
     expect(result["900000001"][1]?.holdingPercent).toBeCloseTo(0.45);
   });
 
+  it("does not rerun SEC lookups for batch-prefetched misses", async () => {
+    mockFetchSecNPortHoldingsBatch.mockResolvedValue({});
+    mockQuoteSummary.mockImplementation(async (symbol: string) => ({
+      topHoldings: {
+        holdings: [
+          {
+            symbol: `${symbol}-HOLDING`,
+            holdingName: `${symbol} Holding`,
+            holdingPercent: 1,
+          },
+        ],
+      },
+    }));
+
+    const { fetchAllHoldings } = await import("../yahoo");
+    const result = await fetchAllHoldings([{ symbol: "SPY" }, { symbol: "QQQ" }]);
+
+    expect(mockFetchSecNPortHoldingsBatch).toHaveBeenCalledTimes(1);
+    expect(mockFetchSecNPortHoldingsBatch).toHaveBeenCalledWith([
+      { symbol: "SPY", description: undefined },
+      { symbol: "QQQ", description: undefined },
+    ]);
+    expect(mockQuoteSummary).toHaveBeenCalledTimes(2);
+    expect(result.SPY).toEqual([
+      {
+        symbol: "SPY-HOLDING",
+        holdingName: "SPY Holding",
+        holdingPercent: 1,
+      },
+    ]);
+    expect(result.QQQ).toEqual([
+      {
+        symbol: "QQQ-HOLDING",
+        holdingName: "QQQ Holding",
+        holdingPercent: 1,
+      },
+    ]);
+  });
+
   it("still skips quote lookups for internal non-market symbols", async () => {
     const { fetchQuotes } = await import("../yahoo");
     const result = await fetchQuotes(["900000001"]);

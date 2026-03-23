@@ -223,18 +223,21 @@ interface DirectHoldingsResult {
 
 async function fetchDirectHoldingsUncached(
   symbol: string,
-  description?: string
+  description?: string,
+  shouldFetchSec = true
 ): Promise<DirectHoldingsResult> {
   if (SKIP_SYMBOLS.has(symbol)) return { holdings: [], isComplete: true };
 
-  try {
-    const secHoldings = await fetchSecNPortHoldingsBatch([{ symbol, description }]);
-    const direct = secHoldings[symbol];
-    if (direct && direct.length > 0) {
-      return { holdings: direct, isComplete: true };
+  if (shouldFetchSec) {
+    try {
+      const secHoldings = await fetchSecNPortHoldingsBatch([{ symbol, description }]);
+      const direct = secHoldings[symbol];
+      if (direct && direct.length > 0) {
+        return { holdings: direct, isComplete: true };
+      }
+    } catch (error) {
+      console.error(`Error fetching SEC N-PORT holdings for ${symbol}:`, error);
     }
-  } catch (error) {
-    console.error(`Error fetching SEC N-PORT holdings for ${symbol}:`, error);
   }
 
   return {
@@ -245,7 +248,8 @@ async function fetchDirectHoldingsUncached(
 
 async function fetchDirectHoldingsCached(
   symbol: string,
-  description: string | null
+  description: string | null,
+  shouldFetchSec: boolean
 ): Promise<DirectHoldingsResult> {
   "use cache";
   cacheLife({
@@ -253,22 +257,24 @@ async function fetchDirectHoldingsCached(
     revalidate: HOLDINGS_REVALIDATE_SECONDS,
     expire: 2 * 24 * 60 * 60,
   });
-  return fetchDirectHoldingsUncached(symbol, description ?? undefined);
+  return fetchDirectHoldingsUncached(symbol, description ?? undefined, shouldFetchSec);
 }
 
 async function fetchDirectHoldings(
   symbol: string,
   description?: string,
-  prefetchedSecHoldings?: Record<string, FundHolding[]>
+  prefetchedSecHoldings?: Record<string, FundHolding[]>,
+  secBatchCoveredSymbols?: ReadonlySet<string>
 ): Promise<DirectHoldingsResult> {
   const prefetched = prefetchedSecHoldings?.[symbol];
   if (prefetched && prefetched.length > 0) {
     return { holdings: prefetched, isComplete: true };
   }
 
+  const shouldFetchSec = !secBatchCoveredSymbols?.has(symbol);
   return SHOULD_BYPASS_NEXT_CACHE
-    ? fetchDirectHoldingsUncached(symbol, description)
-    : fetchDirectHoldingsCached(symbol, description ?? null);
+    ? fetchDirectHoldingsUncached(symbol, description, shouldFetchSec)
+    : fetchDirectHoldingsCached(symbol, description ?? null, shouldFetchSec);
 }
 
 // === Holdings aggregation & look-through ===
@@ -312,9 +318,15 @@ async function fetchHoldingsForSymbol(
   description?: string,
   depth = 0,
   visited = new Set<string>(),
-  prefetchedSecHoldings?: Record<string, FundHolding[]>
+  prefetchedSecHoldings?: Record<string, FundHolding[]>,
+  secBatchCoveredSymbols?: ReadonlySet<string>
 ): Promise<FundHolding[]> {
-  const direct = await fetchDirectHoldings(symbol, description, prefetchedSecHoldings);
+  const direct = await fetchDirectHoldings(
+    symbol,
+    description,
+    prefetchedSecHoldings,
+    secBatchCoveredSymbols
+  );
   if (direct.holdings.length === 0) return getLastGoodHoldings(symbol) ?? [];
 
   const reportedPercent = sumHoldingPercents(direct.holdings);
@@ -343,7 +355,8 @@ async function fetchHoldingsForSymbol(
       h.holdingName,
       depth + 1,
       nextVisited,
-      prefetchedSecHoldings
+      prefetchedSecHoldings,
+      secBatchCoveredSymbols
     );
     if (nested.length === 0) {
       expanded.push(h);
@@ -376,8 +389,10 @@ export async function fetchAllHoldings(
   );
 
   let prefetchedSecHoldings: Record<string, FundHolding[]> = {};
+  let secBatchCoveredSymbols: ReadonlySet<string> | undefined;
   try {
     prefetchedSecHoldings = await fetchSecNPortHoldingsBatch(normalized);
+    secBatchCoveredSymbols = new Set(normalized.map(({ symbol }) => symbol));
   } catch (error) {
     console.error("Error prefetching SEC N-PORT holdings batch:", error);
   }
@@ -392,7 +407,8 @@ export async function fetchAllHoldings(
         description,
         0,
         new Set<string>(),
-        prefetchedSecHoldings
+        prefetchedSecHoldings,
+        secBatchCoveredSymbols
       ),
     })
   );
