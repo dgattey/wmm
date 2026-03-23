@@ -19,6 +19,7 @@ const HOLDINGS_REVALIDATE_SECONDS = 60 * 60;
 const SHOULD_BYPASS_NEXT_CACHE = process.env.NODE_ENV === "test";
 const LOOKTHROUGH_DEPTH = 1;
 const MIN_HOLDING_PERCENT = 0.000001;
+const MAX_HOLDINGS_PER_FUND = 250;
 const HOLDINGS_CONCURRENCY = 4;
 const QUOTE_BATCH_SIZE = 100;
 
@@ -313,6 +314,22 @@ function buildResidualHolding(
   };
 }
 
+function limitHoldings(
+  symbol: string,
+  description: string | undefined,
+  holdings: FundHolding[]
+): FundHolding[] {
+  if (holdings.length <= MAX_HOLDINGS_PER_FUND) return holdings;
+
+  const kept = holdings.slice(0, MAX_HOLDINGS_PER_FUND);
+  const omittedPercent = holdings
+    .slice(MAX_HOLDINGS_PER_FUND)
+    .reduce((sum, holding) => sum + holding.holdingPercent, 0);
+  const residual = buildResidualHolding(symbol, description, omittedPercent);
+
+  return residual ? aggregateHoldings([...kept, residual]) : kept;
+}
+
 async function fetchHoldingsForSymbol(
   symbol: string,
   description?: string,
@@ -335,7 +352,11 @@ async function fetchHoldingsForSymbol(
     : buildResidualHolding(symbol, description, Math.max(0, 1 - reportedPercent));
 
   if (direct.isComplete || depth >= LOOKTHROUGH_DEPTH) {
-    const holdings = aggregateHoldings(residual ? [...direct.holdings, residual] : direct.holdings);
+    const holdings = limitHoldings(
+      symbol,
+      description,
+      aggregateHoldings(residual ? [...direct.holdings, residual] : direct.holdings)
+    );
     rememberHoldings(symbol, holdings);
     return holdings;
   }
@@ -374,7 +395,7 @@ async function fetchHoldingsForSymbol(
 
   if (residual) expanded.push(residual);
 
-  const holdings = aggregateHoldings(expanded);
+  const holdings = limitHoldings(symbol, description, aggregateHoldings(expanded));
   rememberHoldings(symbol, holdings);
   return holdings;
 }

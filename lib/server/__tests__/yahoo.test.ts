@@ -343,6 +343,27 @@ describe("yahoo fund symbol lookups", () => {
     ]);
   });
 
+  it("caps oversized complete holdings lists into a residual slice", async () => {
+    mockFetchSecNPortHoldingsBatch.mockResolvedValue({
+      VTI: Array.from({ length: 260 }, (_, index) => ({
+        symbol: `H${String(index).padStart(3, "0")}`,
+        holdingName: `Holding ${index}`,
+        holdingPercent: 0.001,
+      })),
+    });
+
+    const { fetchAllHoldings } = await import("../yahoo");
+    const result = await fetchAllHoldings([{ symbol: "VTI" }]);
+    const residual = result.VTI.find((holding) => holding.symbol === "VTI");
+
+    expect(result.VTI).toHaveLength(251);
+    expect(residual).toMatchObject({
+      symbol: "VTI",
+      holdingName: "Rest of VTI",
+    });
+    expect(residual?.holdingPercent).toBeCloseTo(0.01);
+  });
+
   it("still skips quote lookups for internal non-market symbols", async () => {
     const { fetchQuotes } = await import("../yahoo");
     const result = await fetchQuotes(["900000001"]);
