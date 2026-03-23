@@ -213,7 +213,6 @@ describe("Dashboard portfolio actions", () => {
 
     const searchShell = screen.getByTestId("portfolio-search-shell");
     expect(searchShell).toBeInTheDocument();
-    expect(screen.getByTestId("header-search-absorber")).toBeInTheDocument();
     expect(screen.getByTestId("inline-holdings-count")).toHaveTextContent(
       "0 holdings"
     );
@@ -241,7 +240,10 @@ describe("Dashboard portfolio actions", () => {
 
     renderDashboard();
 
-    expect(screen.getByRole("banner")).toHaveClass("is-search-docked");
+    const header = screen.getByRole("banner");
+    expect(header).toHaveClass("is-search-docked");
+    expect(header).toHaveClass("sticky-header");
+    expect(header.querySelector("[data-testid='header-search-absorber']")).toBeNull();
     expect(screen.queryByTestId("portfolio-search-shell-background")).not.toBeInTheDocument();
     expect(screen.getByRole("searchbox", { name: "Search portfolio" })).toHaveClass(
       "bg-surface/92"
@@ -448,5 +450,138 @@ describe("Dashboard portfolio actions", () => {
       )
     ).toBeInTheDocument();
     expect(screen.getByText(/Yahoo Finance rate limit hit/i)).toBeInTheDocument();
+  });
+
+  it("search bar is visible, interactive, and shares the header surface when docked with real data", () => {
+    vi.useFakeTimers();
+
+    const realRows: import("@/lib/types").TableRow[] = [
+      {
+        symbol: "AAPL", name: "Apple Inc.", accounts: ["Brokerage"],
+        investmentTypes: ["Stocks"], totalValue: 45000, percentOfPortfolio: 22.5,
+        currentPrice: 189.5, totalGainLossDollar: 12000, totalGainLossPercent: 36.4,
+        fiftyTwoWeekHigh: 199.62, fiftyTwoWeekLow: 124.17, isExpandable: false, sources: [],
+      },
+      {
+        symbol: "MSFT", name: "Microsoft Corp", accounts: ["Brokerage"],
+        investmentTypes: ["Stocks"], totalValue: 38000, percentOfPortfolio: 19,
+        currentPrice: 378.91, totalGainLossDollar: 9200, totalGainLossPercent: 31.9,
+        fiftyTwoWeekHigh: 384.3, fiftyTwoWeekLow: 275.37, isExpandable: false, sources: [],
+      },
+      {
+        symbol: "VTI", name: "Vanguard Total Stock Market ETF", accounts: ["401k"],
+        investmentTypes: ["ETFs"], totalValue: 32000, percentOfPortfolio: 16,
+        currentPrice: 236.12, totalGainLossDollar: 4800, totalGainLossPercent: 17.6,
+        fiftyTwoWeekHigh: 242.89, fiftyTwoWeekLow: 193.05, isExpandable: true, sources: [],
+      },
+      {
+        symbol: "GOOGL", name: "Alphabet Inc.", accounts: ["Brokerage"],
+        investmentTypes: ["Stocks"], totalValue: 28000, percentOfPortfolio: 14,
+        currentPrice: 141.8, totalGainLossDollar: 5600, totalGainLossPercent: 25,
+        fiftyTwoWeekHigh: 153.78, fiftyTwoWeekLow: 101.43, isExpandable: false, sources: [],
+      },
+      {
+        symbol: "AMZN", name: "Amazon.com Inc.", accounts: ["Brokerage"],
+        investmentTypes: ["Stocks"], totalValue: 25000, percentOfPortfolio: 12.5,
+        currentPrice: 178.25, totalGainLossDollar: 3400, totalGainLossPercent: 15.7,
+        fiftyTwoWeekHigh: 189.77, fiftyTwoWeekLow: 118.35, isExpandable: false, sources: [],
+      },
+      {
+        symbol: "BND", name: "Vanguard Total Bond Market ETF", accounts: ["401k"],
+        investmentTypes: ["ETFs"], totalValue: 18000, percentOfPortfolio: 9,
+        currentPrice: 72.54, totalGainLossDollar: -800, totalGainLossPercent: -4.3,
+        fiftyTwoWeekHigh: 75.21, fiftyTwoWeekLow: 69.88, isExpandable: false, sources: [],
+      },
+      {
+        symbol: "NVDA", name: "NVIDIA Corp", accounts: ["Brokerage"],
+        investmentTypes: ["Stocks"], totalValue: 14000, percentOfPortfolio: 7,
+        currentPrice: 875.28, totalGainLossDollar: 6200, totalGainLossPercent: 79.5,
+        fiftyTwoWeekHigh: 974.94, fiftyTwoWeekLow: 373.56, isExpandable: false, sources: [],
+      },
+    ];
+
+    const realPortfolioData: import("@/lib/types").PortfolioData = {
+      treeMapNodes: [],
+      tableRows: realRows,
+      positionRows: realRows,
+      summary: {
+        totalValue: 200000,
+        totalGainLoss: 40400,
+        totalGainLossPercent: 25.3,
+        accounts: ["Brokerage", "401k"],
+        investmentTypes: ["Stocks", "ETFs"],
+      },
+      lastUpdated: new Date().toISOString(),
+    };
+
+    mockUseIsStickyDocked.mockReturnValue([{ current: null }, true, 112]);
+
+    const onFiltersChange = vi.fn();
+    render(
+      <Dashboard
+        portfolioData={realPortfolioData}
+        portfolioName="Retirement + Brokerage"
+        portfolioId="port-abc-123"
+        filteredTreeMapNodes={[]}
+        filteredRows={realRows}
+        isMobile={false}
+        filters={{ investmentTypes: [], accounts: [], searchQuery: "" }}
+        onFiltersChange={onFiltersChange}
+        onResetFilters={vi.fn()}
+        sortConfig={{ key: "totalValue", direction: "desc" }}
+        onSort={vi.fn()}
+        expandedRows={new Set()}
+        onToggleExpand={vi.fn()}
+        onBackToPicker={vi.fn()}
+        isLoading={false}
+        viewMode="holdings"
+        onViewModeChange={vi.fn()}
+        treeMapGrouping="fund"
+        onTreeMapGroupingChange={vi.fn()}
+        selectedFunds={[]}
+        onToggleFund={vi.fn()}
+        onClearFunds={vi.fn()}
+        fundOptions={[]}
+        activeSummary={null}
+        treeMapWidth={1400}
+        treeMapHeight={500}
+      />
+    );
+
+    const header = screen.getByRole("banner");
+    expect(header).toHaveClass("sticky-header", "is-search-docked");
+
+    expect(header.querySelector(".sticky-header-search-absorber")).toBeNull();
+
+    const searchInput = screen.getByRole("searchbox", { name: "Search portfolio" });
+    expect(searchInput).toBeInTheDocument();
+    expect(searchInput).toBeVisible();
+    expect(searchInput).toBeEnabled();
+    expect(searchInput).toHaveAttribute("placeholder", "Search by name or symbol");
+
+    expect(searchInput).toHaveClass("bg-surface/92");
+    expect(searchInput).not.toHaveClass("backdrop-blur-xl");
+
+    expect(screen.getByTestId("inline-holdings-count")).toHaveTextContent("7 holdings");
+
+    fireEvent.change(searchInput, { target: { value: "Apple" } });
+    expect(searchInput).toHaveValue("Apple");
+
+    vi.advanceTimersByTime(250);
+    expect(onFiltersChange).toHaveBeenCalledWith(
+      expect.objectContaining({ searchQuery: "Apple" })
+    );
+
+    fireEvent.change(searchInput, { target: { value: "" } });
+    vi.advanceTimersByTime(250);
+    expect(onFiltersChange).toHaveBeenCalledWith(
+      expect.objectContaining({ searchQuery: "" })
+    );
+
+    const searchShell = screen.getByTestId("portfolio-search-shell");
+    expect(searchShell).toHaveClass("sticky");
+    expect(searchShell).toHaveClass("z-50");
+
+    vi.useRealTimers();
   });
 });
