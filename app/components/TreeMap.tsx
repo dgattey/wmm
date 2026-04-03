@@ -307,9 +307,9 @@ export function TreeMap({
                 <>
                   <SearchOffIcon
                     size={isMobile ? 14 : 16}
-                    className="text-white drop-shadow-sm opacity-95"
+                    className="text-text-primary drop-shadow-sm"
                   />
-                  <span className="mt-0.5 max-w-[min(100%,18rem)] text-center text-[10px] leading-none text-white/80 drop-shadow-sm">
+                  <span className="mt-0.5 max-w-[min(100%,18rem)] text-center text-[10px] leading-none text-text-muted drop-shadow-sm">
                     {node.emptyStateMessage}
                   </span>
                 </>
