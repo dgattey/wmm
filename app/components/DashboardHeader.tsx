@@ -283,10 +283,10 @@ export function DashboardHeader({
                 "block font-bold text-text-primary whitespace-nowrap transition-[font-size,line-height] duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
                 isMobile
                   ? isSearchDocked
-                    ? "text-[clamp(1.25rem,6vw,1.65rem)] leading-tight"
+                    ? "text-[clamp(1.1rem,5.2vw,1.45rem)] leading-tight"
                     : "text-[clamp(2rem,10vw,2.6rem)]"
                   : isSearchDocked
-                    ? "text-xl md:text-3xl leading-tight"
+                    ? "text-lg md:text-2xl leading-tight"
                     : "text-3xl md:text-5xl"
               )}
             />
@@ -314,10 +314,10 @@ export function DashboardHeader({
                 "transition-[font-size] duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
                 isMobile
                   ? isSearchDocked
-                    ? "text-sm"
+                    ? "text-xs"
                     : "text-lg"
                   : isSearchDocked
-                    ? "text-base md:text-lg"
+                    ? "text-sm md:text-base"
                     : "text-xl md:text-2xl"
               )}
               formatDollarValue={formatHeaderCurrency}
