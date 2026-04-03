@@ -212,34 +212,40 @@ body {
   50% { border-color: var(--accent); opacity: 0.8; }
 }
 
-/* === Sticky Header — Search Dock Absorption === */
-.sticky-header {
-  border-bottom: 1px solid transparent;
-  isolation: isolate;
-  overflow: visible;
-}
-
-.sticky-header::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+/* === Sticky Header/Search Shared Backdrop === */
+.sticky-shared-backdrop {
+  height: calc(var(--sticky-header-height, 0px) + 1rem);
+  margin-bottom: calc(-1 * (var(--sticky-header-height, 0px) + 1rem));
   background-color: var(--glass-bg);
   backdrop-filter: blur(20px) saturate(1.2);
-  pointer-events: none;
-  z-index: -1;
+  box-shadow: none;
   transition:
-    bottom 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    height 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    margin-bottom 220ms cubic-bezier(0.16, 1, 0.3, 1),
     background-color 220ms ease,
     box-shadow 220ms ease;
 }
 
-.sticky-header.is-search-docked::before {
+.sticky-shared-backdrop.is-search-docked {
+  height: calc(
+    var(--sticky-header-height, 0px) +
+    var(--sticky-search-height, 0px) +
+    1rem
+  );
+  margin-bottom: calc(
+    -1 * (
+      var(--sticky-header-height, 0px) +
+      var(--sticky-search-height, 0px) +
+      1rem
+    )
+  );
   background-color: var(--glass-bg-strong);
-  bottom: calc(-1 * (var(--header-search-absorb-height, 0px) + 1rem));
   box-shadow: var(--shadow);
+}
+
+.sticky-header {
+  border-bottom: 1px solid transparent;
+  background: transparent;
 }
 
 /* === Utility Classes === */

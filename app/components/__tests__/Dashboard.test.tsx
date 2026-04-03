@@ -371,8 +371,10 @@ describe("Dashboard portfolio actions", () => {
     const header = screen.getByRole("banner");
     expect(header).toHaveClass("is-search-docked");
     expect(header).toHaveClass("sticky-header");
-    expect(header.querySelector("[data-testid='header-search-absorber']")).toBeNull();
-    expect(screen.queryByTestId("portfolio-search-shell-background")).not.toBeInTheDocument();
+    expect(screen.getByTestId("sticky-shared-backdrop")).toHaveClass(
+      "sticky-shared-backdrop",
+      "is-search-docked"
+    );
     expect(screen.getByRole("searchbox", { name: "Search portfolio" })).toHaveClass(
       "bg-surface/92"
     );
@@ -678,8 +680,10 @@ describe("Dashboard portfolio actions", () => {
 
     const header = screen.getByRole("banner");
     expect(header).toHaveClass("sticky-header", "is-search-docked");
-
-    expect(header.querySelector(".sticky-header-search-absorber")).toBeNull();
+    expect(screen.getByTestId("sticky-shared-backdrop")).toHaveClass(
+      "sticky-shared-backdrop",
+      "is-search-docked"
+    );
 
     const searchInput = screen.getByRole("searchbox", { name: "Search portfolio" });
     expect(searchInput).toBeInTheDocument();
@@ -712,7 +716,7 @@ describe("Dashboard portfolio actions", () => {
 
     const searchShell = screen.getByTestId("portfolio-search-shell");
     expect(searchShell).toHaveClass("sticky");
-    expect(searchShell).toHaveClass("z-50");
+    expect(searchShell).toHaveClass("z-[35]");
 
     vi.useRealTimers();
   });
