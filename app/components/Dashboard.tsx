@@ -98,6 +98,7 @@ export function Dashboard({
   const searchQueryFromFilters = filters.searchQuery ?? "";
   const [searchInput, setSearchInput] = useState(searchQueryFromFilters);
   const debouncedSearchInput = useDebouncedValue(searchInput, 250);
+  const [headerExpandedHeightPx, setHeaderExpandedHeightPx] = useState(0);
 
   useEffect(() => {
     setSearchInput(searchQueryFromFilters);
@@ -130,8 +131,33 @@ export function Dashboard({
 
   const headerRef = useRef<HTMLElement>(null);
   const searchShellRef = useRef<HTMLDivElement>(null);
-  const [dockSentinelRef, isSearchDocked, headerHeightPx] = useIsStickyDocked(headerRef);
+  const estimatedCollapsedHeaderHeightPx =
+    headerExpandedHeightPx > 0
+      ? Math.max(headerExpandedHeightPx - (isMobile ? 40 : 56), 0)
+      : 0;
+  const [dockSentinelRef, isSearchDocked, headerExpandedTopPx, headerCollapseProgress] =
+    useIsStickyDocked(headerRef, {
+      expandedHeightPx: headerExpandedHeightPx,
+      collapsedHeightPx: estimatedCollapsedHeaderHeightPx,
+    });
+  const [headerHeightPx, setHeaderHeightPx] = useState(0);
   const [searchShellHeightPx, setSearchShellHeightPx] = useState(0);
+
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const nextHeightPx = Math.ceil(el.getBoundingClientRect().height);
+      setHeaderHeightPx(nextHeightPx);
+      setHeaderExpandedHeightPx((prev) => Math.max(prev, nextHeightPx));
+    };
+    update();
+
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const el = searchShellRef.current;
@@ -220,6 +246,7 @@ export function Dashboard({
           filterEmptyNoResults={filterEmptyNoResults}
           isMobile={isMobile}
           isSearchDocked={isSearchDocked}
+          collapseProgress={headerCollapseProgress}
           isLoading={isLoading}
           enableIntroAnimation={enableIntroAnimation}
           enableValueAnimations={enableValueAnimations}
@@ -291,7 +318,14 @@ export function Dashboard({
           {
             marginLeft: "calc(-50vw + 50%)",
             marginRight: "calc(-50vw + 50%)",
-            top: headerHeightPx > 0 ? headerHeightPx : isMobile ? 92 : 112,
+            top:
+              headerHeightPx > 0
+                ? headerHeightPx
+                : headerExpandedTopPx > 0
+                  ? headerExpandedTopPx
+                  : isMobile
+                    ? 92
+                    : 112,
             "--enter-delay": "220ms",
           } as CSSProperties
         }

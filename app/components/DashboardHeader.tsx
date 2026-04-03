@@ -19,6 +19,10 @@ import {
 } from "@/lib/portfolioViewTransition";
 import { ChevronLeftIcon, PencilIcon, RefreshIcon, SearchIcon, XIcon } from "./icons";
 
+function interpolate(from: number, to: number, progress: number): number {
+  return from + (to - from) * progress;
+}
+
 interface DashboardHeaderProps {
   portfolioData: PortfolioData;
   portfolioName: string;
@@ -31,6 +35,7 @@ interface DashboardHeaderProps {
   isMobile: boolean;
   /** When true, search bar is stuck under the header — compact totals and hide metric captions. */
   isSearchDocked: boolean;
+  collapseProgress?: number;
   isLoading: boolean;
   enableIntroAnimation: boolean;
   enableValueAnimations: boolean;
@@ -50,6 +55,7 @@ export function DashboardHeader({
   filterEmptyNoResults = false,
   isMobile,
   isSearchDocked,
+  collapseProgress = isSearchDocked ? 1 : 0,
   isLoading,
   enableIntroAnimation,
   enableValueAnimations,
@@ -58,6 +64,7 @@ export function DashboardHeader({
   isRefreshing,
   viewTransitionPortfolioId,
 }: DashboardHeaderProps) {
+  const clampedCollapseProgress = Math.min(Math.max(collapseProgress, 0), 1);
   const { summary, lastUpdated } = portfolioData;
   const timeAgo = useTimeAgo(lastUpdated);
   const [hoveredTooltip, setHoveredTooltip] = useState<"value" | "gain" | null>(null);
@@ -134,14 +141,47 @@ export function DashboardHeader({
   const displayValue = activeSummary?.value ?? summary.totalValue;
   const displayGainLoss = activeSummary?.gainLoss ?? summary.totalGainLoss;
   const displayGainLossPercent = activeSummary?.gainLossPercent ?? summary.totalGainLossPercent;
+  const rootPaddingY = isMobile
+    ? 20 - clampedCollapseProgress * 8
+    : 20 - clampedCollapseProgress * 8;
+  const titleBottomMargin = isMobile
+    ? 24 - clampedCollapseProgress * 12
+    : 24 - clampedCollapseProgress * 12;
+  const metricRowGapY = 12 - clampedCollapseProgress * 8;
+  const valueLabelOpacity = 1 - clampedCollapseProgress;
+  const valueLabelSpacing = 4 * valueLabelOpacity;
+  const valueLabelMaxHeight = 24 * valueLabelOpacity;
+  const interpolatedValueFontSizeRem = isMobile
+    ? 2 - clampedCollapseProgress * 0.7
+    : 3 - clampedCollapseProgress * 1.5;
+  const interpolatedValueLineHeight = isMobile
+    ? 1.05
+    : 1.02 + clampedCollapseProgress * 0.1;
+  const interpolatedGainFontSizeRem = isMobile
+    ? 1.125 - clampedCollapseProgress * 0.375
+    : 1.5 - clampedCollapseProgress * 0.5;
+  const valueTypographyStyle = {
+    fontSize: isMobile
+      ? `clamp(1.1rem, ${interpolate(10, 5.2, clampedCollapseProgress)}vw, ${interpolate(
+          2.6,
+          1.45,
+          clampedCollapseProgress
+        )}rem)`
+      : `${interpolatedValueFontSizeRem}rem`,
+    lineHeight: interpolatedValueLineHeight,
+  } as CSSProperties;
+  const gainTypographyStyle = {
+    fontSize: `${interpolatedGainFontSizeRem}rem`,
+    lineHeight: 1.2,
+  } as CSSProperties;
 
   return (
     <div
       className={cn(
-        "relative z-10 max-w-[1400px] mx-auto transition-[padding] duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
-        isSearchDocked ? "py-3" : "py-5",
+        "relative z-10 max-w-[1400px] mx-auto transition-[padding] duration-[80ms] linear",
         isMobile ? "px-4" : "px-6"
       )}
+      style={{ paddingTop: `${rootPaddingY}px`, paddingBottom: `${rootPaddingY}px` }}
     >
       <div
         className={cn(enableIntroAnimation && "animate-soft-rise")}
@@ -149,9 +189,9 @@ export function DashboardHeader({
       >
         <div
           className={cn(
-            "flex min-w-0 items-center justify-between gap-4 transition-[margin-bottom] duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
-            isSearchDocked ? "mb-3" : "mb-6"
+            "flex min-w-0 items-center justify-between gap-4 transition-[margin-bottom] duration-[80ms] linear"
           )}
+          style={{ marginBottom: `${titleBottomMargin}px` }}
         >
           <div className="flex min-w-0 items-center gap-3">
             <button
@@ -268,10 +308,10 @@ export function DashboardHeader({
 
         <div
           className={cn(
-            "gap-x-6 transition-[gap,row-gap] duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
-            isSearchDocked ? "gap-y-1" : "gap-y-3",
+            "gap-x-6 transition-[gap,row-gap] duration-[80ms] linear",
             isMobile ? "flex flex-col items-start" : "flex flex-wrap items-end"
           )}
+          style={{ rowGap: `${metricRowGapY}px` }}
         >
           <div
             ref={valueTotalsAnchorRef}
@@ -284,29 +324,29 @@ export function DashboardHeader({
                 : undefined
             }
           >
-            <AnimatedNumber
-              value={displayValue}
-              format={formatHeaderCurrency}
-              animate={enableValueAnimations}
-              placeholder={filterEmptyNoResults ? "—" : undefined}
-              className={cn(
-                "block font-bold whitespace-nowrap transition-[font-size,line-height] duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
-                filterEmptyNoResults ? "text-text-muted" : "text-text-primary",
-                isMobile
-                  ? isSearchDocked
-                    ? "text-[clamp(1.1rem,5.2vw,1.45rem)] leading-tight"
-                    : "text-[clamp(2rem,10vw,2.6rem)]"
-                  : isSearchDocked
-                    ? "text-lg md:text-2xl leading-tight"
-                    : "text-3xl md:text-5xl"
-              )}
-            />
+            <div style={valueTypographyStyle}>
+              <AnimatedNumber
+                value={displayValue}
+                format={formatHeaderCurrency}
+                animate={enableValueAnimations}
+                placeholder={filterEmptyNoResults ? "—" : undefined}
+                className={cn(
+                  "block font-bold whitespace-nowrap transition-[font-size,line-height] duration-[80ms] linear",
+                  filterEmptyNoResults ? "text-text-muted" : "text-text-primary"
+                )}
+              />
+            </div>
             <p
               className={cn(
-                "text-xs text-text-muted overflow-hidden transition-[max-height,opacity,margin-top] duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
-                isSearchDocked ? "mt-0 max-h-0 opacity-0 pointer-events-none" : "mt-1 max-h-6 opacity-100"
+                "overflow-hidden text-xs text-text-muted transition-[max-height,opacity,margin-top] duration-[80ms] linear",
+                clampedCollapseProgress >= 0.99 && "pointer-events-none"
               )}
-              aria-hidden={isSearchDocked}
+              style={{
+                marginTop: `${valueLabelSpacing}px`,
+                maxHeight: `${valueLabelMaxHeight}px`,
+                opacity: valueLabelOpacity,
+              }}
+              aria-hidden={clampedCollapseProgress >= 0.99}
             >
               Current market value
             </p>
@@ -317,30 +357,30 @@ export function DashboardHeader({
             onMouseEnter={() => setHoveredTooltip("gain")}
             onMouseLeave={() => setHoveredTooltip(null)}
           >
-            <GainLoss
-              dollar={filterEmptyNoResults ? undefined : displayGainLoss}
-              percent={filterEmptyNoResults ? undefined : displayGainLossPercent}
-              placeholder={filterEmptyNoResults ? "—" : undefined}
-              size={isMobile ? "sm" : "md"}
-              className={cn(
-                "transition-[font-size] duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
-                isMobile
-                  ? isSearchDocked
-                    ? "text-xs"
-                    : "text-lg"
-                  : isSearchDocked
-                    ? "text-sm md:text-base"
-                    : "text-xl md:text-2xl",
-                filterEmptyNoResults && "!text-text-muted"
-              )}
-              formatDollarValue={formatHeaderCurrency}
-            />
+            <div style={gainTypographyStyle}>
+              <GainLoss
+                dollar={filterEmptyNoResults ? undefined : displayGainLoss}
+                percent={filterEmptyNoResults ? undefined : displayGainLossPercent}
+                placeholder={filterEmptyNoResults ? "—" : undefined}
+                size={isMobile ? "sm" : "md"}
+                className={cn(
+                  "transition-[font-size] duration-[80ms] linear",
+                  filterEmptyNoResults && "!text-text-muted"
+                )}
+                formatDollarValue={formatHeaderCurrency}
+              />
+            </div>
             <p
               className={cn(
-                "text-xs text-text-muted overflow-hidden transition-[max-height,opacity,margin-top] duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
-                isSearchDocked ? "mt-0 max-h-0 opacity-0 pointer-events-none" : "mt-1 max-h-6 opacity-100"
+                "overflow-hidden text-xs text-text-muted transition-[max-height,opacity,margin-top] duration-[80ms] linear",
+                clampedCollapseProgress >= 0.99 && "pointer-events-none"
               )}
-              aria-hidden={isSearchDocked}
+              style={{
+                marginTop: `${valueLabelSpacing}px`,
+                maxHeight: `${valueLabelMaxHeight}px`,
+                opacity: valueLabelOpacity,
+              }}
+              aria-hidden={clampedCollapseProgress >= 0.99}
             >
               Unrealized gain / return on cost basis
             </p>
