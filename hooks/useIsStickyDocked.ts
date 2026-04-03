@@ -37,7 +37,9 @@ export function useIsStickyDocked(headerRef: React.RefObject<HTMLElement | null>
     const observer = new IntersectionObserver(
       ([entry]) => {
         const { bottom } = entry.boundingClientRect;
-        setIsDocked(bottom < stickyTopPx);
+        // Use <= to avoid pixel-rounding edge cases (common on mobile) where the
+        // sentinel "bottom" lands exactly on the sticky header boundary.
+        setIsDocked(bottom <= stickyTopPx);
       },
       {
         root: null,
