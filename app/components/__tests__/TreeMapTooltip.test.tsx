@@ -75,6 +75,6 @@ describe("TreeMapTooltip", () => {
 
     const tooltip = screen.getByText("ASSET-A").closest(".fixed") as HTMLElement;
     expect(tooltip.parentElement).toBe(document.body);
-    expect(tooltip).toHaveClass("z-[100]");
+    expect(tooltip).toHaveClass("z-[200]");
   });
 });

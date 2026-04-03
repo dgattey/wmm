@@ -181,6 +181,7 @@ export function Dashboard({
           onBackToPicker={onBackToPicker}
           activeSummary={activeSummary}
           isMobile={isMobile}
+          isSearchDocked={isSearchDocked}
           isLoading={isLoading}
           enableIntroAnimation={enableIntroAnimation}
           enableValueAnimations={enableValueAnimations}
