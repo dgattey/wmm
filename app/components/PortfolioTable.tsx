@@ -47,6 +47,52 @@ const SORTABLE_COLUMNS: {
   },
 ];
 
+function MobileSortControls({
+  sortConfig,
+  onSort,
+}: {
+  sortConfig: SortConfig;
+  onSort: (key: string) => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-border/60 bg-surface p-4 shadow-[var(--shadow-md)]">
+      <div className="mb-3">
+        <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-text-muted">
+          Sort holdings
+        </span>
+      </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <label className="min-w-0 flex-1">
+          <span className="sr-only">Sort by</span>
+          <select
+            aria-label="Sort holdings"
+            value={sortConfig.key}
+            onChange={(event) => {
+              if (event.target.value !== sortConfig.key) {
+                onSort(event.target.value);
+              }
+            }}
+            className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors hover:border-border/80"
+          >
+            {SORTABLE_COLUMNS.map((column) => (
+              <option key={column.key} value={column.key}>
+                {column.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          onClick={() => onSort(sortConfig.key)}
+          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface-hover"
+        >
+          {sortConfig.direction === "desc" ? "Descending" : "Ascending"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /** Unique fund tickers that contribute to an aggregated row (stable order). */
 function fundSourceTickers(row: TableRow): string[] {
   const seen = new Set<string>();
@@ -96,112 +142,39 @@ export function PortfolioTable({
     );
   }
 
-  if (isMobile && rows.length === 0 && filterEmptyNoResults) {
-    return (
-      <div className="space-y-4">
-        <div className="rounded-2xl border border-border/60 bg-surface p-4 shadow-[var(--shadow-md)]">
-          <div className="mb-3">
-            <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-text-muted">
-              Sort holdings
-            </span>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <label className="min-w-0 flex-1">
-              <span className="sr-only">Sort by</span>
-              <select
-                aria-label="Sort holdings"
-                value={sortConfig.key}
-                onChange={(event) => {
-                  if (event.target.value !== sortConfig.key) {
-                    onSort(event.target.value);
-                  }
-                }}
-                className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors hover:border-border/80"
-              >
-                {SORTABLE_COLUMNS.map((column) => (
-                  <option key={column.key} value={column.key}>
-                    {column.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              onClick={() => onSort(sortConfig.key)}
-              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface-hover"
-            >
-              {sortConfig.direction === "desc" ? "Descending" : "Ascending"}
-            </button>
-          </div>
-        </div>
-        <div
-          className={cn(
-            "flex min-h-[min(60vh,28rem)] flex-col items-center justify-center rounded-2xl border border-border/60 bg-surface px-6 py-16 text-center shadow-[var(--shadow-md)]",
-            enableIntroAnimation && "animate-soft-rise"
-          )}
-          style={{ "--enter-delay": "80ms" } as CSSProperties}
-        >
-          <p className="text-base font-medium text-text-primary">No results found</p>
-          <p className="mt-2 max-w-sm text-sm text-text-muted">
-            Try a different search or adjust your filters.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   if (isMobile) {
     return (
       <div className="space-y-4">
-        <div className="rounded-2xl border border-border/60 bg-surface p-4 shadow-[var(--shadow-md)]">
-          <div className="mb-3">
-            <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-text-muted">
-              Sort holdings
-            </span>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <label className="min-w-0 flex-1">
-              <span className="sr-only">Sort by</span>
-              <select
-                aria-label="Sort holdings"
-                value={sortConfig.key}
-                onChange={(event) => {
-                  if (event.target.value !== sortConfig.key) {
-                    onSort(event.target.value);
-                  }
-                }}
-                className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors hover:border-border/80"
-              >
-                {SORTABLE_COLUMNS.map((column) => (
-                  <option key={column.key} value={column.key}>
-                    {column.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              onClick={() => onSort(sortConfig.key)}
-              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface-hover"
-            >
-              {sortConfig.direction === "desc" ? "Descending" : "Ascending"}
-            </button>
-          </div>
-        </div>
+        <MobileSortControls sortConfig={sortConfig} onSort={onSort} />
 
-        <div className="space-y-3">
-          {rows.map((row) => (
-            <MobileRowCard
-              key={row.symbol}
-              row={row}
-              sortConfig={sortConfig}
-              isExpanded={expandedRows.has(row.symbol)}
-              onToggle={() => onToggleExpand(row.symbol)}
-              showAggregatedFundSources={showAggregatedFundSources}
-              enableValueAnimations={enableValueAnimations}
-            />
-          ))}
-        </div>
+        {filterEmptyNoResults && rows.length === 0 ? (
+          <div
+            className={cn(
+              "flex min-h-[min(60vh,28rem)] flex-col items-center justify-center rounded-2xl border border-border/60 bg-surface px-6 py-16 text-center shadow-[var(--shadow-md)]",
+              enableIntroAnimation && "animate-soft-rise"
+            )}
+            style={{ "--enter-delay": "80ms" } as CSSProperties}
+          >
+            <p className="text-base font-medium text-text-primary">No results found</p>
+            <p className="mt-2 max-w-sm text-sm text-text-muted">
+              Try a different search or adjust your filters.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {rows.map((row) => (
+              <MobileRowCard
+                key={row.symbol}
+                row={row}
+                sortConfig={sortConfig}
+                isExpanded={expandedRows.has(row.symbol)}
+                onToggle={() => onToggleExpand(row.symbol)}
+                showAggregatedFundSources={showAggregatedFundSources}
+                enableValueAnimations={enableValueAnimations}
+              />
+            ))}
+          </div>
+        )}
       </div>
     );
   }

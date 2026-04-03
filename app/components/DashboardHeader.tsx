@@ -239,27 +239,17 @@ export function DashboardHeader({
                 : undefined
             }
           >
-            {filterEmptyNoResults ? (
-              <span
-                className={cn(
-                  "font-bold text-text-muted whitespace-nowrap tabular-nums",
-                  isMobile ? "text-[clamp(2rem,10vw,2.6rem)]" : "text-3xl md:text-5xl"
-                )}
-                aria-hidden
-              >
-                —
-              </span>
-            ) : (
-              <AnimatedNumber
-                value={displayValue}
-                format={formatHeaderCurrency}
-                animate={enableValueAnimations}
-                className={cn(
-                  "font-bold text-text-primary whitespace-nowrap",
-                  isMobile ? "text-[clamp(2rem,10vw,2.6rem)]" : "text-3xl md:text-5xl"
-                )}
-              />
-            )}
+            <AnimatedNumber
+              value={displayValue}
+              format={formatHeaderCurrency}
+              animate={enableValueAnimations}
+              placeholder={filterEmptyNoResults ? "—" : undefined}
+              className={cn(
+                "font-bold whitespace-nowrap",
+                filterEmptyNoResults ? "text-text-muted" : "text-text-primary",
+                isMobile ? "text-[clamp(2rem,10vw,2.6rem)]" : "text-3xl md:text-5xl"
+              )}
+            />
             <p className="mt-1 text-xs text-text-muted">Current market value</p>
             {hoveredTooltip === "value" && !filterEmptyNoResults && (
               <div
@@ -275,25 +265,17 @@ export function DashboardHeader({
             onMouseEnter={() => setHoveredTooltip("gain")}
             onMouseLeave={() => setHoveredTooltip(null)}
           >
-            {filterEmptyNoResults ? (
-              <span
-                className={cn(
-                  "font-medium text-text-muted tabular-nums",
-                  isMobile ? "text-lg" : "text-xl md:text-2xl"
-                )}
-                aria-hidden
-              >
-                —
-              </span>
-            ) : (
-              <GainLoss
-                dollar={displayGainLoss}
-                percent={displayGainLossPercent}
-                size={isMobile ? "sm" : "md"}
-                className={cn(isMobile ? "text-lg" : "text-xl md:text-2xl")}
-                formatDollarValue={formatHeaderCurrency}
-              />
-            )}
+            <GainLoss
+              dollar={filterEmptyNoResults ? undefined : displayGainLoss}
+              percent={filterEmptyNoResults ? undefined : displayGainLossPercent}
+              placeholder={filterEmptyNoResults ? "—" : undefined}
+              size={isMobile ? "sm" : "md"}
+              className={cn(
+                isMobile ? "text-lg" : "text-xl md:text-2xl",
+                filterEmptyNoResults && "!text-text-muted"
+              )}
+              formatDollarValue={formatHeaderCurrency}
+            />
             <p className="mt-1 text-xs text-text-muted">Unrealized gain / return on cost basis</p>
             {hoveredTooltip === "gain" && !filterEmptyNoResults && (
               <div

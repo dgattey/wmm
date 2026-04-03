@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { useIsStickyDocked } from "@/hooks/useIsStickyDocked";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { portfolioViewTransitionShell } from "@/lib/portfolioViewTransition";
+import { buildEmptyFilterTreeMapNode } from "@/lib/treemapEmptyNode";
 import { TreeMap } from "./TreeMap";
 import { PortfolioTable } from "./PortfolioTable";
 import { FloatingToolbar } from "./FloatingToolbar";
@@ -170,6 +171,14 @@ export function Dashboard({
   const filterEmptyNoResults =
     activeSummary !== null && filteredRows.length === 0;
 
+  const treeMapNodesForView = useMemo(
+    () =>
+      filterEmptyNoResults
+        ? [buildEmptyFilterTreeMapNode(treeMapWidth, treeMapHeight)]
+        : filteredTreeMapNodes,
+    [filterEmptyNoResults, filteredTreeMapNodes, treeMapHeight, treeMapWidth]
+  );
+
   return (
     <div
       className={cn("min-h-0 flex-1 pb-8", enableIntroAnimation && "animate-fade-in")}
@@ -214,8 +223,8 @@ export function Dashboard({
         style={{ "--enter-delay": "160ms" } as CSSProperties}
       >
         <TreeMap
-          key={filteredTreeMapNodes.length > 0 ? "treemap-populated" : "treemap-empty"}
-          nodes={filteredTreeMapNodes}
+          key={filterEmptyNoResults ? "treemap-empty-filter" : "treemap-populated"}
+          nodes={treeMapNodesForView}
           originalWidth={treeMapWidth}
           originalHeight={treeMapHeight}
           grouping={treeMapGrouping}

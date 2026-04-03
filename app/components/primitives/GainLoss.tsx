@@ -9,6 +9,8 @@ interface GainLossProps {
   className?: string;
   formatDollarValue?: (value: number) => string;
   formatPercentValue?: (value: number) => string;
+  /** Same layout as dollar/percent; use when there is nothing to show (e.g. filter had no matches). */
+  placeholder?: string;
 }
 
 export function GainLoss({
@@ -18,7 +20,23 @@ export function GainLoss({
   className,
   formatDollarValue = formatDollar,
   formatPercentValue = formatPercent,
+  placeholder,
 }: GainLossProps) {
+  if (placeholder !== undefined) {
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center gap-1 font-medium tabular-nums",
+          size === "sm" ? "text-xs" : "text-sm",
+          "text-text-muted",
+          className
+        )}
+      >
+        {placeholder}
+      </span>
+    );
+  }
+
   const value = dollar ?? percent ?? 0;
   const isPositive = value > 0;
   const isNegative = value < 0;

@@ -91,6 +91,8 @@ export interface TreeMapNode {
   fiftyTwoWeekLow?: number;
   investmentType?: string;
   account?: string;
+  /** When set, leaf renders this message instead of symbol/value (filter had no matches). */
+  emptyStateMessage?: string;
 }
 
 export interface FundOption {
