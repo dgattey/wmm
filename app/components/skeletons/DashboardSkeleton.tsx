@@ -71,10 +71,10 @@ export function DashboardSkeleton({
         </section>
       )}
 
-      {/* Search bar + Table — matches Dashboard table section */}
+      {/* Search — matches Dashboard (z-[35] above shared backdrop) */}
       <section
         className={cn(
-          "max-w-[1400px] mx-auto overflow-x-clip",
+          "relative z-[35] max-w-[1400px] mx-auto overflow-x-clip",
           enableIntroAnimation && "animate-soft-rise",
           isMobile ? "px-4" : "px-6"
         )}
@@ -83,6 +83,16 @@ export function DashboardSkeleton({
         <div className="mb-4 py-3">
           <SearchBarSkeleton isMobile={isMobile} />
         </div>
+      </section>
+
+      <section
+        className={cn(
+          "max-w-[1400px] mx-auto overflow-x-clip",
+          enableIntroAnimation && "animate-soft-rise",
+          isMobile ? "px-4" : "px-6"
+        )}
+        style={{ "--enter-delay": "180ms" } as CSSProperties}
+      >
         <TableSkeleton isMobile={isMobile} />
       </section>
 

@@ -251,10 +251,11 @@ export function Dashboard({
         </section>
       )}
 
-      {/* Table */}
+      {/* Search docks under the header; this section must sit above `.sticky-shared-backdrop` (z-30)
+          in the root stacking order. The table block below stays z-auto so rows scroll under the frosted layer. */}
       <section
         className={cn(
-          "max-w-[1400px] mx-auto overflow-x-clip",
+          "relative z-[35] max-w-[1400px] mx-auto overflow-x-clip",
           enableIntroAnimation && "animate-soft-rise",
           isMobile ? "px-4" : "px-6"
         )}
@@ -283,7 +284,16 @@ export function Dashboard({
             isSearchDocked={isSearchDocked}
           />
         </div>
+      </section>
 
+      <section
+        className={cn(
+          "max-w-[1400px] mx-auto overflow-x-clip",
+          enableIntroAnimation && "animate-soft-rise",
+          isMobile ? "px-4" : "px-6"
+        )}
+        style={{ "--enter-delay": "260ms" } as CSSProperties}
+      >
         <PortfolioTable
           rows={filteredRows}
           sortConfig={sortConfig}
