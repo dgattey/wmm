@@ -168,9 +168,27 @@ export function Dashboard({
 
   return (
     <div
-      className={cn("min-h-0 flex-1 pb-8", enableIntroAnimation && "animate-fade-in")}
+      className={cn(
+        "min-h-0 flex-1 overflow-x-clip pb-8",
+        enableIntroAnimation && "animate-fade-in"
+      )}
       style={vtShellStyle}
     >
+      <div
+        aria-hidden
+        data-testid="sticky-shared-backdrop"
+        className={cn(
+          "sticky-shared-backdrop sticky top-0 pointer-events-none z-30",
+          isSearchDocked && "is-search-docked"
+        )}
+        style={
+          {
+            "--sticky-header-height": `${headerHeightPx}px`,
+            "--sticky-search-height": `${searchShellHeightPx}px`,
+          } as CSSProperties
+        }
+      />
+
       {/* Sticky Header */}
       <header
         ref={headerRef}
@@ -178,7 +196,6 @@ export function Dashboard({
           "sticky-header sticky top-0 z-40",
           isSearchDocked && "is-search-docked"
         )}
-        style={{ "--header-search-absorb-height": `${searchShellHeightPx}px` } as CSSProperties}
       >
         <DashboardHeader
           portfolioData={portfolioData}
@@ -188,6 +205,7 @@ export function Dashboard({
           onBackToPicker={onBackToPicker}
           activeSummary={activeSummary}
           isMobile={isMobile}
+          isSearchDocked={isSearchDocked}
           isLoading={isLoading}
           enableIntroAnimation={enableIntroAnimation}
           enableValueAnimations={enableValueAnimations}
@@ -243,39 +261,45 @@ export function Dashboard({
         </section>
       )}
 
-      {/* Table */}
+      {/* Sentinel + sticky search are direct children of this tall root so sticky’s scroll range
+          includes the table below. A short wrapper section would scroll away and “lose” the bar
+          while `.sticky-shared-backdrop` keeps painting (blank gap). */}
+      <div ref={dockSentinelRef} className="h-px" aria-hidden />
+      <div
+        ref={searchShellRef}
+        data-testid="portfolio-search-shell"
+        className={cn(
+          "sticky mb-4 py-3 w-screen relative z-[35]",
+          "bg-transparent",
+          enableIntroAnimation && "animate-soft-rise"
+        )}
+        style={
+          {
+            marginLeft: "calc(-50vw + 50%)",
+            marginRight: "calc(-50vw + 50%)",
+            top: headerHeightPx > 0 ? headerHeightPx : isMobile ? 92 : 112,
+            "--enter-delay": "220ms",
+          } as CSSProperties
+        }
+      >
+        <DashboardSearchBar
+          searchInput={searchInput}
+          onSearchChange={handleSearchChange}
+          onClearSearch={handleClearSearch}
+          visibleHoldingCount={visibleHoldingCount}
+          isMobile={isMobile}
+          isSearchDocked={isSearchDocked}
+        />
+      </div>
+
       <section
         className={cn(
           "max-w-[1400px] mx-auto overflow-x-clip",
           enableIntroAnimation && "animate-soft-rise",
           isMobile ? "px-4" : "px-6"
         )}
-        style={{ "--enter-delay": "220ms" } as CSSProperties}
+        style={{ "--enter-delay": "260ms" } as CSSProperties}
       >
-        <div ref={dockSentinelRef} className="h-px" aria-hidden />
-        <div
-          ref={searchShellRef}
-          data-testid="portfolio-search-shell"
-          className={cn(
-            "sticky mb-4 py-3 w-screen relative",
-            isSearchDocked ? "bg-transparent z-50" : "bg-transparent z-40"
-          )}
-          style={{
-            marginLeft: "calc(-50vw + 50%)",
-            marginRight: "calc(-50vw + 50%)",
-            top: headerHeightPx > 0 ? headerHeightPx : isMobile ? 92 : 112,
-          }}
-        >
-          <DashboardSearchBar
-            searchInput={searchInput}
-            onSearchChange={handleSearchChange}
-            onClearSearch={handleClearSearch}
-            visibleHoldingCount={visibleHoldingCount}
-            isMobile={isMobile}
-            isSearchDocked={isSearchDocked}
-          />
-        </div>
-
         <PortfolioTable
           rows={filteredRows}
           sortConfig={sortConfig}

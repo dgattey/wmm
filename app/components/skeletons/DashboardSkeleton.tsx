@@ -28,7 +28,7 @@ export function DashboardSkeleton({
   return (
     <div
       className={cn(
-        "min-h-0 flex-1 pb-8",
+        "min-h-0 flex-1 overflow-x-clip pb-8",
         enableIntroAnimation && "animate-fade-in"
       )}
     >
@@ -71,18 +71,25 @@ export function DashboardSkeleton({
         </section>
       )}
 
-      {/* Search bar + Table — matches Dashboard table section */}
+      <div
+        className={cn(
+          "mb-4 max-w-[1400px] mx-auto py-3",
+          enableIntroAnimation && "animate-soft-rise",
+          isMobile ? "px-4" : "px-6"
+        )}
+        style={{ "--enter-delay": "140ms" } as CSSProperties}
+      >
+        <SearchBarSkeleton isMobile={isMobile} />
+      </div>
+
       <section
         className={cn(
           "max-w-[1400px] mx-auto overflow-x-clip",
           enableIntroAnimation && "animate-soft-rise",
           isMobile ? "px-4" : "px-6"
         )}
-        style={{ "--enter-delay": "140ms" } as CSSProperties}
+        style={{ "--enter-delay": "180ms" } as CSSProperties}
       >
-        <div className="mb-4 py-3">
-          <SearchBarSkeleton isMobile={isMobile} />
-        </div>
         <TableSkeleton isMobile={isMobile} />
       </section>
 

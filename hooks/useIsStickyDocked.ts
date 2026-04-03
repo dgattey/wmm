@@ -22,7 +22,10 @@ export function useIsStickyDocked(headerRef: React.RefObject<HTMLElement | null>
     const header = headerRef.current;
     if (!header) return;
 
-    const updateHeight = () => setStickyTopPx(header.getBoundingClientRect().height);
+    const updateHeight = () => {
+      // Round up to avoid fractional-pixel rootMargin parsing edge cases (common on mobile).
+      setStickyTopPx(Math.ceil(header.getBoundingClientRect().height));
+    };
     updateHeight();
 
     const observer = new ResizeObserver(updateHeight);
@@ -34,10 +37,14 @@ export function useIsStickyDocked(headerRef: React.RefObject<HTMLElement | null>
     const sentinel = sentinelRef.current;
     if (!sentinel || stickyTopPx <= 0) return;
 
+    const computeDocked = (bottom: number) => setIsDocked(bottom <= stickyTopPx);
+
+    // Initial compute ensures the sticky state is correct immediately on mount.
+    computeDocked(sentinel.getBoundingClientRect().bottom);
+
     const observer = new IntersectionObserver(
       ([entry]) => {
-        const { bottom } = entry.boundingClientRect;
-        setIsDocked(bottom < stickyTopPx);
+        computeDocked(entry.boundingClientRect.bottom);
       },
       {
         root: null,
@@ -47,7 +54,9 @@ export function useIsStickyDocked(headerRef: React.RefObject<HTMLElement | null>
     );
 
     observer.observe(sentinel);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, [stickyTopPx]);
 
   return [sentinelRef, isDocked, stickyTopPx];
