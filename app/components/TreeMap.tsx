@@ -12,6 +12,7 @@ import { isFundInvestmentType } from "@/lib/investmentTypes";
 import { buildEmptyFilterTreeMapNode } from "@/lib/treemapEmptyNode";
 import { filterFundTreeMapNodes } from "@/lib/treemap";
 import { cn, formatCompact } from "@/lib/utils";
+import { SearchOffIcon } from "./icons";
 import { TreeMapTooltip } from "./TreeMapTooltip";
 import { SymbolLink } from "./primitives/SymbolLink";
 
@@ -303,9 +304,15 @@ export function TreeMap({
               }}
             >
               {isEmptyFilterTile && node.emptyStateMessage && (
-                <span className="px-4 text-center text-base font-semibold text-text-primary md:text-lg">
-                  {node.emptyStateMessage}
-                </span>
+                <>
+                  <SearchOffIcon
+                    size={isMobile ? 14 : 16}
+                    className="text-white drop-shadow-sm opacity-95"
+                  />
+                  <span className="mt-0.5 max-w-[min(100%,18rem)] text-center text-[10px] leading-none text-white/80 drop-shadow-sm">
+                    {node.emptyStateMessage}
+                  </span>
+                </>
               )}
               {showSymbol && (
                 <SymbolLink
