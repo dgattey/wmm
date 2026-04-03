@@ -584,7 +584,7 @@ describe("Dashboard portfolio actions", () => {
 
     const searchShell = screen.getByTestId("portfolio-search-shell");
     expect(searchShell).toHaveClass("sticky");
-    expect(searchShell).toHaveClass("z-50");
+    expect(searchShell).toHaveClass("z-[35]");
 
     vi.useRealTimers();
   });

@@ -161,7 +161,10 @@ export function Dashboard({
 
   return (
     <div
-      className={cn("min-h-0 flex-1 pb-8", enableIntroAnimation && "animate-fade-in")}
+      className={cn(
+        "min-h-0 flex-1 overflow-x-clip pb-8",
+        enableIntroAnimation && "animate-fade-in"
+      )}
       style={vtShellStyle}
     >
       <div
@@ -251,40 +254,36 @@ export function Dashboard({
         </section>
       )}
 
-      {/* Search docks under the header; this section must sit above `.sticky-shared-backdrop` (z-30)
-          in the root stacking order. The table block below stays z-auto so rows scroll under the frosted layer. */}
-      <section
+      {/* Sentinel + sticky search are direct children of this tall root so sticky’s scroll range
+          includes the table below. A short wrapper section would scroll away and “lose” the bar
+          while `.sticky-shared-backdrop` keeps painting (blank gap). */}
+      <div ref={dockSentinelRef} className="h-px" aria-hidden />
+      <div
+        ref={searchShellRef}
+        data-testid="portfolio-search-shell"
         className={cn(
-          "relative z-[35] max-w-[1400px] mx-auto overflow-x-clip",
-          enableIntroAnimation && "animate-soft-rise",
-          isMobile ? "px-4" : "px-6"
+          "sticky mb-4 py-3 w-screen relative z-[35]",
+          "bg-transparent",
+          enableIntroAnimation && "animate-soft-rise"
         )}
-        style={{ "--enter-delay": "220ms" } as CSSProperties}
-      >
-        <div ref={dockSentinelRef} className="h-px" aria-hidden />
-        <div
-          ref={searchShellRef}
-          data-testid="portfolio-search-shell"
-          className={cn(
-            "sticky mb-4 py-3 w-screen relative",
-            "bg-transparent z-50"
-          )}
-          style={{
+        style={
+          {
             marginLeft: "calc(-50vw + 50%)",
             marginRight: "calc(-50vw + 50%)",
             top: headerHeightPx > 0 ? headerHeightPx : isMobile ? 92 : 112,
-          }}
-        >
-          <DashboardSearchBar
-            searchInput={searchInput}
-            onSearchChange={handleSearchChange}
-            onClearSearch={handleClearSearch}
-            visibleHoldingCount={visibleHoldingCount}
-            isMobile={isMobile}
-            isSearchDocked={isSearchDocked}
-          />
-        </div>
-      </section>
+            "--enter-delay": "220ms",
+          } as CSSProperties
+        }
+      >
+        <DashboardSearchBar
+          searchInput={searchInput}
+          onSearchChange={handleSearchChange}
+          onClearSearch={handleClearSearch}
+          visibleHoldingCount={visibleHoldingCount}
+          isMobile={isMobile}
+          isSearchDocked={isSearchDocked}
+        />
+      </div>
 
       <section
         className={cn(
