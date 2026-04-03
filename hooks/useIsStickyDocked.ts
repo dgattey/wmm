@@ -68,12 +68,19 @@ export function useIsStickyDocked(headerRef: React.RefObject<HTMLElement | null>
     );
 
     observer.observe(sentinel);
+    // Some browsers (and headless/mobile emulation) dispatch scroll events on `document`
+    // rather than `window`. Listen on both to ensure we recompute docked state reliably.
     window.addEventListener("scroll", scheduleCompute, { passive: true });
+    document.addEventListener("scroll", scheduleCompute, { passive: true, capture: true });
     window.addEventListener("resize", scheduleCompute);
+    // Safety net: if events don't fire (seen in some mobile/headless runs), poll briefly.
+    const intervalId = window.setInterval(computeDocked, 250);
     return () => {
       observer.disconnect();
       window.removeEventListener("scroll", scheduleCompute);
+      document.removeEventListener("scroll", scheduleCompute, true);
       window.removeEventListener("resize", scheduleCompute);
+      window.clearInterval(intervalId);
       if (rafId) window.cancelAnimationFrame(rafId);
     };
   }, [stickyTopPx]);
