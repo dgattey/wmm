@@ -17,6 +17,10 @@ interface TreeMapTooltipProps {
 export function TreeMapTooltip({ node, mouseX, mouseY }: TreeMapTooltipProps) {
   if (!node) return null;
 
+  if (node.emptyStateMessage) {
+    return null;
+  }
+
   // Position tooltip near the pointer, then clamp it within the viewport.
   const offset = 12;
   const viewportPadding = 16;

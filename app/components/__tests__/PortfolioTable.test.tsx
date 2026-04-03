@@ -152,6 +152,43 @@ describe("PortfolioTable", () => {
     expect(screen.queryByText("100.0%")).not.toBeInTheDocument();
   });
 
+  it("keeps table chrome and shows empty state when filter has no matches (desktop)", () => {
+    const { container } = render(
+      <PortfolioTable
+        rows={[]}
+        sortConfig={{ key: "totalValue", direction: "desc" }}
+        onSort={vi.fn()}
+        expandedRows={new Set()}
+        onToggleExpand={vi.fn()}
+        viewMode="holdings"
+        filterEmptyNoResults
+      />
+    );
+
+    expect(screen.getByRole("columnheader", { name: "Holding" })).toBeInTheDocument();
+    expect(screen.getByText("No results found")).toBeInTheDocument();
+    const wrapper = container.querySelector(".overflow-x-auto");
+    expect(wrapper).toHaveClass("min-h-[min(60vh,28rem)]");
+  });
+
+  it("keeps mobile sort chrome and shows empty state when filter has no matches", () => {
+    render(
+      <PortfolioTable
+        rows={[]}
+        sortConfig={{ key: "totalValue", direction: "desc" }}
+        onSort={vi.fn()}
+        expandedRows={new Set()}
+        onToggleExpand={vi.fn()}
+        viewMode="holdings"
+        isMobile
+        filterEmptyNoResults
+      />
+    );
+
+    expect(screen.getByRole("combobox", { name: "Sort holdings" })).toBeInTheDocument();
+    expect(screen.getByText("No results found")).toBeInTheDocument();
+  });
+
   it("renders mobile cards with sort controls and expandable breakdowns", () => {
     function TestHarness() {
       const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());

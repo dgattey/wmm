@@ -9,7 +9,9 @@ import {
 } from "react";
 import type { TreeMapGrouping, TreeMapNode } from "@/lib/types";
 import { isFundInvestmentType } from "@/lib/investmentTypes";
+import { buildEmptyFilterTreeMapNode } from "@/lib/treemapEmptyNode";
 import { filterFundTreeMapNodes } from "@/lib/treemap";
+import { SearchX } from "lucide-react";
 import { cn, formatCompact } from "@/lib/utils";
 import { TreeMapTooltip } from "./TreeMapTooltip";
 import { SymbolLink } from "./primitives/SymbolLink";
@@ -104,6 +106,11 @@ export function TreeMap({
   isMobile = false,
   enableIntroAnimation = true,
 }: TreeMapProps) {
+  const nodesResolved =
+    nodes.length === 0
+      ? [buildEmptyFilterTreeMapNode(originalWidth, originalHeight)]
+      : nodes;
+
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(originalWidth);
   const [hoveredNode, setHoveredNode] = useState<TreeMapNode | null>(null);
@@ -130,14 +137,14 @@ export function TreeMap({
 
   const selectedNodes =
     grouping === "fund" && hasSelectedFunds
-      ? filterFundTreeMapNodes(nodes, selectedFunds)
+      ? filterFundTreeMapNodes(nodesResolved, selectedFunds)
       : [];
   const visibleNodeIds = new Set(selectedNodes.map((node) => node.id));
   const zoomTransform = computeZoomTransform(
     selectedNodes, scaleX, scaleY, containerWidth, scaledHeight
   );
 
-  const { parents: parentNodes, leaves: leafNodes } = partitionNodes(nodes);
+  const { parents: parentNodes, leaves: leafNodes } = partitionNodes(nodesResolved);
 
   function handleMouseMove(e: MouseEvent) {
     setMousePos({ x: e.clientX, y: e.clientY });
@@ -161,19 +168,6 @@ export function TreeMap({
 
   function isNodeVisible(node: TreeMapNode): boolean {
     return grouping !== "fund" || !hasSelectedFunds || visibleNodeIds.has(node.id);
-  }
-
-  if (nodes.length === 0) {
-    return (
-      <div
-        className={cn(
-          "w-full flex items-center justify-center text-text-muted",
-          isMobile ? "h-[280px]" : "h-[400px]"
-        )}
-      >
-        No matches
-      </div>
-    );
   }
 
   return (
@@ -258,8 +252,17 @@ export function TreeMap({
           const pos = applyZoom(rawPos.x, rawPos.y, rawPos.w, rawPos.h, zoomTransform);
           const w = pos.width;
           const h = pos.height;
-          const showSymbol = visible && w > (isMobile ? 36 : 45) && h > (isMobile ? 20 : 25);
-          const showValue = visible && w > (isMobile ? 58 : 75) && h > (isMobile ? 30 : 40);
+          const isEmptyFilterTile = Boolean(node.emptyStateMessage);
+          const showSymbol =
+            !isEmptyFilterTile &&
+            visible &&
+            w > (isMobile ? 36 : 45) &&
+            h > (isMobile ? 20 : 25);
+          const showValue =
+            !isEmptyFilterTile &&
+            visible &&
+            w > (isMobile ? 58 : 75) &&
+            h > (isMobile ? 30 : 40);
 
           return (
             <div
@@ -269,32 +272,56 @@ export function TreeMap({
                 enableIntroAnimation && "animate-tile-in",
                 "select-none overflow-hidden",
                 "transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
-                grouping === "fund" ? "cursor-pointer" : "cursor-default",
+                grouping === "fund" && !isEmptyFilterTile ? "cursor-pointer" : "cursor-default",
                 visible &&
+                  !isEmptyFilterTile &&
                   "hover:z-20 hover:brightness-110 hover:shadow-[var(--shadow-lg)] hover-lift"
               )}
-              style={{
-                "--enter-delay": `${160 + Math.min(index, 10) * 18}ms`,
-                left: pos.left,
-                top: pos.top,
-                width: w,
-                height: h,
-                backgroundColor: node.color,
-                opacity: visible ? 1 : 0,
-                transform: visible ? "scale(1)" : "scale(0.85)",
-                pointerEvents: visible ? "auto" : "none",
-                boxShadow: visible
-                  ? "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.06)"
-                  : "none",
-                border: visible ? "1px solid rgba(255,255,255,0.08)" : "none",
-              } as CSSProperties}
-              onMouseEnter={() => visible && setHoveredNode(node)}
+              style={
+                {
+                  "--enter-delay": `${160 + Math.min(index, 10) * 18}ms`,
+                  left: pos.left,
+                  top: pos.top,
+                  width: w,
+                  height: h,
+                  background: isEmptyFilterTile ? "var(--treemap-empty-fill)" : undefined,
+                  backgroundColor: isEmptyFilterTile ? undefined : node.color,
+                  opacity: visible ? 1 : 0,
+                  transform: visible ? "scale(1)" : "scale(0.85)",
+                  pointerEvents: visible && !isEmptyFilterTile ? "auto" : "none",
+                  boxShadow: visible
+                    ? "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.06)"
+                    : "none",
+                  border: visible
+                    ? isEmptyFilterTile
+                      ? "1px solid var(--treemap-empty-border)"
+                      : "1px solid rgba(255,255,255,0.08)"
+                    : "none",
+                } as CSSProperties
+              }
+              onMouseEnter={() => visible && !isEmptyFilterTile && setHoveredNode(node)}
               onMouseLeave={() => setHoveredNode(null)}
               onClick={(e) => {
                 e.stopPropagation();
                 handleNodeClick(node);
               }}
             >
+              {isEmptyFilterTile && node.emptyStateMessage && (
+                <div className="flex max-w-[min(100%,22rem)] flex-col items-center gap-3 px-3 text-center md:gap-4">
+                  <SearchX
+                    className={cn(
+                      "shrink-0 text-accent",
+                      isMobile ? "size-10" : "size-12",
+                      "drop-shadow-sm"
+                    )}
+                    strokeWidth={1.5}
+                    aria-hidden
+                  />
+                  <span className="text-sm font-medium leading-snug text-text-primary md:text-base">
+                    {node.emptyStateMessage}
+                  </span>
+                </div>
+              )}
               {showSymbol && (
                 <SymbolLink
                   symbol={node.symbol}

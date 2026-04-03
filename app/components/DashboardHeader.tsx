@@ -26,6 +26,8 @@ interface DashboardHeaderProps {
   onRenamePortfolio?: (portfolioId: string, name: string) => void;
   onBackToPicker: () => void;
   activeSummary: ActivePortfolioSummary | null;
+  /** When filters are active but no rows match, show dashes instead of $0 / 0%. */
+  filterEmptyNoResults?: boolean;
   isMobile: boolean;
   /** When true, search bar is stuck under the header — compact totals and hide metric captions. */
   isSearchDocked: boolean;
@@ -45,6 +47,7 @@ export function DashboardHeader({
   onRenamePortfolio,
   onBackToPicker,
   activeSummary,
+  filterEmptyNoResults = false,
   isMobile,
   isSearchDocked,
   isLoading,
@@ -285,8 +288,10 @@ export function DashboardHeader({
               value={displayValue}
               format={formatHeaderCurrency}
               animate={enableValueAnimations}
+              placeholder={filterEmptyNoResults ? "—" : undefined}
               className={cn(
-                "block font-bold text-text-primary whitespace-nowrap transition-[font-size,line-height] duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
+                "block font-bold whitespace-nowrap transition-[font-size,line-height] duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
+                filterEmptyNoResults ? "text-text-muted" : "text-text-primary",
                 isMobile
                   ? isSearchDocked
                     ? "text-[clamp(1.1rem,5.2vw,1.45rem)] leading-tight"
@@ -313,8 +318,9 @@ export function DashboardHeader({
             onMouseLeave={() => setHoveredTooltip(null)}
           >
             <GainLoss
-              dollar={displayGainLoss}
-              percent={displayGainLossPercent}
+              dollar={filterEmptyNoResults ? undefined : displayGainLoss}
+              percent={filterEmptyNoResults ? undefined : displayGainLossPercent}
+              placeholder={filterEmptyNoResults ? "—" : undefined}
               size={isMobile ? "sm" : "md"}
               className={cn(
                 "transition-[font-size] duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
@@ -324,7 +330,8 @@ export function DashboardHeader({
                     : "text-lg"
                   : isSearchDocked
                     ? "text-sm md:text-base"
-                    : "text-xl md:text-2xl"
+                    : "text-xl md:text-2xl",
+                filterEmptyNoResults && "!text-text-muted"
               )}
               formatDollarValue={formatHeaderCurrency}
             />
@@ -341,6 +348,7 @@ export function DashboardHeader({
         </div>
         {typeof document !== "undefined" &&
           hoveredTooltip &&
+          !filterEmptyNoResults &&
           headerTooltipPos &&
           createPortal(
             <div

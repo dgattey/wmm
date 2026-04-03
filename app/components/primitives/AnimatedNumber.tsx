@@ -8,6 +8,8 @@ interface AnimatedNumberProps {
   format: (n: number) => string;
   className?: string;
   animate?: boolean;
+  /** Same typography as numeric display; use when there is no value to animate (e.g. filter had no matches). */
+  placeholder?: string;
 }
 
 const POSITIVE_FLASH_CLASS = "animate-[flash-positive_600ms_ease-out]";
@@ -18,11 +20,16 @@ export function AnimatedNumber({
   format,
   className,
   animate = true,
+  placeholder,
 }: AnimatedNumberProps) {
   const spanRef = useRef<HTMLSpanElement>(null);
   const prevValue = useRef(value);
 
   useEffect(() => {
+    if (placeholder !== undefined) {
+      return;
+    }
+
     const element = spanRef.current;
 
     if (!animate) {
@@ -53,7 +60,13 @@ export function AnimatedNumber({
     }, 600);
 
     return () => window.clearTimeout(timer);
-  }, [animate, value]);
+  }, [animate, placeholder, value]);
+
+  if (placeholder !== undefined) {
+    return (
+      <span className={cn("tabular-nums transition-colors duration-300", className)}>{placeholder}</span>
+    );
+  }
 
   return (
     <span

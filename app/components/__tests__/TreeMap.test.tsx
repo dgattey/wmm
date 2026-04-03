@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { TreeMap } from "../TreeMap";
 
 describe("TreeMap", () => {
-  it("shows loading copy when there are no nodes", () => {
+  it("shows an empty-state tile when there are no nodes", () => {
     render(
       <TreeMap
         nodes={[]}
@@ -12,6 +12,6 @@ describe("TreeMap", () => {
       />
     );
 
-    expect(screen.getByText("No matches")).toBeInTheDocument();
+    expect(screen.getByText("No results found")).toBeInTheDocument();
   });
 });
