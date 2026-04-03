@@ -282,14 +282,18 @@ export function TreeMap({
                 top: pos.top,
                 width: w,
                 height: h,
-                backgroundColor: node.color,
+                backgroundColor: isEmptyFilterTile ? "var(--treemap-empty-fill)" : node.color,
                 opacity: visible ? 1 : 0,
                 transform: visible ? "scale(1)" : "scale(0.85)",
                 pointerEvents: visible && !isEmptyFilterTile ? "auto" : "none",
                 boxShadow: visible
                   ? "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.06)"
                   : "none",
-                border: visible ? "1px solid rgba(255,255,255,0.08)" : "none",
+                border: visible
+                  ? isEmptyFilterTile
+                    ? "1px solid var(--treemap-empty-border)"
+                    : "1px solid rgba(255,255,255,0.08)"
+                  : "none",
               } as CSSProperties}
               onMouseEnter={() => visible && !isEmptyFilterTile && setHoveredNode(node)}
               onMouseLeave={() => setHoveredNode(null)}
@@ -299,7 +303,7 @@ export function TreeMap({
               }}
             >
               {isEmptyFilterTile && node.emptyStateMessage && (
-                <span className="px-4 text-center text-base font-semibold text-white drop-shadow-sm md:text-lg">
+                <span className="px-4 text-center text-base font-semibold text-text-primary md:text-lg">
                   {node.emptyStateMessage}
                 </span>
               )}

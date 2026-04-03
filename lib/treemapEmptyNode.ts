@@ -12,7 +12,8 @@ export function buildEmptyFilterTreeMapNode(
     symbol: EMPTY_NODE_ID,
     name: "No results",
     value: 0,
-    color: "#64748b",
+    /** Unused when `emptyStateMessage` is set — fill comes from `--treemap-empty-fill`. */
+    color: "#808080",
     percentOfPortfolio: 0,
     x0: 0,
     y0: 0,
