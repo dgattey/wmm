@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { Dashboard } from "../Dashboard";
 import type { PortfolioData } from "@/lib/types";
 import * as portfolioSelectors from "@/lib/portfolioSelectors";
@@ -227,7 +227,9 @@ describe("Dashboard portfolio actions", () => {
     });
     expect(onFiltersChange).not.toHaveBeenCalled();
 
-    vi.advanceTimersByTime(250);
+    act(() => {
+      vi.advanceTimersByTime(250);
+    });
     expect(onFiltersChange).toHaveBeenCalledWith({
       investmentTypes: [],
       accounts: [],
@@ -300,10 +302,63 @@ describe("Dashboard portfolio actions", () => {
     expect(getFilteredRowsSpy).toHaveBeenCalledTimes(1);
     expect(onFiltersChange).not.toHaveBeenCalled();
 
-    vi.advanceTimersByTime(250);
+    act(() => {
+      vi.advanceTimersByTime(250);
+    });
     expect(onFiltersChange).toHaveBeenCalledWith(
       expect.objectContaining({ searchQuery: "aapl" })
     );
+    // After the debounced update, the component re-renders with the new filters,
+    // so the memoized count recomputes once.
+    render(
+      <Dashboard
+        portfolioData={{
+          ...portfolioData,
+          tableRows: [
+            {
+              symbol: "AAPL",
+              name: "Apple Inc.",
+              accounts: ["Account A"],
+              investmentTypes: ["Stocks"],
+              totalValue: 100,
+              percentOfPortfolio: 100,
+              currentPrice: 100,
+              totalGainLossDollar: 10,
+              totalGainLossPercent: 10,
+              fiftyTwoWeekHigh: 120,
+              fiftyTwoWeekLow: 80,
+              isExpandable: false,
+              sources: [],
+            },
+          ],
+        }}
+        portfolioName="Sample beta portfolio"
+        filteredTreeMapNodes={[]}
+        filteredRows={[]}
+        isMobile={false}
+        filters={{ investmentTypes: [], accounts: [], searchQuery: "aapl" }}
+        onFiltersChange={onFiltersChange}
+        onResetFilters={vi.fn()}
+        sortConfig={{ key: "totalValue", direction: "desc" }}
+        onSort={vi.fn()}
+        expandedRows={new Set()}
+        onToggleExpand={vi.fn()}
+        onBackToPicker={vi.fn()}
+        isLoading={false}
+        viewMode="positions"
+        onViewModeChange={vi.fn()}
+        treeMapGrouping="fund"
+        onTreeMapGroupingChange={vi.fn()}
+        selectedFunds={[]}
+        onToggleFund={vi.fn()}
+        onClearFunds={vi.fn()}
+        fundOptions={[]}
+        activeSummary={null}
+        treeMapWidth={1200}
+        treeMapHeight={400}
+      />
+    );
+    expect(getFilteredRowsSpy).toHaveBeenCalledTimes(2);
 
     vi.useRealTimers();
   });
@@ -640,13 +695,17 @@ describe("Dashboard portfolio actions", () => {
     fireEvent.change(searchInput, { target: { value: "Apple" } });
     expect(searchInput).toHaveValue("Apple");
 
-    vi.advanceTimersByTime(250);
+    act(() => {
+      vi.advanceTimersByTime(250);
+    });
     expect(onFiltersChange).toHaveBeenCalledWith(
       expect.objectContaining({ searchQuery: "Apple" })
     );
 
     fireEvent.change(searchInput, { target: { value: "" } });
-    vi.advanceTimersByTime(250);
+    act(() => {
+      vi.advanceTimersByTime(250);
+    });
     expect(onFiltersChange).toHaveBeenCalledWith(
       expect.objectContaining({ searchQuery: "" })
     );

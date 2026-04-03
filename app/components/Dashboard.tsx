@@ -16,6 +16,7 @@ import type {
 import { getFilteredRows } from "@/lib/portfolioSelectors";
 import { cn } from "@/lib/utils";
 import { useIsStickyDocked } from "@/hooks/useIsStickyDocked";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { portfolioViewTransitionShell } from "@/lib/portfolioViewTransition";
 import { TreeMap } from "./TreeMap";
 import { PortfolioTable } from "./PortfolioTable";
@@ -95,23 +96,19 @@ export function Dashboard({
 }: DashboardProps) {
   const searchQueryFromFilters = filters.searchQuery ?? "";
   const [searchInput, setSearchInput] = useState(searchQueryFromFilters);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debouncedSearchInput = useDebouncedValue(searchInput, 250);
 
   useEffect(() => {
     setSearchInput(searchQueryFromFilters);
   }, [searchQueryFromFilters]);
-
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
 
   const visibleHoldingCount = useMemo(() => {
     if (viewMode === "holdings") {
       return filteredRows.length;
     }
 
+    // `filters.searchQuery` only updates after `debouncedSearchInput` flushes,
+    // so this stays stable while the user is typing quickly.
     return getFilteredRows(portfolioData.tableRows, filters, sortConfig, selectedFunds).length;
   }, [filteredRows.length, filters, portfolioData.tableRows, selectedFunds, sortConfig, viewMode]);
 
@@ -119,6 +116,16 @@ export function Dashboard({
   useEffect(() => {
     filtersRef.current = filters;
   }, [filters]);
+
+  useEffect(() => {
+    const currentSearch = filtersRef.current.searchQuery ?? "";
+    if (currentSearch === debouncedSearchInput) {
+      return;
+    }
+
+    filtersRef.current = { ...filtersRef.current, searchQuery: debouncedSearchInput };
+    onFiltersChange(filtersRef.current);
+  }, [debouncedSearchInput, onFiltersChange]);
 
   const headerRef = useRef<HTMLElement>(null);
   const searchShellRef = useRef<HTMLDivElement>(null);
@@ -139,20 +146,17 @@ export function Dashboard({
     (event: ChangeEvent<HTMLInputElement>) => {
       const value = event.target.value;
       setSearchInput(value);
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        debounceRef.current = null;
-        onFiltersChange({ ...filtersRef.current, searchQuery: value });
-      }, 250);
     },
-    [onFiltersChange]
+    []
   );
 
   const handleClearSearch = useCallback(() => {
     setSearchInput("");
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = null;
-    onFiltersChange({ ...filtersRef.current, searchQuery: "" });
+    const currentSearch = filtersRef.current.searchQuery ?? "";
+    if (currentSearch) {
+      filtersRef.current = { ...filtersRef.current, searchQuery: "" };
+      onFiltersChange(filtersRef.current);
+    }
   }, [onFiltersChange]);
 
   const vtShellStyle =
