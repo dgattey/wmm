@@ -41,21 +41,32 @@ export function useIsStickyDocked(
     return () => observer.disconnect();
   }, [headerRef]);
 
+  const expandedHeightPx = options?.expandedHeightPx;
+  const collapsedHeightPx = options?.collapsedHeightPx;
+
   const stickyTopPx = useMemo(() => {
-    const measuredExpandedHeightPx = options?.expandedHeightPx ?? fallbackHeaderHeightPx;
+    const measuredExpandedHeightPx =
+      expandedHeightPx && expandedHeightPx > 0
+        ? expandedHeightPx
+        : fallbackHeaderHeightPx;
     return Math.max(Math.ceil(measuredExpandedHeightPx), 0);
-  }, [fallbackHeaderHeightPx, options?.expandedHeightPx]);
+  }, [expandedHeightPx, fallbackHeaderHeightPx]);
 
   const collapsedTopPx = useMemo(() => {
-    const rawCollapsedHeightPx = options?.collapsedHeightPx ?? stickyTopPx;
+    const rawCollapsedHeightPx =
+      collapsedHeightPx && collapsedHeightPx > 0
+        ? collapsedHeightPx
+        : stickyTopPx;
     return clamp(Math.ceil(rawCollapsedHeightPx), 0, stickyTopPx);
-  }, [options?.collapsedHeightPx, stickyTopPx]);
+  }, [collapsedHeightPx, stickyTopPx]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel || stickyTopPx <= 0) return;
 
     let frame = 0;
+    let lastProgressBucket = -1;
+    let lastDockedState = false;
 
     const update = () => {
       frame = 0;
@@ -69,11 +80,18 @@ export function useIsStickyDocked(
           : nextIsDocked
             ? 1
             : 0;
+      const roundedProgress = Math.round(nextCollapseProgress * 1000) / 1000;
+      const progressBucket = Math.round(roundedProgress * 100) / 100;
 
-      setIsDocked((prev) => (prev === nextIsDocked ? prev : nextIsDocked));
-      setCollapseProgress((prev) =>
-        Math.abs(prev - nextCollapseProgress) < 0.001 ? prev : nextCollapseProgress
-      );
+      if (lastDockedState !== nextIsDocked) {
+        lastDockedState = nextIsDocked;
+        setIsDocked(nextIsDocked);
+      }
+
+      if (lastProgressBucket !== progressBucket) {
+        lastProgressBucket = progressBucket;
+        setCollapseProgress(roundedProgress);
+      }
     };
 
     const scheduleUpdate = () => {
