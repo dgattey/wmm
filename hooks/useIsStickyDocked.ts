@@ -37,28 +37,14 @@ export function useIsStickyDocked(headerRef: React.RefObject<HTMLElement | null>
     const sentinel = sentinelRef.current;
     if (!sentinel || stickyTopPx <= 0) return;
 
-    const computeDocked = () => {
-      const { bottom } = sentinel.getBoundingClientRect();
-      setIsDocked(bottom <= stickyTopPx);
-    };
+    const computeDocked = (bottom: number) => setIsDocked(bottom <= stickyTopPx);
 
-    let rafId = 0;
-    const scheduleCompute = () => {
-      if (rafId) return;
-      rafId = window.requestAnimationFrame(() => {
-        rafId = 0;
-        computeDocked();
-      });
-    };
-
-    // Initial compute so we have a correct state even if IntersectionObserver
-    // is delayed or doesn't fire (seen in some mobile/headless environments).
-    computeDocked();
+    // Initial compute ensures the sticky state is correct immediately on mount.
+    computeDocked(sentinel.getBoundingClientRect().bottom);
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        const { bottom } = entry.boundingClientRect;
-        setIsDocked(bottom <= stickyTopPx);
+        computeDocked(entry.boundingClientRect.bottom);
       },
       {
         root: null,
@@ -68,20 +54,8 @@ export function useIsStickyDocked(headerRef: React.RefObject<HTMLElement | null>
     );
 
     observer.observe(sentinel);
-    // Some browsers (and headless/mobile emulation) dispatch scroll events on `document`
-    // rather than `window`. Listen on both to ensure we recompute docked state reliably.
-    window.addEventListener("scroll", scheduleCompute, { passive: true });
-    document.addEventListener("scroll", scheduleCompute, { passive: true, capture: true });
-    window.addEventListener("resize", scheduleCompute);
-    // Safety net: if events don't fire (seen in some mobile/headless runs), poll briefly.
-    const intervalId = window.setInterval(computeDocked, 250);
     return () => {
       observer.disconnect();
-      window.removeEventListener("scroll", scheduleCompute);
-      document.removeEventListener("scroll", scheduleCompute, true);
-      window.removeEventListener("resize", scheduleCompute);
-      window.clearInterval(intervalId);
-      if (rafId) window.cancelAnimationFrame(rafId);
     };
   }, [stickyTopPx]);
 

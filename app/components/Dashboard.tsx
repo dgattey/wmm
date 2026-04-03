@@ -164,6 +164,21 @@ export function Dashboard({
       className={cn("min-h-0 flex-1 pb-8", enableIntroAnimation && "animate-fade-in")}
       style={vtShellStyle}
     >
+      <div
+        aria-hidden
+        data-testid="sticky-shared-backdrop"
+        className={cn(
+          "sticky-shared-backdrop sticky top-0 pointer-events-none z-30",
+          isSearchDocked && "is-search-docked"
+        )}
+        style={
+          {
+            "--sticky-header-height": `${headerHeightPx}px`,
+            "--sticky-search-height": `${searchShellHeightPx}px`,
+          } as CSSProperties
+        }
+      />
+
       {/* Sticky Header */}
       <header
         ref={headerRef}
@@ -171,7 +186,6 @@ export function Dashboard({
           "sticky-header sticky top-0 z-40",
           isSearchDocked && "is-search-docked"
         )}
-        style={{ "--header-search-absorb-height": `${searchShellHeightPx}px` } as CSSProperties}
       >
         <DashboardHeader
           portfolioData={portfolioData}
