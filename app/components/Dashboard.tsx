@@ -169,15 +169,10 @@ export function Dashboard({
         ref={headerRef}
         className={cn(
           "sticky-header sticky top-0 z-40",
-          isSearchDocked && "is-search-docked border-b-0"
+          isSearchDocked && "is-search-docked"
         )}
         style={{ "--header-search-absorb-height": `${searchShellHeightPx}px` } as CSSProperties}
       >
-        <div
-          aria-hidden="true"
-          data-testid="header-search-absorber"
-          className={cn("sticky-header-search-absorber", isSearchDocked && "is-docked")}
-        />
         <DashboardHeader
           portfolioData={portfolioData}
           portfolioName={portfolioName}
