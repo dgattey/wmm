@@ -135,7 +135,8 @@ export function DashboardHeader({
   return (
     <div
       className={cn(
-        "relative z-10 max-w-[1400px] mx-auto py-5",
+        "relative z-10 max-w-[1400px] mx-auto transition-[padding] duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
+        isSearchDocked ? "py-3" : "py-5",
         isMobile ? "px-4" : "px-6"
       )}
     >
@@ -143,7 +144,12 @@ export function DashboardHeader({
         className={cn(enableIntroAnimation && "animate-soft-rise")}
         style={{ "--enter-delay": "40ms" } as CSSProperties}
       >
-        <div className="mb-6 flex min-w-0 items-center justify-between gap-4">
+        <div
+          className={cn(
+            "flex min-w-0 items-center justify-between gap-4 transition-[margin-bottom] duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
+            isSearchDocked ? "mb-3" : "mb-6"
+          )}
+        >
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
