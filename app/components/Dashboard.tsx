@@ -252,7 +252,7 @@ export function Dashboard({
           data-testid="portfolio-search-shell"
           className={cn(
             "sticky mb-4 py-3 w-screen relative",
-            isSearchDocked ? "bg-transparent z-50" : "bg-transparent z-40"
+            "bg-transparent z-50"
           )}
           style={{
             marginLeft: "calc(-50vw + 50%)",
