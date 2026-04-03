@@ -37,11 +37,27 @@ export function useIsStickyDocked(headerRef: React.RefObject<HTMLElement | null>
     const sentinel = sentinelRef.current;
     if (!sentinel || stickyTopPx <= 0) return;
 
+    const computeDocked = () => {
+      const { bottom } = sentinel.getBoundingClientRect();
+      setIsDocked(bottom <= stickyTopPx);
+    };
+
+    let rafId = 0;
+    const scheduleCompute = () => {
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = 0;
+        computeDocked();
+      });
+    };
+
+    // Initial compute so we have a correct state even if IntersectionObserver
+    // is delayed or doesn't fire (seen in some mobile/headless environments).
+    computeDocked();
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         const { bottom } = entry.boundingClientRect;
-        // Use <= to avoid pixel-rounding edge cases (common on mobile) where the
-        // sentinel "bottom" lands exactly on the sticky header boundary.
         setIsDocked(bottom <= stickyTopPx);
       },
       {
@@ -52,7 +68,14 @@ export function useIsStickyDocked(headerRef: React.RefObject<HTMLElement | null>
     );
 
     observer.observe(sentinel);
-    return () => observer.disconnect();
+    window.addEventListener("scroll", scheduleCompute, { passive: true });
+    window.addEventListener("resize", scheduleCompute);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", scheduleCompute);
+      window.removeEventListener("resize", scheduleCompute);
+      if (rafId) window.cancelAnimationFrame(rafId);
+    };
   }, [stickyTopPx]);
 
   return [sentinelRef, isDocked, stickyTopPx];
