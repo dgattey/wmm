@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, CSSProperties } from "react";
 import type {
   ActivePortfolioSummary,
@@ -107,10 +107,13 @@ export function Dashboard({
     };
   }, []);
 
-  const visibleHoldingCount =
-    viewMode === "holdings"
-      ? filteredRows.length
-      : getFilteredRows(portfolioData.tableRows, filters, sortConfig, selectedFunds).length;
+  const visibleHoldingCount = useMemo(() => {
+    if (viewMode === "holdings") {
+      return filteredRows.length;
+    }
+
+    return getFilteredRows(portfolioData.tableRows, filters, sortConfig, selectedFunds).length;
+  }, [filteredRows.length, filters, portfolioData.tableRows, selectedFunds, sortConfig, viewMode]);
 
   const filtersRef = useRef(filters);
   useEffect(() => {
