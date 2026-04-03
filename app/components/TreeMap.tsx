@@ -277,25 +277,28 @@ export function TreeMap({
                   !isEmptyFilterTile &&
                   "hover:z-20 hover:brightness-110 hover:shadow-[var(--shadow-lg)] hover-lift"
               )}
-              style={{
-                "--enter-delay": `${160 + Math.min(index, 10) * 18}ms`,
-                left: pos.left,
-                top: pos.top,
-                width: w,
-                height: h,
-                backgroundColor: isEmptyFilterTile ? "var(--treemap-empty-fill)" : node.color,
-                opacity: visible ? 1 : 0,
-                transform: visible ? "scale(1)" : "scale(0.85)",
-                pointerEvents: visible && !isEmptyFilterTile ? "auto" : "none",
-                boxShadow: visible
-                  ? "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.06)"
-                  : "none",
-                border: visible
-                  ? isEmptyFilterTile
-                    ? "1px solid var(--treemap-empty-border)"
-                    : "1px solid rgba(255,255,255,0.08)"
-                  : "none",
-              } as CSSProperties}
+              style={
+                {
+                  "--enter-delay": `${160 + Math.min(index, 10) * 18}ms`,
+                  left: pos.left,
+                  top: pos.top,
+                  width: w,
+                  height: h,
+                  background: isEmptyFilterTile ? "var(--treemap-empty-fill)" : undefined,
+                  backgroundColor: isEmptyFilterTile ? undefined : node.color,
+                  opacity: visible ? 1 : 0,
+                  transform: visible ? "scale(1)" : "scale(0.85)",
+                  pointerEvents: visible && !isEmptyFilterTile ? "auto" : "none",
+                  boxShadow: visible
+                    ? "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.06)"
+                    : "none",
+                  border: visible
+                    ? isEmptyFilterTile
+                      ? "1px solid var(--treemap-empty-border)"
+                      : "1px solid rgba(255,255,255,0.08)"
+                    : "none",
+                } as CSSProperties
+              }
               onMouseEnter={() => visible && !isEmptyFilterTile && setHoveredNode(node)}
               onMouseLeave={() => setHoveredNode(null)}
               onClick={(e) => {
