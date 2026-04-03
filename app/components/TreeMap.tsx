@@ -11,8 +11,8 @@ import type { TreeMapGrouping, TreeMapNode } from "@/lib/types";
 import { isFundInvestmentType } from "@/lib/investmentTypes";
 import { buildEmptyFilterTreeMapNode } from "@/lib/treemapEmptyNode";
 import { filterFundTreeMapNodes } from "@/lib/treemap";
+import { SearchX } from "lucide-react";
 import { cn, formatCompact } from "@/lib/utils";
-import { SearchOffIcon } from "./icons";
 import { TreeMapTooltip } from "./TreeMapTooltip";
 import { SymbolLink } from "./primitives/SymbolLink";
 
@@ -307,15 +307,20 @@ export function TreeMap({
               }}
             >
               {isEmptyFilterTile && node.emptyStateMessage && (
-                <>
-                  <SearchOffIcon
-                    size={isMobile ? 14 : 16}
-                    className="text-text-primary drop-shadow-sm"
+                <div className="flex max-w-[min(100%,22rem)] flex-col items-center gap-3 px-3 text-center md:gap-4">
+                  <SearchX
+                    className={cn(
+                      "shrink-0 text-accent",
+                      isMobile ? "size-10" : "size-12",
+                      "drop-shadow-sm"
+                    )}
+                    strokeWidth={1.5}
+                    aria-hidden
                   />
-                  <span className="mt-0.5 max-w-[min(100%,18rem)] text-center text-[10px] leading-none text-text-muted drop-shadow-sm">
+                  <span className="text-sm font-medium leading-snug text-text-primary md:text-base">
                     {node.emptyStateMessage}
                   </span>
-                </>
+                </div>
               )}
               {showSymbol && (
                 <SymbolLink

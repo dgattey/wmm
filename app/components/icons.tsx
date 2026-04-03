@@ -57,17 +57,6 @@ export function SearchIcon(props: IconProps) {
   );
 }
 
-/** Magnifying glass with strike — “nothing matched this search.” */
-export function SearchOffIcon(props: IconProps) {
-  return (
-    <svg {...defaultProps(18, props)}>
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.3-4.3" />
-      <path d="M4 20 20 4" strokeWidth={2.25} />
-    </svg>
-  );
-}
-
 export function XIcon(props: IconProps) {
   return (
     <svg {...defaultProps(12, props)} strokeWidth={2.5}>
