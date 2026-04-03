@@ -166,6 +166,10 @@ export function Dashboard({
 
   const { summary } = portfolioData;
 
+  /** Filters are active but nothing matches (e.g. search with no hits) — keep layout height and show dash metrics. */
+  const filterEmptyNoResults =
+    activeSummary !== null && filteredRows.length === 0;
+
   return (
     <div
       className={cn("min-h-0 flex-1 pb-8", enableIntroAnimation && "animate-fade-in")}
@@ -187,6 +191,7 @@ export function Dashboard({
           onRenamePortfolio={onRenamePortfolio}
           onBackToPicker={onBackToPicker}
           activeSummary={activeSummary}
+          filterEmptyNoResults={filterEmptyNoResults}
           isMobile={isMobile}
           isLoading={isLoading}
           enableIntroAnimation={enableIntroAnimation}
@@ -286,6 +291,7 @@ export function Dashboard({
           isMobile={isMobile}
           enableIntroAnimation={enableIntroAnimation}
           enableValueAnimations={enableValueAnimations}
+          filterEmptyNoResults={filterEmptyNoResults}
         />
       </section>
 

@@ -93,6 +93,70 @@ interface TreeMapProps {
   enableIntroAnimation?: boolean;
 }
 
+/** Same outer dimensions as a populated treemap; one neutral tile instead of collapsing the section. */
+function TreeMapEmptyPlaceholder({
+  originalWidth,
+  originalHeight,
+  enableIntroAnimation,
+}: {
+  originalWidth: number;
+  originalHeight: number;
+  enableIntroAnimation: boolean;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(originalWidth);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const scaleX = containerWidth / originalWidth;
+  const scaleY = scaleX;
+  const scaledHeight = originalHeight * scaleY;
+
+  return (
+    <div className="relative">
+      <div
+        ref={containerRef}
+        className={cn(
+          "relative w-full overflow-hidden",
+          enableIntroAnimation && "animate-soft-rise"
+        )}
+        style={
+          {
+            height: scaledHeight,
+            "--enter-delay": "40ms",
+          } as CSSProperties
+        }
+      >
+        <div
+          className={cn(
+            "absolute inset-0 flex flex-col items-center justify-center rounded-lg",
+            "select-none overflow-hidden",
+            "transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
+            "border border-border/80 bg-surface-hover",
+            "shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-1px_0_rgba(0,0,0,0.06)]",
+            "dark:border-white/[0.08]"
+          )}
+        >
+          <span className="px-4 text-center text-base font-semibold text-text-primary md:text-lg">
+            No results found
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function TreeMap({
   nodes,
   originalWidth = 1200,
@@ -165,14 +229,11 @@ export function TreeMap({
 
   if (nodes.length === 0) {
     return (
-      <div
-        className={cn(
-          "w-full flex items-center justify-center text-text-muted",
-          isMobile ? "h-[280px]" : "h-[400px]"
-        )}
-      >
-        No matches
-      </div>
+      <TreeMapEmptyPlaceholder
+        originalWidth={originalWidth}
+        originalHeight={originalHeight}
+        enableIntroAnimation={enableIntroAnimation}
+      />
     );
   }
 

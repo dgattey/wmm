@@ -25,6 +25,8 @@ interface DashboardHeaderProps {
   onRenamePortfolio?: (portfolioId: string, name: string) => void;
   onBackToPicker: () => void;
   activeSummary: ActivePortfolioSummary | null;
+  /** When filters are active but no rows match, show dashes instead of $0 / 0%. */
+  filterEmptyNoResults?: boolean;
   isMobile: boolean;
   isLoading: boolean;
   enableIntroAnimation: boolean;
@@ -42,6 +44,7 @@ export function DashboardHeader({
   onRenamePortfolio,
   onBackToPicker,
   activeSummary,
+  filterEmptyNoResults = false,
   isMobile,
   isLoading,
   enableIntroAnimation,
@@ -236,17 +239,29 @@ export function DashboardHeader({
                 : undefined
             }
           >
-            <AnimatedNumber
-              value={displayValue}
-              format={formatHeaderCurrency}
-              animate={enableValueAnimations}
-              className={cn(
-                "font-bold text-text-primary whitespace-nowrap",
-                isMobile ? "text-[clamp(2rem,10vw,2.6rem)]" : "text-3xl md:text-5xl"
-              )}
-            />
+            {filterEmptyNoResults ? (
+              <span
+                className={cn(
+                  "font-bold text-text-muted whitespace-nowrap tabular-nums",
+                  isMobile ? "text-[clamp(2rem,10vw,2.6rem)]" : "text-3xl md:text-5xl"
+                )}
+                aria-hidden
+              >
+                —
+              </span>
+            ) : (
+              <AnimatedNumber
+                value={displayValue}
+                format={formatHeaderCurrency}
+                animate={enableValueAnimations}
+                className={cn(
+                  "font-bold text-text-primary whitespace-nowrap",
+                  isMobile ? "text-[clamp(2rem,10vw,2.6rem)]" : "text-3xl md:text-5xl"
+                )}
+              />
+            )}
             <p className="mt-1 text-xs text-text-muted">Current market value</p>
-            {hoveredTooltip === "value" && (
+            {hoveredTooltip === "value" && !filterEmptyNoResults && (
               <div
                 role="tooltip"
                 className="pointer-events-none absolute left-0 top-full z-50 mt-1.5 w-max rounded-lg border border-border/80 bg-surface px-3 py-1.5 text-left text-xs leading-5 text-text-primary shadow-[var(--shadow-lg)]"
@@ -260,15 +275,27 @@ export function DashboardHeader({
             onMouseEnter={() => setHoveredTooltip("gain")}
             onMouseLeave={() => setHoveredTooltip(null)}
           >
-            <GainLoss
-              dollar={displayGainLoss}
-              percent={displayGainLossPercent}
-              size={isMobile ? "sm" : "md"}
-              className={cn(isMobile ? "text-lg" : "text-xl md:text-2xl")}
-              formatDollarValue={formatHeaderCurrency}
-            />
+            {filterEmptyNoResults ? (
+              <span
+                className={cn(
+                  "font-medium text-text-muted tabular-nums",
+                  isMobile ? "text-lg" : "text-xl md:text-2xl"
+                )}
+                aria-hidden
+              >
+                —
+              </span>
+            ) : (
+              <GainLoss
+                dollar={displayGainLoss}
+                percent={displayGainLossPercent}
+                size={isMobile ? "sm" : "md"}
+                className={cn(isMobile ? "text-lg" : "text-xl md:text-2xl")}
+                formatDollarValue={formatHeaderCurrency}
+              />
+            )}
             <p className="mt-1 text-xs text-text-muted">Unrealized gain / return on cost basis</p>
-            {hoveredTooltip === "gain" && (
+            {hoveredTooltip === "gain" && !filterEmptyNoResults && (
               <div
                 role="tooltip"
                 className="pointer-events-none absolute left-0 top-full z-50 mt-1.5 w-max rounded-lg border border-border/80 bg-surface px-3 py-1.5 text-left text-xs leading-5 text-text-primary shadow-[var(--shadow-lg)]"
