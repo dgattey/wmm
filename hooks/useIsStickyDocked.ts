@@ -22,7 +22,10 @@ export function useIsStickyDocked(headerRef: React.RefObject<HTMLElement | null>
     const header = headerRef.current;
     if (!header) return;
 
-    const updateHeight = () => setStickyTopPx(header.getBoundingClientRect().height);
+    const updateHeight = () => {
+      // Round up to avoid fractional-pixel rootMargin parsing edge cases (common on mobile).
+      setStickyTopPx(Math.ceil(header.getBoundingClientRect().height));
+    };
     updateHeight();
 
     const observer = new ResizeObserver(updateHeight);
