@@ -62,7 +62,7 @@ const portfolioData: PortfolioData = {
 };
 
 beforeEach(() => {
-  mockUseIsStickyDocked.mockReturnValue([{ current: null }, false, 112]);
+  mockUseIsStickyDocked.mockReturnValue([{ current: null }, false, 112, 0]);
 });
 
 function renderDashboard({
@@ -364,7 +364,7 @@ describe("Dashboard portfolio actions", () => {
   });
 
   it("treats the docked header and search row as one shared surface", () => {
-    mockUseIsStickyDocked.mockReturnValue([{ current: null }, true, 112]);
+    mockUseIsStickyDocked.mockReturnValue([{ current: null }, true, 112, 1]);
 
     renderDashboard();
 
@@ -644,7 +644,7 @@ describe("Dashboard portfolio actions", () => {
       lastUpdated: new Date().toISOString(),
     };
 
-    mockUseIsStickyDocked.mockReturnValue([{ current: null }, true, 112]);
+    mockUseIsStickyDocked.mockReturnValue([{ current: null }, true, 112, 1]);
 
     const onFiltersChange = vi.fn();
     render(

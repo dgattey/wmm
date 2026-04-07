@@ -1,31 +1,39 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+interface StickyDockedOptions {
+  expandedHeightPx?: number;
+  collapsedHeightPx?: number;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
 
 /**
- * Detects when a sticky element is in its "docked" (stuck) state using
- * IntersectionObserver. Fires only when intersection state changes—no scroll
- * or resize listeners. Caller must render a sentinel element at the dock point
- * and pass a ref to the header (element above the search bar) so we measure
- * its height—no magic numbers.
+ * Tracks when the search row reaches the sticky header and exposes a
+ * scroll-progress value for smoothly collapsing the header between expanded and
+ * collapsed heights.
  */
-export function useIsStickyDocked(headerRef: React.RefObject<HTMLElement | null>): [
-  React.RefObject<HTMLDivElement | null>,
-  boolean,
-  number
-] {
+export function useIsStickyDocked(
+  headerRef: React.RefObject<HTMLElement | null>,
+  options?: StickyDockedOptions
+): [React.RefObject<HTMLDivElement | null>, boolean, number, number] {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const [stickyTopPx, setStickyTopPx] = useState(0);
+  const [fallbackHeaderHeightPx, setFallbackHeaderHeightPx] = useState(0);
   const [isDocked, setIsDocked] = useState(false);
+  const [collapseProgress, setCollapseProgress] = useState(0);
 
   useEffect(() => {
     const header = headerRef.current;
     if (!header) return;
 
     const updateHeight = () => {
-      // Round up to avoid fractional-pixel rootMargin parsing edge cases (common on mobile).
-      setStickyTopPx(Math.ceil(header.getBoundingClientRect().height));
+      // Round up to avoid fractional-pixel measurement churn near the dock point.
+      setFallbackHeaderHeightPx(Math.ceil(header.getBoundingClientRect().height));
     };
+
     updateHeight();
 
     const observer = new ResizeObserver(updateHeight);
@@ -33,31 +41,81 @@ export function useIsStickyDocked(headerRef: React.RefObject<HTMLElement | null>
     return () => observer.disconnect();
   }, [headerRef]);
 
+  const expandedHeightPx = options?.expandedHeightPx;
+  const collapsedHeightPx = options?.collapsedHeightPx;
+
+  const stickyTopPx = useMemo(() => {
+    const measuredExpandedHeightPx =
+      expandedHeightPx && expandedHeightPx > 0
+        ? expandedHeightPx
+        : fallbackHeaderHeightPx;
+    return Math.max(Math.ceil(measuredExpandedHeightPx), 0);
+  }, [expandedHeightPx, fallbackHeaderHeightPx]);
+
+  const collapsedTopPx = useMemo(() => {
+    const rawCollapsedHeightPx =
+      collapsedHeightPx && collapsedHeightPx > 0
+        ? collapsedHeightPx
+        : stickyTopPx;
+    return clamp(Math.ceil(rawCollapsedHeightPx), 0, stickyTopPx);
+  }, [collapsedHeightPx, stickyTopPx]);
+
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel || stickyTopPx <= 0) return;
 
-    const computeDocked = (bottom: number) => setIsDocked(bottom <= stickyTopPx);
+    let frame = 0;
+    let lastProgressBucket = -1;
+    let lastDockedState = false;
 
-    // Initial compute ensures the sticky state is correct immediately on mount.
-    computeDocked(sentinel.getBoundingClientRect().bottom);
+    const update = () => {
+      frame = 0;
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        computeDocked(entry.boundingClientRect.bottom);
-      },
-      {
-        root: null,
-        rootMargin: `-${stickyTopPx}px 0px 0px 0px`,
-        threshold: 0,
+      const bottom = sentinel.getBoundingClientRect().bottom;
+      const nextIsDocked = bottom <= stickyTopPx;
+      const collapseRangePx = stickyTopPx - collapsedTopPx;
+      const nextCollapseProgress =
+        collapseRangePx > 0
+          ? clamp((stickyTopPx - bottom) / collapseRangePx, 0, 1)
+          : nextIsDocked
+            ? 1
+            : 0;
+      const roundedProgress = Math.round(nextCollapseProgress * 1000) / 1000;
+      const progressBucket = Math.round(roundedProgress * 100) / 100;
+
+      if (lastDockedState !== nextIsDocked) {
+        lastDockedState = nextIsDocked;
+        setIsDocked(nextIsDocked);
       }
-    );
 
+      if (lastProgressBucket !== progressBucket) {
+        lastProgressBucket = progressBucket;
+        setCollapseProgress(roundedProgress);
+      }
+    };
+
+    const scheduleUpdate = () => {
+      if (frame !== 0) return;
+      frame = window.requestAnimationFrame(update);
+    };
+
+    update();
+
+    window.addEventListener("scroll", scheduleUpdate, { capture: true, passive: true });
+    window.addEventListener("resize", scheduleUpdate);
+
+    const observer = new ResizeObserver(scheduleUpdate);
     observer.observe(sentinel);
+
     return () => {
+      if (frame !== 0) {
+        window.cancelAnimationFrame(frame);
+      }
+      window.removeEventListener("scroll", scheduleUpdate, true);
+      window.removeEventListener("resize", scheduleUpdate);
       observer.disconnect();
     };
-  }, [stickyTopPx]);
+  }, [collapsedTopPx, stickyTopPx]);
 
-  return [sentinelRef, isDocked, stickyTopPx];
+  return [sentinelRef, isDocked, stickyTopPx, collapseProgress];
 }
