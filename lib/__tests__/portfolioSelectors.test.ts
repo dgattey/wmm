@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  collectSearchMatchedPositionSymbols,
   getActivePortfolioSummary,
   getFilteredRows,
   getFilteredTreeMapNodes,
@@ -166,6 +167,110 @@ describe("portfolio selectors", () => {
       totalValue: 220,
       totalGainLossDollar: 20,
     });
+  });
+
+  it("maps aggregated holdings search to position rows via fund tickers (unified search)", () => {
+    const metaHoldings = makeRow({
+      symbol: "META",
+      name: "Meta Platforms, Inc.",
+      totalValue: 5000,
+      totalGainLossDollar: 0,
+      isExpandable: true,
+      sources: [
+        {
+          type: "fund",
+          sourceSymbol: "VTI",
+          sourceName: "Vanguard Total Stock Market ETF",
+          value: 3000,
+          percentOfSource: 2,
+          percentOfPortfolio: 3,
+          account: "Account A",
+          investmentType: "ETFs",
+          totalGainLossDollar: 0,
+          costBasisTotal: 0,
+        },
+        {
+          type: "fund",
+          sourceSymbol: "SPY",
+          sourceName: "SPDR S&P 500 ETF Trust",
+          value: 2000,
+          percentOfSource: 1,
+          percentOfPortfolio: 2,
+          account: "Account A",
+          investmentType: "ETFs",
+          totalGainLossDollar: 0,
+          costBasisTotal: 0,
+        },
+      ],
+    });
+
+    const vtiPosition = makeRow({
+      symbol: "VTI",
+      name: "Vanguard Total Stock Market ETF",
+      totalValue: 50000,
+      isExpandable: false,
+      sources: [
+        {
+          type: "direct",
+          sourceSymbol: "DIRECT",
+          sourceName: "Account A",
+          value: 50000,
+          percentOfSource: 100,
+          percentOfPortfolio: 50,
+          account: "Account A",
+          investmentType: "ETFs",
+          totalGainLossDollar: 100,
+          costBasisTotal: 45000,
+        },
+      ],
+    });
+
+    const unrelatedFund = makeRow({
+      symbol: "BND",
+      name: "Vanguard Total Bond Market ETF",
+      totalValue: 10000,
+      isExpandable: false,
+      sources: [
+        {
+          type: "direct",
+          sourceSymbol: "DIRECT",
+          sourceName: "Account A",
+          value: 10000,
+          percentOfSource: 100,
+          percentOfPortfolio: 10,
+          account: "Account A",
+          investmentType: "ETFs",
+          totalGainLossDollar: 0,
+          costBasisTotal: 9500,
+        },
+      ],
+    });
+
+    const filters = {
+      accounts: [] as string[],
+      investmentTypes: [] as string[],
+      searchQuery: "meta",
+    };
+
+    const allowlist = collectSearchMatchedPositionSymbols(
+      [metaHoldings],
+      filters,
+      []
+    );
+    expect(allowlist.has("META")).toBe(true);
+    expect(allowlist.has("VTI")).toBe(true);
+    expect(allowlist.has("SPY")).toBe(true);
+
+    const positionFiltered = getFilteredRows(
+      [vtiPosition, unrelatedFund],
+      filters,
+      SORT_CONFIG,
+      [],
+      allowlist
+    );
+
+    expect(positionFiltered).toHaveLength(1);
+    expect(positionFiltered[0].symbol).toBe("VTI");
   });
 
   it("filters treemap nodes by account and relayouts the remaining nodes", () => {

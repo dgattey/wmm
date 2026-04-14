@@ -21,6 +21,7 @@ import type {
   FidelityPosition,
   FilterState,
   PortfolioData,
+  PositionSource,
   SortConfig,
   TableRow,
   TreeMapNode,
@@ -30,14 +31,18 @@ export function getFilteredRows(
   rows: TableRow[] | null,
   filters: FilterState,
   sortConfig: SortConfig,
-  selectedFunds: string[]
+  selectedFunds: string[],
+  /** When set (positions table + active search), restrict rows to symbols that match the same search on aggregated holdings. */
+  searchSymbolAllowlist?: ReadonlySet<string> | null
 ): TableRow[] {
   if (!rows) {
     return [];
   }
 
   const filtered = rows
-    .map((row) => buildVisibleRow(row, filters, selectedFunds))
+    .map((row) =>
+      buildVisibleRow(row, filters, selectedFunds, searchSymbolAllowlist)
+    )
     .filter((row): row is TableRow => row !== null);
   const visibleTotalValue = filtered.reduce(
     (sum, row) => sum + row.totalValue,
@@ -174,12 +179,50 @@ function getActiveSummaryLabel(
   } applied`;
 }
 
-function buildVisibleRow(
+/** Symbols (position row keys + contributing fund tickers) for rows that match search on aggregated holdings — keeps "By fund" table search aligned with "Aggregated". */
+export function collectSearchMatchedPositionSymbols(
+  holdingsRows: TableRow[],
+  filters: FilterState,
+  selectedFunds: string[]
+): Set<string> {
+  const symbols = new Set<string>();
+  for (const row of holdingsRows) {
+    const visibleSources = getVisibleSourcesForFilters(
+      row,
+      filters,
+      selectedFunds
+    );
+    if (visibleSources.length === 0) {
+      continue;
+    }
+    if (
+      !matchesTableRowSearch(
+        {
+          symbol: row.symbol,
+          name: row.name,
+          sources: visibleSources,
+        },
+        filters.searchQuery
+      )
+    ) {
+      continue;
+    }
+    symbols.add(row.symbol);
+    for (const source of visibleSources) {
+      if (source.type === "fund") {
+        symbols.add(source.sourceSymbol);
+      }
+    }
+  }
+  return symbols;
+}
+
+function getVisibleSourcesForFilters(
   row: TableRow,
   filters: FilterState,
   selectedFunds: string[]
-): TableRow | null {
-  const visibleSources = row.sources.filter(
+): PositionSource[] {
+  return row.sources.filter(
     (source) =>
       matchesSourceFilters(source.account, source.investmentType, filters) &&
       matchesRowSourceFundSelection(
@@ -191,18 +234,41 @@ function buildVisibleRow(
         selectedFunds
       )
   );
+}
 
-  if (
-    visibleSources.length === 0 ||
-    !matchesTableRowSearch(
+function buildVisibleRow(
+  row: TableRow,
+  filters: FilterState,
+  selectedFunds: string[],
+  searchSymbolAllowlist: ReadonlySet<string> | null | undefined
+): TableRow | null {
+  const visibleSources = getVisibleSourcesForFilters(
+    row,
+    filters,
+    selectedFunds
+  );
+
+  if (visibleSources.length === 0) {
+    return null;
+  }
+
+  const searchMatchesHoldings =
+    !hasSearchQuery(filters) ||
+    matchesTableRowSearch(
       {
         symbol: row.symbol,
         name: row.name,
         sources: visibleSources,
       },
       filters.searchQuery
-    )
-  ) {
+    );
+
+  const searchMatchesPositionsView =
+    searchSymbolAllowlist &&
+    searchSymbolAllowlist.size > 0 &&
+    searchSymbolAllowlist.has(row.symbol);
+
+  if (!searchMatchesHoldings && !searchMatchesPositionsView) {
     return null;
   }
 
