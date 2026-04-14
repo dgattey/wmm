@@ -116,10 +116,13 @@ export function usePortfolioViewState({
   const effectiveFilters = currentSelection.filters;
   const effectiveSelectedFunds = currentSelection.selectedFunds;
 
-  const sourceRows =
-    viewMode === "holdings"
-      ? portfolioData?.tableRows
-      : portfolioData?.positionRows;
+  const isPositionsView = viewMode === "positions";
+  const sourceRows = isPositionsView
+    ? portfolioData?.positionRows
+    : portfolioData?.tableRows;
+  const holdingsRowsForSearch = isPositionsView
+    ? portfolioData?.tableRows
+    : undefined;
 
   const filteredFundTreeMapNodes = useMemo(
     () =>
@@ -143,9 +146,16 @@ export function usePortfolioViewState({
         sourceRows ?? null,
         effectiveFilters,
         sortConfig,
-        effectiveSelectedFunds
+        effectiveSelectedFunds,
+        holdingsRowsForSearch
       ),
-    [effectiveFilters, effectiveSelectedFunds, sortConfig, sourceRows]
+    [
+      effectiveFilters,
+      effectiveSelectedFunds,
+      holdingsRowsForSearch,
+      sortConfig,
+      sourceRows,
+    ]
   );
 
   const activeSummary = useMemo(
