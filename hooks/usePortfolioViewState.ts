@@ -28,9 +28,7 @@ import {
   sanitizeSelectionForFilterChange,
   sanitizeSelectionForFundChange,
 } from "@/lib/portfolioSelection";
-import { hasSearchQuery } from "@/lib/portfolioFilters";
 import {
-  collectSearchMatchedPositionSymbols,
   getActivePortfolioSummary,
   getFilteredRows,
   getFilteredTreeMapNodes,
@@ -118,25 +116,13 @@ export function usePortfolioViewState({
   const effectiveFilters = currentSelection.filters;
   const effectiveSelectedFunds = currentSelection.selectedFunds;
 
-  const sourceRows =
-    viewMode === "holdings"
-      ? portfolioData?.tableRows
-      : portfolioData?.positionRows;
-
-  const searchMatchedPositionSymbols = useMemo(() => {
-    if (
-      viewMode !== "positions" ||
-      !hasSearchQuery(effectiveFilters) ||
-      !portfolioData?.tableRows
-    ) {
-      return null;
-    }
-    return collectSearchMatchedPositionSymbols(
-      portfolioData.tableRows,
-      effectiveFilters,
-      effectiveSelectedFunds
-    );
-  }, [effectiveFilters, effectiveSelectedFunds, portfolioData, viewMode]);
+  const isPositionsView = viewMode === "positions";
+  const sourceRows = isPositionsView
+    ? portfolioData?.positionRows
+    : portfolioData?.tableRows;
+  const holdingsRowsForSearch = isPositionsView
+    ? portfolioData?.tableRows
+    : undefined;
 
   const filteredFundTreeMapNodes = useMemo(
     () =>
@@ -161,12 +147,12 @@ export function usePortfolioViewState({
         effectiveFilters,
         sortConfig,
         effectiveSelectedFunds,
-        searchMatchedPositionSymbols
+        holdingsRowsForSearch
       ),
     [
       effectiveFilters,
       effectiveSelectedFunds,
-      searchMatchedPositionSymbols,
+      holdingsRowsForSearch,
       sortConfig,
       sourceRows,
     ]

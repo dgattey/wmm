@@ -13,6 +13,7 @@ import {
   matchesTableRowSearch,
   matchesTreeMapNodeFilters,
   matchesTreeMapNodeSearch,
+  normalizeSearchQuery,
 } from "./portfolioFilters";
 import { sortTableRows } from "./tableSort";
 import { getTreeMapGroupKey, relayoutTreeMapNodes } from "./treemap";
@@ -21,27 +22,35 @@ import type {
   FidelityPosition,
   FilterState,
   PortfolioData,
-  PositionSource,
   SortConfig,
   TableRow,
   TreeMapNode,
 } from "./types";
 
+/**
+ * @param holdingsRows Pass aggregated holdings rows when filtering position rows,
+ *   so search for an underlying name (e.g. "meta") also surfaces the funds that hold it.
+ *   Omit for the aggregated (holdings) table itself.
+ */
 export function getFilteredRows(
   rows: TableRow[] | null,
   filters: FilterState,
   sortConfig: SortConfig,
   selectedFunds: string[],
-  /** When set (positions table + active search), restrict rows to symbols that match the same search on aggregated holdings. */
-  searchSymbolAllowlist?: ReadonlySet<string> | null
+  holdingsRows?: TableRow[]
 ): TableRow[] {
   if (!rows) {
     return [];
   }
 
+  const searchAllowlist =
+    holdingsRows && hasSearchQuery(filters)
+      ? buildSearchAllowlist(holdingsRows, filters, selectedFunds)
+      : null;
+
   const filtered = rows
     .map((row) =>
-      buildVisibleRow(row, filters, selectedFunds, searchSymbolAllowlist)
+      buildVisibleRow(row, filters, selectedFunds, searchAllowlist)
     )
     .filter((row): row is TableRow => row !== null);
   const visibleTotalValue = filtered.reduce(
@@ -179,49 +188,43 @@ function getActiveSummaryLabel(
   } applied`;
 }
 
-/** Symbols (position row keys + contributing fund tickers) for rows that match search on aggregated holdings — keeps "By fund" table search aligned with "Aggregated". */
-export function collectSearchMatchedPositionSymbols(
+/**
+ * Build a set of symbols (underlying + contributing fund tickers) that match
+ * the current search on aggregated holdings rows. Used so searching "meta"
+ * on the positions table also surfaces VTI/SPY — any fund that holds META.
+ */
+function buildSearchAllowlist(
   holdingsRows: TableRow[],
   filters: FilterState,
   selectedFunds: string[]
 ): Set<string> {
   const symbols = new Set<string>();
   for (const row of holdingsRows) {
-    const visibleSources = getVisibleSourcesForFilters(
-      row,
-      filters,
-      selectedFunds
-    );
-    if (visibleSources.length === 0) {
-      continue;
-    }
+    const sources = filterVisibleSources(row, filters, selectedFunds);
     if (
+      sources.length === 0 ||
       !matchesTableRowSearch(
-        {
-          symbol: row.symbol,
-          name: row.name,
-          sources: visibleSources,
-        },
+        { symbol: row.symbol, name: row.name, sources },
         filters.searchQuery
       )
     ) {
       continue;
     }
     symbols.add(row.symbol);
-    for (const source of visibleSources) {
-      if (source.type === "fund") {
-        symbols.add(source.sourceSymbol);
+    for (const s of sources) {
+      if (s.type === "fund") {
+        symbols.add(s.sourceSymbol);
       }
     }
   }
   return symbols;
 }
 
-function getVisibleSourcesForFilters(
+function filterVisibleSources(
   row: TableRow,
   filters: FilterState,
   selectedFunds: string[]
-): PositionSource[] {
+) {
   return row.sources.filter(
     (source) =>
       matchesSourceFilters(source.account, source.investmentType, filters) &&
@@ -236,39 +239,39 @@ function getVisibleSourcesForFilters(
   );
 }
 
+function matchesSearch(
+  row: TableRow,
+  searchQuery: string | undefined,
+  allowlist: ReadonlySet<string> | null
+): boolean {
+  if (!normalizeSearchQuery(searchQuery)) {
+    return true;
+  }
+  if (
+    matchesTableRowSearch(
+      { symbol: row.symbol, name: row.name, sources: row.sources },
+      searchQuery
+    )
+  ) {
+    return true;
+  }
+  return allowlist !== null && allowlist.has(row.symbol);
+}
+
 function buildVisibleRow(
   row: TableRow,
   filters: FilterState,
   selectedFunds: string[],
-  searchSymbolAllowlist: ReadonlySet<string> | null | undefined
+  searchAllowlist: ReadonlySet<string> | null
 ): TableRow | null {
-  const visibleSources = getVisibleSourcesForFilters(
-    row,
-    filters,
-    selectedFunds
-  );
+  const visibleSources = filterVisibleSources(row, filters, selectedFunds);
 
   if (visibleSources.length === 0) {
     return null;
   }
 
-  const searchMatchesHoldings =
-    !hasSearchQuery(filters) ||
-    matchesTableRowSearch(
-      {
-        symbol: row.symbol,
-        name: row.name,
-        sources: visibleSources,
-      },
-      filters.searchQuery
-    );
-
-  const searchMatchesPositionsView =
-    searchSymbolAllowlist &&
-    searchSymbolAllowlist.size > 0 &&
-    searchSymbolAllowlist.has(row.symbol);
-
-  if (!searchMatchesHoldings && !searchMatchesPositionsView) {
+  const rowWithVisibleSources = { ...row, sources: visibleSources };
+  if (!matchesSearch(rowWithVisibleSources, filters.searchQuery, searchAllowlist)) {
     return null;
   }
 

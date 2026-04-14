@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  collectSearchMatchedPositionSymbols,
   getActivePortfolioSummary,
   getFilteredRows,
   getFilteredTreeMapNodes,
@@ -252,21 +251,12 @@ describe("portfolio selectors", () => {
       searchQuery: "meta",
     };
 
-    const allowlist = collectSearchMatchedPositionSymbols(
-      [metaHoldings],
-      filters,
-      []
-    );
-    expect(allowlist.has("META")).toBe(true);
-    expect(allowlist.has("VTI")).toBe(true);
-    expect(allowlist.has("SPY")).toBe(true);
-
     const positionFiltered = getFilteredRows(
       [vtiPosition, unrelatedFund],
       filters,
       SORT_CONFIG,
       [],
-      allowlist
+      [metaHoldings]
     );
 
     expect(positionFiltered).toHaveLength(1);
