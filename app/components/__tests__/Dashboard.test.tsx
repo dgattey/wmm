@@ -1,7 +1,8 @@
+import { useCallback, useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { Dashboard } from "../Dashboard";
-import type { PortfolioData } from "@/lib/types";
+import type { FilterState, PortfolioData } from "@/lib/types";
 import * as portfolioSelectors from "@/lib/portfolioSelectors";
 
 const { mockUseIsStickyDocked } = vi.hoisted(() => ({
@@ -235,6 +236,76 @@ describe("Dashboard portfolio actions", () => {
       accounts: [],
       searchQuery: "aapl",
     });
+    vi.useRealTimers();
+  });
+
+  it("keeps search cleared when Reset filters runs before debounce catches up", () => {
+    vi.useFakeTimers();
+
+    function DashboardSearchResetHarness() {
+      const [filters, setFilters] = useState<FilterState>({
+        investmentTypes: [],
+        accounts: [],
+        searchQuery: "",
+      });
+
+      const resetFilters = useCallback(() => {
+        setFilters({ investmentTypes: [], accounts: [], searchQuery: "" });
+      }, []);
+
+      return (
+        <>
+          <button type="button" onClick={resetFilters}>
+            Test reset filters
+          </button>
+          <Dashboard
+            portfolioData={portfolioData}
+            portfolioName="Sample beta portfolio"
+            filteredTreeMapNodes={[]}
+            filteredRows={[]}
+            isMobile={false}
+            filters={filters}
+            onFiltersChange={setFilters}
+            onResetFilters={resetFilters}
+            sortConfig={{ key: "totalValue", direction: "desc" }}
+            onSort={vi.fn()}
+            expandedRows={new Set()}
+            onToggleExpand={vi.fn()}
+            onBackToPicker={vi.fn()}
+            isLoading={false}
+            viewMode="holdings"
+            onViewModeChange={vi.fn()}
+            treeMapGrouping="fund"
+            onTreeMapGroupingChange={vi.fn()}
+            selectedFunds={[]}
+            onToggleFund={vi.fn()}
+            onClearFunds={vi.fn()}
+            fundOptions={[]}
+            activeSummary={null}
+            treeMapWidth={1200}
+            treeMapHeight={400}
+          />
+        </>
+      );
+    }
+
+    render(<DashboardSearchResetHarness />);
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search portfolio" }), {
+      target: { value: "aapl" },
+    });
+    act(() => {
+      vi.advanceTimersByTime(250);
+    });
+    expect(screen.getByRole("searchbox", { name: "Search portfolio" })).toHaveValue("aapl");
+
+    fireEvent.click(screen.getByRole("button", { name: "Test reset filters" }));
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(screen.getByRole("searchbox", { name: "Search portfolio" })).toHaveValue("");
     vi.useRealTimers();
   });
 
