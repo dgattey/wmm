@@ -97,12 +97,15 @@ export function Dashboard({
 }: DashboardProps) {
   const searchQueryFromFilters = filters.searchQuery ?? "";
   const [searchInput, setSearchInput] = useState(searchQueryFromFilters);
+  const [prevSearchQueryFromFilters, setPrevSearchQueryFromFilters] = useState(
+    searchQueryFromFilters
+  );
+  if (searchQueryFromFilters !== prevSearchQueryFromFilters) {
+    setPrevSearchQueryFromFilters(searchQueryFromFilters);
+    setSearchInput(searchQueryFromFilters);
+  }
   const debouncedSearchInput = useDebouncedValue(searchInput, 250);
   const [headerExpandedHeightPx, setHeaderExpandedHeightPx] = useState(0);
-
-  useEffect(() => {
-    setSearchInput(searchQueryFromFilters);
-  }, [searchQueryFromFilters]);
 
   const visibleHoldingCount = useMemo(() => {
     if (viewMode === "holdings") {
@@ -125,9 +128,16 @@ export function Dashboard({
       return;
     }
 
+    // While the user types, `debouncedSearchInput` lags `searchInput`. If filters were cleared
+    // externally (e.g. Reset filters) before the debounce catches up, do not push the stale
+    // debounced text back into `filters`.
+    if (debouncedSearchInput !== searchInput) {
+      return;
+    }
+
     filtersRef.current = { ...filtersRef.current, searchQuery: debouncedSearchInput };
     onFiltersChange(filtersRef.current);
-  }, [debouncedSearchInput, onFiltersChange]);
+  }, [debouncedSearchInput, onFiltersChange, searchInput]);
 
   const headerRef = useRef<HTMLElement>(null);
   const searchShellRef = useRef<HTMLDivElement>(null);
