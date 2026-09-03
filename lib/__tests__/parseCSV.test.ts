@@ -4,6 +4,9 @@ import { parseCSV } from "../parseCSV";
 const VALID_HEADER =
   "Account Number,Account Name,Investment Type,Symbol,Description,Quantity,Last Price,Last Price Change,Current Value,Today's Gain/Loss Dollar,Today's Gain/Loss Percent,Total Gain/Loss Dollar,Total Gain/Loss Percent,Percent Of Account,Cost Basis Total,Average Cost Basis,Type";
 
+const LIVE_FIDELITY_HEADER =
+  "Account number,Account name,Investment type,Symbol,Description,Quantity,Last price,Last price change,Current value,Today's gain/loss dollar,Today's gain/loss percent,Total gain/loss dollar,Total gain/loss percent,Percent of account,Cost basis total,Average cost basis,Type";
+
 function makeCSV(rows: string[]): string {
   return [VALID_HEADER, ...rows].join("\n");
 }
@@ -70,6 +73,16 @@ describe("parseCSV", () => {
     ]);
     const result = parseCSV(csv);
     expect(result).toHaveLength(1);
+  });
+
+  it("parses a live Fidelity Positions download with sentence-case headers", () => {
+    const row =
+      "X00000000,Brokerage,Mutual funds,FXAIX,FIDELITY 500 INDEX FUND,10,$100.00,+$1.00,$1000.00,+$10.00,+1.00%,+$100.00,+11.11%,10.00%,$900.00,$90.00,Cash,";
+    const result = parseCSV([LIVE_FIDELITY_HEADER, row].join("\n"));
+    expect(result).toHaveLength(1);
+    expect(result[0].symbol).toBe("FXAIX");
+    expect(result[0].investmentType).toBe("Mutual Funds");
+    expect(result[0].currentValue).toBe(1000);
   });
 
   it("throws on file without Fidelity header", () => {
