@@ -1,6 +1,5 @@
 import type { FidelityPosition, InvestmentType } from "./types";
 
-/** Known symbol mappings: Fidelity symbol → Yahoo Finance symbol */
 const SYMBOL_MAP: Record<string, string> = {
   BRKB: "BRK-B",
 };
@@ -21,12 +20,10 @@ export function parseCSV(raw: string): FidelityPosition[] {
   // Strip BOM if present
   let text = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw;
 
-  // Normalize line endings
   text = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
   const lines = text.split("\n");
 
-  // Find the header row
   const headerIdx = lines.findIndex((line) =>
     line.toLowerCase().startsWith("account number,account name,")
   );
@@ -38,12 +35,10 @@ export function parseCSV(raw: string): FidelityPosition[] {
 
   const positions: FidelityPosition[] = [];
 
-  // Parse data rows (everything after the header until we hit a blank or disclaimer)
   for (let i = headerIdx + 1; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line) continue;
 
-    // Stop at the disclaimer section (starts with a quote mark at the beginning of a paragraph)
     if (line.startsWith('"The data and information')) break;
     if (line.startsWith('"Brokerage services')) break;
     if (line.startsWith('"Date downloaded')) break;
@@ -71,17 +66,14 @@ export function parseCSV(raw: string): FidelityPosition[] {
       type,
     ] = fields;
 
-    // Skip rows without an investment type (like "Pending activity")
     if (!investmentType.trim()) continue;
 
-    // Skip pending activity rows
     if (description?.toLowerCase().includes("pending activity")) continue;
 
     // Clean symbol: strip ** suffix from money market funds
     let cleanSymbol = symbol.replace(/\*+$/, "").trim();
     if (!cleanSymbol) continue;
 
-    // Apply symbol mapping
     cleanSymbol = SYMBOL_MAP[cleanSymbol] || cleanSymbol;
 
     let cleanType =
@@ -123,9 +115,6 @@ export function parseCSV(raw: string): FidelityPosition[] {
   return positions;
 }
 
-/**
- * Parse a single CSV line, handling quoted fields that may contain commas.
- */
 function parseCSVLine(line: string): string[] {
   const fields: string[] = [];
   let current = "";
@@ -152,9 +141,6 @@ function parseCSVLine(line: string): string[] {
   return fields;
 }
 
-/**
- * Clean a numeric string by removing $, +, %, commas, and parsing as float.
- */
 function cleanNumber(value: string): number {
   if (!value) return 0;
   const cleaned = value.replace(/[$,%+]/g, "").trim();
