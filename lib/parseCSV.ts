@@ -5,6 +5,14 @@ const SYMBOL_MAP: Record<string, string> = {
   BRKB: "BRK-B",
 };
 
+const INVESTMENT_TYPES: Record<string, InvestmentType> = {
+  stocks: "Stocks",
+  etfs: "ETFs",
+  "mutual funds": "Mutual Funds",
+  cash: "Cash",
+  others: "Others",
+};
+
 /**
  * Parse a Fidelity portfolio positions CSV export into typed position objects.
  * Handles: BOM, quoted fields, dollar/percent cleaning, money market **, pending rows.
@@ -20,7 +28,7 @@ export function parseCSV(raw: string): FidelityPosition[] {
 
   // Find the header row
   const headerIdx = lines.findIndex((line) =>
-    line.startsWith("Account Number,Account Name,")
+    line.toLowerCase().startsWith("account number,account name,")
   );
   if (headerIdx === -1) {
     throw new Error(
@@ -76,25 +84,13 @@ export function parseCSV(raw: string): FidelityPosition[] {
     // Apply symbol mapping
     cleanSymbol = SYMBOL_MAP[cleanSymbol] || cleanSymbol;
 
-    // Determine investment type
-    let cleanType = investmentType.trim() as InvestmentType;
+    let cleanType =
+      INVESTMENT_TYPES[investmentType.trim().toLowerCase()] ?? "Others";
     if (
       symbol.includes("**") ||
       description?.toLowerCase().includes("money market")
     ) {
       cleanType = "Cash";
-    }
-
-    // Validate investment type
-    const validTypes: InvestmentType[] = [
-      "Stocks",
-      "ETFs",
-      "Mutual Funds",
-      "Cash",
-      "Others",
-    ];
-    if (!validTypes.includes(cleanType)) {
-      cleanType = "Others";
     }
 
     positions.push({
